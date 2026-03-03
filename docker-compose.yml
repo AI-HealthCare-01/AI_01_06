@@ -33,6 +33,8 @@ services:
       - ws
     volumes:
       - mysql_data:/var/lib/mysql  # 컨테이너가 삭제돼도 데이터는 호스트 파일시스템에 남음
+      # 호스트의 파일명(Sullivan_Init.sql)과 컨테이너 내부 경로를 연결, 이후 디비 구조 변경시 compose down -v
+      - ./db/Sullivan_Init.sql:/docker-entrypoint-initdb.d/Sullivan_Init.sql:ro
     command: # 한글 저장을 위한 문자셋 설정 (필수!)
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
