@@ -1,29 +1,67 @@
-from typing import Annotated
+"""
+medication DTO — 기존 파일 재작성.
 
-from pydantic import BaseModel, ConfigDict, Field
+기준: docs/dev/api_spec.md
+"""
 
+from datetime import date
+
+from pydantic import BaseModel, ConfigDict
+
+from app.core.enums import TimeOfDay
 from app.dtos.base import BaseSerializerModel
 
 
-class MedicationSummary(BaseSerializerModel):
-    model_config = ConfigDict(populate_by_name=True)
+class MedicationDetailResponse(BaseSerializerModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    medication_id: Annotated[str, Field(alias="id")]
-    name: Annotated[str, Field(alias="drug_name")]
-    ingredient: str | None = None  # TODO: 성분 필드는 모델에 없음, 향후 확장 필요
+    id: str
+    drug_name: str
     dosage: str | None = None
-    frequency_per_day: Annotated[str | None, Field(alias="frequency")]
+    frequency: str | None = None
+    administration: str | None = None
     duration_days: int | None = None
 
 
 class MedicationListResponse(BaseModel):
-    medications: list[MedicationSummary]
+    medications: list[MedicationDetailResponse]
 
 
-class MedicationDetailResponse(BaseSerializerModel):
-    model_config = ConfigDict(populate_by_name=True)
+class ScheduleCreateRequest(BaseModel):
+    medication_id: str
+    time_of_day: TimeOfDay
+    specific_time: str | None = None   # HH:MM
+    start_date: date | None = None
+    end_date: date | None = None
 
-    medication_id: Annotated[str, Field(alias="id")]
-    name: Annotated[str, Field(alias="drug_name")]
-    warnings: list[str] = Field(default_factory=list)
-    side_effects: list[str] = Field(default_factory=list)
+
+class ScheduleResponse(BaseSerializerModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    medication_id: str
+    time_of_day: TimeOfDay
+    specific_time: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+
+
+class AdherenceLogRequest(BaseModel):
+    schedule_id: str
+    target_date: date
+    note: str | None = None
+
+
+class AdherenceSkipRequest(BaseModel):
+    schedule_id: str
+    target_date: date
+    note: str | None = None
+
+
+class AdherenceLogResponse(BaseSerializerModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    schedule_id: str
+    target_date: date
+    status: str

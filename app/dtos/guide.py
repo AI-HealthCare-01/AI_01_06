@@ -1,31 +1,23 @@
-from enum import Enum
-from typing import Annotated
+"""
+guide DTO — 기존 파일 재작성.
 
-from pydantic import BaseModel, ConfigDict, Field
+기준: docs/dev/api_spec.md
+"""
+
+from datetime import datetime
+
+from pydantic import ConfigDict
 
 from app.dtos.base import BaseSerializerModel
 
 
-class GuideStyle(str, Enum):
-    SIMPLE = "SIMPLE"
-    DETAILED = "DETAILED"
+class GuideResponse(BaseSerializerModel):
+    model_config = ConfigDict(from_attributes=True)
 
-
-class GuideCreateRequest(BaseModel):
+    id: str
     prescription_id: str
-    style: GuideStyle | None = GuideStyle.SIMPLE
-
-
-class GuideCreateResponse(BaseSerializerModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    guide_id: Annotated[str, Field(alias="id")]
-    content: str
-
-
-class GuideDetailResponse(BaseSerializerModel):
-    content: str
-
-
-class GuidePdfResponse(BaseModel):
-    file_url: str
+    guide_markdown: str
+    precautions: str | None = None
+    lifestyle_advice: str | None = None
+    summary_json: dict | None = None
+    generated_at: datetime

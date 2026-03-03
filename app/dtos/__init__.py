@@ -1,24 +1,15 @@
+"""
+dtos 패키지 공개 인터페이스.
+
+실제 존재하는 클래스만 export합니다.
+각 도메인 모듈을 직접 import하는 것을 권장합니다.
+"""
+
 from app.dtos.audit import AuditLogItem, AuditLogListResponse
-from app.dtos.auth import (
-    FontMode,
-    LoginRequest,
-    LoginResponse,
-    SignUpRequest,
-    TokenRefreshResponse,
-    UserRole,
-)
+from app.dtos.auth import LoginRequest, LoginResponse, SignUpRequest, TokenRefreshResponse
 from app.dtos.base import BaseSerializerModel, GenericResponse
-from app.dtos.caregiver import (
-    CaregiverApproveResponse,
-    CaregiverRequestCreate,
-    CaregiverRequestListResponse,
-    CaregiverRequestResponse,
-    CaregiverRequestStatus,
-    PatientListResponse,
-    PatientSummary,
-)
+from app.dtos.caregiver import CaregiverMappingResponse, CaregiverRequestBody
 from app.dtos.chat import (
-    ChatFeedbackRating,
     ChatFeedbackRequest,
     ChatFeedbackResponse,
     ChatMessageListResponse,
@@ -29,35 +20,23 @@ from app.dtos.chat import (
     ChatThreadListResponse,
     ChatThreadResponse,
 )
-from app.dtos.guide import (
-    GuideCreateRequest,
-    GuideCreateResponse,
-    GuideDetailResponse,
-    GuidePdfResponse,
-    GuideStyle,
+from app.dtos.guide import GuideResponse
+from app.dtos.medication import (
+    AdherenceLogRequest,
+    AdherenceLogResponse,
+    AdherenceSkipRequest,
+    MedicationDetailResponse,
+    MedicationListResponse,
+    ScheduleCreateRequest,
+    ScheduleResponse,
 )
-from app.dtos.medication import MedicationDetailResponse, MedicationListResponse, MedicationSummary
-from app.dtos.notification import NotificationItem, NotificationListResponse, NotificationType
+from app.dtos.notification import NotificationItem, NotificationListResponse
 from app.dtos.prescription import (
     OcrResultResponse,
     OcrUpdateRequest,
     PrescriptionDetailResponse,
     PrescriptionListResponse,
     PrescriptionUploadResponse,
-)
-from app.dtos.schedule import (
-    AdherenceCreateRequest,
-    AdherenceRecordResponse,
-    AdherenceSkipRequest,
-    AdherenceStatResponse,
-    AlarmChannel,
-    InstanceStatus,
-    ScheduleCreateRequest,
-    ScheduleCreateResponse,
-    ScheduleInstanceResponse,
-    ScheduleListResponse,
-    ScheduleSummaryResponse,
-    ScheduleUpdateRequest,
 )
 from app.dtos.users import AccessibilityUpdateRequest, UserInfoResponse, UserUpdateRequest
 
@@ -66,8 +45,6 @@ __all__ = [
     "BaseSerializerModel",
     "GenericResponse",
     # auth
-    "UserRole",
-    "FontMode",
     "SignUpRequest",
     "LoginRequest",
     "LoginResponse",
@@ -82,37 +59,19 @@ __all__ = [
     "PrescriptionListResponse",
     "OcrResultResponse",
     "OcrUpdateRequest",
-    # medication
-    "MedicationSummary",
-    "MedicationListResponse",
+    # medication/schedule/adherence
     "MedicationDetailResponse",
-    # guide
-    "GuideStyle",
-    "GuideCreateRequest",
-    "GuideCreateResponse",
-    "GuideDetailResponse",
-    "GuidePdfResponse",
-    # schedule
-    "AlarmChannel",
+    "MedicationListResponse",
     "ScheduleCreateRequest",
-    "ScheduleCreateResponse",
-    "ScheduleSummaryResponse",
-    "ScheduleListResponse",
-    "ScheduleUpdateRequest",
-    "InstanceStatus",
-    "ScheduleInstanceResponse",
-    "AdherenceCreateRequest",
+    "ScheduleResponse",
+    "AdherenceLogRequest",
     "AdherenceSkipRequest",
-    "AdherenceRecordResponse",
-    "AdherenceStatResponse",
+    "AdherenceLogResponse",
+    # guide
+    "GuideResponse",
     # caregiver
-    "CaregiverRequestStatus",
-    "CaregiverRequestCreate",
-    "CaregiverRequestResponse",
-    "CaregiverRequestListResponse",
-    "CaregiverApproveResponse",
-    "PatientSummary",
-    "PatientListResponse",
+    "CaregiverRequestBody",
+    "CaregiverMappingResponse",
     # chat
     "ChatThreadCreateRequest",
     "ChatThreadResponse",
@@ -121,11 +80,9 @@ __all__ = [
     "ChatMessageSendResponse",
     "ChatMessageSummary",
     "ChatMessageListResponse",
-    "ChatFeedbackRating",
     "ChatFeedbackRequest",
     "ChatFeedbackResponse",
     # notification
-    "NotificationType",
     "NotificationItem",
     "NotificationListResponse",
     # audit

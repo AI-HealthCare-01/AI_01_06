@@ -1,7 +1,6 @@
 from datetime import datetime
-from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from app.dtos.base import BaseSerializerModel
 

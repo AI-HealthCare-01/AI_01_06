@@ -1,44 +1,18 @@
-from enum import Enum
-from typing import Annotated
+"""
+CAREGIVER 도메인 DTO.
+"""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
 
+from app.core.enums import CaregiverMappingStatus
 from app.dtos.base import BaseSerializerModel
 
 
-class CaregiverRequestStatus(str, Enum):
-    PENDING = "PENDING"
-    APPROVED = "APPROVED"
-    REJECTED = "REJECTED"
+class CaregiverRequestBody(BaseModel):
+    patient_id: str
 
 
-class CaregiverRequestCreate(BaseModel):
-    patient_email: str
-    message: str | None = None
-
-
-class CaregiverRequestResponse(BaseSerializerModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    request_id: Annotated[str, Field(alias="id")]
-    status: CaregiverRequestStatus
-
-
-class CaregiverRequestListResponse(BaseModel):
-    requests: list[CaregiverRequestResponse]
-
-
-class CaregiverApproveResponse(BaseModel):
-    mapping_id: str
-
-
-class PatientSummary(BaseSerializerModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    patient_id: Annotated[str, Field(alias="id")]
-    # 추가 환자 정보 필드 (이름, 생년월일 등)가 필요할 수 있음
-    email: str | None = None
-
-
-class PatientListResponse(BaseModel):
-    patients: list[PatientSummary]
+class CaregiverMappingResponse(BaseSerializerModel):
+    caregiver_id: str
+    patient_id: str
+    status: CaregiverMappingStatus

@@ -13,3 +13,7 @@ wheels/
 *.coverage
 .coverage.*
 .DS_Store
+
+# agents
+docs/*
+.agents/*
