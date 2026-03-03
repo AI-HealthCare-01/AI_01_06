@@ -6,7 +6,12 @@ from app.core import config
 
 TORTOISE_APP_MODELS = [
     "aerich.models",
-    "app.models.users",
+    "app.models.user",
+    "app.models.medical",
+    "app.models.guide",
+    "app.models.chat",
+    "app.models.notification",
+    "app.models.audit",
 ]
 
 TORTOISE_ORM = {
@@ -36,4 +41,9 @@ TORTOISE_ORM = {
 
 def initialize_tortoise(app: FastAPI) -> None:
     Tortoise.init_models(TORTOISE_APP_MODELS, "models")
-    register_tortoise(app, config=TORTOISE_ORM)
+    register_tortoise(
+        app,
+        config=TORTOISE_ORM,
+        generate_schemas=getattr(config, "ENV", "prod") == "local",
+        add_exception_handlers=True,
+    )
