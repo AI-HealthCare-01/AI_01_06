@@ -47,6 +47,7 @@ _adherence_repo = AdherenceRepository()
 
 # ── GUIDE ──────────────────────────────────
 
+
 @guide_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_guide(
     prescription_id: str,
@@ -92,6 +93,7 @@ async def download_guide_pdf(
 
 # ── SCHEDULE ──────────────────────────────────
 
+
 @schedule_router.post("", status_code=status.HTTP_201_CREATED)
 async def create_schedule(
     body: ScheduleCreateRequest,
@@ -133,6 +135,7 @@ async def delete_schedule(
 
 
 # ── ADHERENCE ──────────────────────────────────
+
 
 @adherence_router.post("", status_code=status.HTTP_201_CREATED)
 async def log_adherence(

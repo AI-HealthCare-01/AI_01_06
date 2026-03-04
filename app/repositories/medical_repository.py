@@ -59,9 +59,7 @@ class OcrRepository:
 
     async def get_by_prescription(self, prescription_id: str) -> OcrJob | None:
         return (
-            await OcrJob.filter(prescription_image__prescription_id=prescription_id)
-            .order_by("-requested_at")
-            .first()
+            await OcrJob.filter(prescription_image__prescription_id=prescription_id).order_by("-requested_at").first()
         )
 
     async def update_extracted(self, ocr_job: OcrJob, extracted_json: dict) -> None:

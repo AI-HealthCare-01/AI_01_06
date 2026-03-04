@@ -30,7 +30,7 @@ class MedicationListResponse(BaseModel):
 class ScheduleCreateRequest(BaseModel):
     medication_id: str
     time_of_day: TimeOfDay
-    specific_time: str | None = None   # HH:MM
+    specific_time: str | None = None  # HH:MM
     start_date: date | None = None
     end_date: date | None = None
 

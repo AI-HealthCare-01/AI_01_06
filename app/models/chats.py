@@ -20,9 +20,7 @@ from app.models.users import User
 
 class ChatSession(models.Model):
     id = fields.CharField(max_length=36, pk=True, default=lambda: str(uuid.uuid4()))
-    patient: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
-        "models.User", related_name="chat_sessions"
-    )
+    patient: fields.ForeignKeyRelation[User] = fields.ForeignKeyField("models.User", related_name="chat_sessions")
     prescription: fields.ForeignKeyRelation[Prescription] = fields.ForeignKeyField(
         "models.Prescription", related_name="chat_sessions", null=True
     )
@@ -51,9 +49,7 @@ class ChatMessage(models.Model):
 
 class ChatFeedback(models.Model):
     id = fields.CharField(max_length=36, pk=True, default=lambda: str(uuid.uuid4()))
-    message: fields.OneToOneRelation[ChatMessage] = fields.OneToOneField(
-        "models.ChatMessage", related_name="feedback"
-    )
+    message: fields.OneToOneRelation[ChatMessage] = fields.OneToOneField("models.ChatMessage", related_name="feedback")
     feedback_category = fields.CharField(max_length=255)
     additional_notes = fields.TextField(null=True)
     created_at = fields.DatetimeField(auto_now_add=True)

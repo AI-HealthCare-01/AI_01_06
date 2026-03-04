@@ -16,9 +16,7 @@ from app.models.users import User
 
 class AuditLog(models.Model):
     id = fields.CharField(max_length=36, pk=True, default=lambda: str(uuid.uuid4()))
-    actor: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
-        "models.User", related_name="audit_logs"
-    )
+    actor: fields.ForeignKeyRelation[User] = fields.ForeignKeyField("models.User", related_name="audit_logs")
     action_type = fields.CharField(max_length=100)
     resource_type = fields.CharField(max_length=50, null=True)
     resource_id = fields.CharField(max_length=255, null=True)

@@ -12,9 +12,7 @@ from datetime import date
 # 비밀번호
 # ──────────────────────────────────────────
 
-_PASSWORD_PATTERN = re.compile(
-    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]).{8,}$"
-)
+_PASSWORD_PATTERN = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]).{8,}$")
 
 
 def validate_password(value: str) -> str:
@@ -24,9 +22,7 @@ def validate_password(value: str) -> str:
     - 영문 대/소문자, 숫자, 특수문자를 각각 1자 이상 포함
     """
     if not _PASSWORD_PATTERN.match(value):
-        raise ValueError(
-            "비밀번호는 8자 이상이며 영문 대/소문자, 숫자, 특수문자를 각각 1자 이상 포함해야 합니다."
-        )
+        raise ValueError("비밀번호는 8자 이상이며 영문 대/소문자, 숫자, 특수문자를 각각 1자 이상 포함해야 합니다.")
     return value
 
 
@@ -73,9 +69,7 @@ def validate_phone_number(value: str) -> str:
     """
     normalized = _PHONE_STRIP_PATTERN.sub("", value)
     if not _PHONE_VALID_PATTERN.match(normalized):
-        raise ValueError(
-            "유효한 한국 휴대폰 번호를 입력해주세요. (예: 010-1234-5678)"
-        )
+        raise ValueError("유효한 한국 휴대폰 번호를 입력해주세요. (예: 010-1234-5678)")
     return normalized
 
 

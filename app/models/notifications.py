@@ -33,9 +33,7 @@ class NotificationSetting(models.Model):
 
 class Notification(models.Model):
     id = fields.CharField(max_length=36, pk=True, default=lambda: str(uuid.uuid4()))
-    user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
-        "models.User", related_name="notifications"
-    )
+    user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField("models.User", related_name="notifications")
     type = fields.CharEnumField(NotificationType, max_length=50)
     title = fields.CharField(max_length=255, null=True)
     body = fields.TextField(null=True)

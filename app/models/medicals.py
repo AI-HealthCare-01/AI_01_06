@@ -27,9 +27,7 @@ from app.models.users import User
 
 class Prescription(models.Model):
     id = fields.CharField(max_length=36, pk=True, default=lambda: str(uuid.uuid4()))
-    patient: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
-        "models.User", related_name="prescriptions"
-    )
+    patient: fields.ForeignKeyRelation[User] = fields.ForeignKeyField("models.User", related_name="prescriptions")
     created_by_user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         "models.User", related_name="created_prescriptions"
     )
@@ -110,9 +108,7 @@ class AdherenceLog(models.Model):
     schedule: fields.ForeignKeyRelation[MedicationSchedule] = fields.ForeignKeyField(
         "models.MedicationSchedule", related_name="adherence_logs"
     )
-    actor_user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
-        "models.User", related_name="adherence_logs"
-    )
+    actor_user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField("models.User", related_name="adherence_logs")
     target_date = fields.DateField()
     status = fields.CharEnumField(AdherenceStatus, max_length=20)
     logged_at = fields.DatetimeField(auto_now_add=True)

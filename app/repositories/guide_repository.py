@@ -43,7 +43,9 @@ class ScheduleRepository:
     async def get_by_id(self, schedule_id: str) -> MedicationSchedule | None:
         return await MedicationSchedule.get_or_none(id=schedule_id)
 
-    async def create(self, *, medication_id: str, time_of_day: str, specific_time=None, start_date=None, end_date=None) -> MedicationSchedule:
+    async def create(
+        self, *, medication_id: str, time_of_day: str, specific_time=None, start_date=None, end_date=None
+    ) -> MedicationSchedule:
         return await MedicationSchedule.create(
             id=str(uuid.uuid4()),
             medication_id=medication_id,

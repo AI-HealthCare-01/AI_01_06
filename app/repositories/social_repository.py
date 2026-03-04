@@ -38,7 +38,9 @@ class ChatRepository:
     async def list_sessions(self, patient_id: str) -> list[ChatSession]:
         return await ChatSession.filter(patient_id=patient_id).order_by("-started_at")
 
-    async def create_session(self, *, patient_id: str, prescription_id: str | None = None, guide_id: str | None = None) -> ChatSession:
+    async def create_session(
+        self, *, patient_id: str, prescription_id: str | None = None, guide_id: str | None = None
+    ) -> ChatSession:
         return await ChatSession.create(
             id=str(uuid.uuid4()),
             patient_id=patient_id,
@@ -57,7 +59,9 @@ class ChatRepository:
             message_text=message_text,
         )
 
-    async def add_feedback(self, *, message_id: str, feedback_category: str, additional_notes: str | None = None) -> ChatFeedback:
+    async def add_feedback(
+        self, *, message_id: str, feedback_category: str, additional_notes: str | None = None
+    ) -> ChatFeedback:
         return await ChatFeedback.create(
             id=str(uuid.uuid4()),
             message_id=message_id,
@@ -75,15 +79,15 @@ class NotificationRepository:
 
     async def mark_read(self, notification: Notification) -> None:
         from datetime import datetime
+
         notification.is_read = True
         notification.read_at = datetime.now(tz=UTC)
         await notification.save(update_fields=["is_read", "read_at"])
 
     async def mark_all_read(self, user_id: str) -> None:
         from datetime import datetime
-        await Notification.filter(user_id=user_id, is_read=False).update(
-            is_read=True, read_at=datetime.now(tz=UTC)
-        )
+
+        await Notification.filter(user_id=user_id, is_read=False).update(is_read=True, read_at=datetime.now(tz=UTC))
 
 
 class AuditRepository:

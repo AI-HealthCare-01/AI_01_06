@@ -20,12 +20,14 @@ from app.utils.validators import validate_birthday, validate_password, validate_
 # 회원가입
 # ──────────────────────────────────────────
 
+
 class SignUpRequest(BaseModel):
     """POST /api/auth/signup 요청 바디.
 
     REQ-USR-001: 이메일, 비밀번호, 이름, 성별, 생년월일, 휴대폰 번호 등 기본 폼 입력.
     REQ-COM-002: 역할(PATIENT | GUARDIAN) 분기 가입.
     """
+
     model_config = ConfigDict(populate_by_name=True)
 
     email: Annotated[
@@ -57,6 +59,7 @@ class SignUpRequest(BaseModel):
 # 로그인
 # ──────────────────────────────────────────
 
+
 class LoginRequest(BaseModel):
     """POST /api/auth/login 요청 바디."""
 
@@ -77,6 +80,7 @@ class LoginResponse(BaseModel):
 # ──────────────────────────────────────────
 # 토큰 재발급
 # ──────────────────────────────────────────
+
 
 class TokenRefreshResponse(BaseModel):
     """POST /api/auth/refresh 응답 바디."""

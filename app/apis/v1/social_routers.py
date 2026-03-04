@@ -55,6 +55,7 @@ _audit_repo = AuditRepository()
 
 # ── CAREGIVER ──────────────────────────────────
 
+
 @caregiver_router.post("/requests", status_code=status.HTTP_201_CREATED)
 async def request_caregiver(
     body: CaregiverRequestBody,
@@ -73,7 +74,10 @@ async def list_caregiver_inbox(
     user: Annotated[User, Depends(get_request_user)],
 ) -> Response:
     mappings = await _caregiver_repo.list_inbox(user.id)
-    return Response(content={"requests": [{"caregiver_id": m.caregiver_id, "requested_at": str(m.requested_at)} for m in mappings]}, status_code=status.HTTP_200_OK)
+    return Response(
+        content={"requests": [{"caregiver_id": m.caregiver_id, "requested_at": str(m.requested_at)} for m in mappings]},
+        status_code=status.HTTP_200_OK,
+    )
 
 
 @caregiver_router.patch("/requests/{caregiver_id}/approve", status_code=status.HTTP_204_NO_CONTENT)
@@ -105,7 +109,9 @@ async def list_my_patients(
     user: Annotated[User, Depends(get_request_user)],
 ) -> Response:
     mappings = await _caregiver_repo.list_patients(user.id)
-    return Response(content={"patients": [{"patient_id": m.patient_id} for m in mappings]}, status_code=status.HTTP_200_OK)
+    return Response(
+        content={"patients": [{"patient_id": m.patient_id} for m in mappings]}, status_code=status.HTTP_200_OK
+    )
 
 
 @caregiver_router.delete("/patients/{mapping_patient_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -121,6 +127,7 @@ async def revoke_patient(
 
 
 # ── CHAT ──────────────────────────────────
+
 
 @chat_router.get("/threads", status_code=status.HTTP_200_OK)
 async def list_threads(
@@ -152,7 +159,9 @@ async def send_message(
         sender_type=SenderType.USER,
         message_text=body.message,
     )
-    return Response(content={"message_id": msg.id, "created_at": str(msg.created_at)}, status_code=status.HTTP_201_CREATED)
+    return Response(
+        content={"message_id": msg.id, "created_at": str(msg.created_at)}, status_code=status.HTTP_201_CREATED
+    )
 
 
 @chat_router.get("/threads/{thread_id}/messages", status_code=status.HTTP_200_OK)
@@ -161,7 +170,10 @@ async def list_messages(
     user: Annotated[User, Depends(get_request_user)],
 ) -> Response:
     messages = await _chat_repo.list_messages(thread_id)
-    data = [{"id": m.id, "sender_type": m.sender_type, "message_text": m.message_text, "created_at": str(m.created_at)} for m in messages]
+    data = [
+        {"id": m.id, "sender_type": m.sender_type, "message_text": m.message_text, "created_at": str(m.created_at)}
+        for m in messages
+    ]
     return Response(content={"messages": data}, status_code=status.HTTP_200_OK)
 
 
@@ -179,6 +191,7 @@ async def chat_feedback(
 
 
 # ── NOTIFICATION ──────────────────────────────────
+
 
 @notification_router.get("", status_code=status.HTTP_200_OK)
 async def list_notifications(
@@ -211,6 +224,7 @@ async def read_notification(
 
 
 # ── AUDIT ──────────────────────────────────
+
 
 @audit_router.get("", status_code=status.HTTP_200_OK)
 async def list_audit_logs(

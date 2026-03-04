@@ -21,6 +21,7 @@ from app.utils.validators import validate_phone_number
 # 내 정보 수정
 # ──────────────────────────────────────────
 
+
 class UserUpdateRequest(BaseModel):
     """PATCH /api/users/me 요청 바디. 모든 필드 선택적."""
 
@@ -39,6 +40,7 @@ class UserUpdateRequest(BaseModel):
 # 접근성 설정 변경
 # ──────────────────────────────────────────
 
+
 class AccessibilityUpdateRequest(BaseModel):
     """PATCH /api/users/me/accessibility 요청 바디.
 
@@ -51,6 +53,7 @@ class AccessibilityUpdateRequest(BaseModel):
 # ──────────────────────────────────────────
 # 내 정보 조회 응답
 # ──────────────────────────────────────────
+
 
 class UserInfoResponse(BaseSerializerModel):
     """GET /api/users/me 응답 바디."""

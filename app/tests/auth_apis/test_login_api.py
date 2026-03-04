@@ -12,17 +12,19 @@ class TestLoginAPI(TestCase):
             "email": "login_test@example.com",
             "password": "Password123!",
             "name": "로그인테스터",
-            "gender": "FEMALE",
-            "birth_date": "1995-05-05",
+            "nickname": "logintester",
+            "gender": "F",
+            "birthdate": "1995-05-05",
             "phone_number": "01011112222",
+            "role": "PATIENT",
         }
         login_data = {"email": "login_test@example.com", "password": "Password123!"}
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await client.post("/api/v1/auth/signup", json=signup_data)
+            await client.post("/api/auth/signup", json=signup_data)
 
             # 로그인 시도
-            response = await client.post("/api/v1/auth/login", json=login_data)
+            response = await client.post("/api/auth/login", json=login_data)
         assert response.status_code == status.HTTP_200_OK
         assert "access_token" in response.json()
         # 쿠키 검증 대신 응답 헤더 확인
@@ -31,7 +33,7 @@ class TestLoginAPI(TestCase):
     async def test_login_invalid_credentials(self):
         login_data = {"email": "nonexistent@example.com", "password": "WrongPassword123!"}
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/auth/login", json=login_data)
+            response = await client.post("/api/auth/login", json=login_data)
 
-        # AuthService.authenticate 에서 실패 시 HTTP_400_BAD_REQUEST 발생
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # AuthService.authenticate 에서 실패 시 HTTP_401_UNAUTHORIZED 발생
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
