@@ -13,3 +13,7 @@ wheels/
 *.coverage
 .coverage.*
 .DS_Store
+docs/
+.agents/
+B담당_강의자료.*
+"ai_worker(ai학습추론)/"

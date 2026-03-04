@@ -7,6 +7,10 @@ from app.core import config
 TORTOISE_APP_MODELS = [
     "aerich.models",
     "app.models.users",
+    # B담당 신규 모델
+    "app.models.prescriptions",
+    "app.models.ocr_jobs",
+    "app.models.medications",
 ]
 
 TORTOISE_ORM = {
