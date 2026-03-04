@@ -34,6 +34,17 @@ export default function DevTestPage() {
     };
   }, []);
 
+  const handleLlmPing = async () => {
+    addLog('CLICK: LLM 연결 테스트');
+    try {
+      const res = await fetch('http://localhost:8000/api/v1/llm/ping');
+      const data = await res.json();
+      addLog(`LLM OK: ${data.reply}`);
+    } catch (e) {
+      addLog(`LLM ERROR: ${e}`);
+    }
+  };
+
   const handleOneClick = async () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     const id = resolveId(prescriptionId);
@@ -98,6 +109,15 @@ export default function DevTestPage() {
               <div style={styles.btnLabel}>챗봇 연결</div>
               <div style={styles.btnNote}>처방 id={prescriptionId} 기준 챗봇 화면</div>
             </Link>
+
+            {/* LLM 연결 테스트 */}
+            <button
+              style={styles.btn}
+              onClick={handleLlmPing}
+            >
+              <div style={styles.btnLabel}>LLM 연결 테스트</div>
+              <div style={styles.btnNote}>FastAPI 연동 및 OpenAI 상태 확인</div>
+            </button>
 
             {/* 회원가입 로컬 */}
             <Link

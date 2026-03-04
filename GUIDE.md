@@ -419,6 +419,10 @@ uv run pytest app/tests/ -v
 ```bash
 # .env 파일 준비
 cp envs/example.local.env envs/.local.env
+```
+> **주의:** 복사한 `envs/.local.env` 파일의 `SECRET_KEY`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `OPENAI_API_KEY` 등의 가이드용 자리표시자(placeholder)를 **반드시 실제 작동 가능한 시크릿 값으로 수정**해야 합니다. 그렇지 않으면 서버나 워커가 기동하지 않습니다.
+
+```bash
 ln -sf envs/.local.env .env  # 또는 직접 .env 생성
 
 # 전체 서비스 실행 (MySQL, Redis, FastAPI, AI Worker, Nginx)
