@@ -7,7 +7,7 @@ CREATE TABLE `users` (
   `name` VARCHAR(100) NOT NULL,
   `nickname` VARCHAR(50) UNIQUE NOT NULL COMMENT '보호자-환자 검색/표시용 별명',
   `phone_number` VARCHAR(20),
-  `gender` VARCHAR(20) NOT NULL,
+  `gender` ENUM('M', 'F') NOT NULL,
   `birthdate` DATE NOT NULL COMMENT '가이드/LLM 맥락 제공(연령)',
   `role` VARCHAR(20) NOT NULL COMMENT 'PATIENT | GUARDIAN',
   `font_size_mode` VARCHAR(20) COMMENT 'SMALL | LARGE 등',
@@ -240,4 +240,13 @@ CREATE TABLE `audit_logs` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_audit_actor` (`actor_id`),
   FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`)
+);
+
+/* 9) 접근성 설정 */
+
+CREATE TABLE `accessibility_settings` (
+  `user_id` VARCHAR(36) PRIMARY KEY,
+  `font_mode` VARCHAR(20) NULL COMMENT 'SMALL | LARGE',
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 );
