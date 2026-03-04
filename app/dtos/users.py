@@ -1,41 +1,72 @@
+"""
+USER 도메인 DTO.
+
+기준: docs/dev/api_spec.md
+  - GET  /api/users/me          (내 정보 조회)
+  - PATCH /api/users/me         (내 정보 수정)
+  - PATCH /api/users/me/accessibility (접근성 설정 변경)
+  - DELETE /api/users/me        (회원 탈퇴)
+"""
+
 from datetime import date, datetime
 from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
+from app.core.enums import FontSizeMode, Gender, UserRole
 from app.dtos.base import BaseSerializerModel
-from app.models.users import Gender
-from app.validators.common import optional_after_validator
-from app.validators.user_validators import validate_birthday, validate_phone_number
+from app.utils.validators import validate_phone_number
+
+# ──────────────────────────────────────────
+# 내 정보 수정
+# ──────────────────────────────────────────
 
 
 class UserUpdateRequest(BaseModel):
-    name: Annotated[str | None, Field(None, min_length=2, max_length=20)]
-    email: Annotated[
-        EmailStr | None,
-        Field(None, max_length=40),
+    """PATCH /api/users/me 요청 바디. 모든 필드 선택적."""
+
+    name: Annotated[
+        str | None,
+        Field(None, min_length=1, max_length=100, description="이름"),
     ]
     phone_number: Annotated[
         str | None,
-        Field(None, description="Available Format: +8201011112222, 01011112222, 010-1111-2222"),
-        optional_after_validator(validate_phone_number),
+        Field(None, description="휴대폰 번호 (예: 010-1234-5678)"),
+        AfterValidator(lambda v: validate_phone_number(v) if v is not None else v),
     ]
-    birthday: Annotated[
-        date | None,
-        Field(None, description="Date Format: YYYY-MM-DD"),
-        optional_after_validator(validate_birthday),
-    ]
-    gender: Annotated[
-        Gender | None,
-        Field(None, description="'MALE' or 'FEMALE'"),
-    ]
+
+
+# ──────────────────────────────────────────
+# 접근성 설정 변경
+# ──────────────────────────────────────────
+
+
+class AccessibilityUpdateRequest(BaseModel):
+    """PATCH /api/users/me/accessibility 요청 바디.
+
+    REQ-COM-001: 고령층을 배려한 글자 크기 모드 토글.
+    """
+
+    font_mode: Annotated[FontSizeMode, Field(..., description="글자 크기 모드 (SMALL | LARGE)")]
+
+
+# ──────────────────────────────────────────
+# 내 정보 조회 응답
+# ──────────────────────────────────────────
 
 
 class UserInfoResponse(BaseSerializerModel):
-    id: int
-    name: str
+    """GET /api/users/me 응답 바디."""
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: str
     email: str
-    phone_number: str
-    birthday: date
+    name: str
+    nickname: str
+    phone_number: str | None = None
     gender: Gender
+    birthdate: date
+    role: UserRole
+    font_size_mode: FontSizeMode | None = None
     created_at: datetime

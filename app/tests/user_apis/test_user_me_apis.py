@@ -13,19 +13,21 @@ class TestUserMeApis(TestCase):
             "email": email,
             "password": "Password123!",
             "name": "내정보테스터",
-            "gender": "FEMALE",
-            "birth_date": "1992-02-02",
+            "nickname": "metester",
+            "gender": "F",
+            "birthdate": "1992-02-02",
             "phone_number": "01055556666",
+            "role": "PATIENT",
         }
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await client.post("/api/v1/auth/signup", json=signup_data)
+            await client.post("/api/auth/signup", json=signup_data)
 
-            login_response = await client.post("/api/v1/auth/login", json={"email": email, "password": "Password123!"})
+            login_response = await client.post("/api/auth/login", json={"email": email, "password": "Password123!"})
             access_token = login_response.json()["access_token"]
 
             # 내 정보 조회
             headers = {"Authorization": f"Bearer {access_token}"}
-            response = await client.get("/api/v1/users/me", headers=headers)
+            response = await client.get("/api/users/me", headers=headers)
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["email"] == email
         assert response.json()["name"] == "내정보테스터"
@@ -37,24 +39,26 @@ class TestUserMeApis(TestCase):
             "email": email,
             "password": "Password123!",
             "name": "수정전",
-            "gender": "MALE",
-            "birth_date": "1990-10-10",
+            "nickname": "updatemetester",
+            "gender": "M",
+            "birthdate": "1990-10-10",
             "phone_number": "01077778888",
+            "role": "PATIENT",
         }
         update_data = {"name": "수정후"}
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await client.post("/api/v1/auth/signup", json=signup_data)
+            await client.post("/api/auth/signup", json=signup_data)
 
-            login_response = await client.post("/api/v1/auth/login", json={"email": email, "password": "Password123!"})
+            login_response = await client.post("/api/auth/login", json={"email": email, "password": "Password123!"})
             access_token = login_response.json()["access_token"]
 
             # 내 정보 수정
             headers = {"Authorization": f"Bearer {access_token}"}
-            response = await client.patch("/api/v1/users/me", json=update_data, headers=headers)
+            response = await client.patch("/api/users/me", json=update_data, headers=headers)
         assert response.status_code == status.HTTP_200_OK
         assert response.json()["name"] == "수정후"
 
     async def test_get_user_me_unauthorized(self):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/api/v1/users/me")
+            response = await client.get("/api/users/me")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED

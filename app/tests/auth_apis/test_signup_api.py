@@ -11,13 +11,15 @@ class TestSignupAPI(TestCase):
             "email": "test@example.com",
             "password": "Password123!",
             "name": "테스터",
-            "gender": "MALE",
-            "birth_date": "1990-01-01",
+            "nickname": "tester01",
+            "gender": "M",
+            "birthdate": "1990-01-01",
             "phone_number": "01012345678",
+            "role": "PATIENT",
         }
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/auth/signup", json=signup_data)
+            response = await client.post("/api/auth/signup", json=signup_data)
         assert response.status_code == status.HTTP_201_CREATED
         assert response.json() == {"detail": "회원가입이 성공적으로 완료되었습니다."}
 
@@ -26,10 +28,12 @@ class TestSignupAPI(TestCase):
             "email": "invalid-email",
             "password": "password123!",
             "name": "테스터",
-            "gender": "MALE",
-            "birth_date": "1990-01-01",
+            "nickname": "tester02",
+            "gender": "M",
+            "birthdate": "1990-01-01",
             "phone_number": "01012345678",
+            "role": "PATIENT",
         }
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/auth/signup", json=signup_data)
+            response = await client.post("/api/auth/signup", json=signup_data)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
