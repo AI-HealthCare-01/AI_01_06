@@ -25,7 +25,7 @@ class User(models.Model):
     name = fields.CharField(max_length=100)
     nickname = fields.CharField(max_length=50, unique=True)  # 보호자-환자 검색/표시용 별명
     phone_number = fields.CharField(max_length=20, null=True)
-    gender = fields.CharEnumField(Gender, max_length=20)
+    gender = fields.CharEnumField(Gender, max_length=1)
     birthdate = fields.DateField()  # 가이드/LLM 맥락 제공(연령)
     role = fields.CharEnumField(UserRole, max_length=20)  # PATIENT | GUARDIAN
     font_size_mode = fields.CharEnumField(FontSizeMode, max_length=20, null=True)
