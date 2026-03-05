@@ -36,19 +36,3 @@ class Config(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 14 * 24 * 60
     JWT_LEEWAY: int = 5
-
-    # ── B담당: CLOVA OCR ──────────────────────────────────────────────
-    CLOVA_OCR_API_URL: str = "https://CHANGE_ME.apigw.ntruss.com/custom/v1/00000/general"
-    CLOVA_OCR_SECRET_KEY: str = "CHANGE_ME_CLOVA_SECRET"
-
-    # B담당: OpenAI (structured parsing 용)
-    OPENAI_API_KEY: str = "CHANGE_ME_OPENAI_KEY"
-    OPENAI_MODEL: str = "gpt-4o-mini"
-
-    # B담당: 파일 업로드
-    UPLOAD_DIR: str = "./uploads"
-    STATIC_URL_PREFIX: str = "/static"
-    MAX_UPLOAD_SIZE_MB: int = 10
-
-    # B담당: OCR 실행 모드 ("real" | "mock")  — 키 없을 때 mock으로 테스트 가능
-    OCR_MODE: str = "real"
