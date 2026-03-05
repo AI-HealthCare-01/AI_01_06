@@ -25,33 +25,6 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
-        <div className="max-w-screen-xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-2xl font-extrabold tracking-tight text-indigo-700">SULLIVAN</span>
-          <nav className="flex items-center gap-3">
-            <button
-              className="hidden sm:inline-flex text-sm text-gray-500 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50"
-              aria-label="글씨 크기 조절"
-            >
-              가 / 가
-            </button>
-            <Link
-              href="/login"
-              className="text-lg font-semibold text-gray-700 border border-gray-300 rounded-xl px-5 py-2 hover:bg-gray-50"
-            >
-              로그인
-            </Link>
-            <Link
-              href="/signup"
-              className="text-lg font-semibold text-white bg-indigo-600 rounded-xl px-5 py-2 hover:bg-indigo-700"
-            >
-              회원가입
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       <main className="max-w-screen-xl mx-auto px-6">
 
         {/* Hero / 소개 이미지 */}
