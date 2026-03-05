@@ -80,6 +80,11 @@ jobs:
 
       - name: Run Tests with Coverage
         if: steps.check_tests.outputs.has_tests == 'true'
+        env:
+          ENV: "local"
+          DB_PASSWORD: "pw1234"
+          DB_HOST: "127.0.0.1"
+          AI_WORKER_BASE_URL: "http://mock-worker"
         run: |
           uv run coverage run -m pytest app
           uv run coverage report -m

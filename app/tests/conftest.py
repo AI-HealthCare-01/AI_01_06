@@ -10,9 +10,6 @@ from _pytest.fixtures import FixtureRequest
 from tortoise import generate_config
 from tortoise.contrib.test import finalizer, initializer
 
-os.environ["DB_PASSWORD"] = "testpassword"
-os.environ["AI_WORKER_BASE_URL"] = "http://test-ai-worker"
-
 from app.core import config
 from app.db.databases import TORTOISE_APP_MODELS
 
