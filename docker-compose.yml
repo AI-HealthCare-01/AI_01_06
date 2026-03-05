@@ -85,6 +85,8 @@ services:
     env_file: .env
     restart: always
     mem_limit: 4G
+    volumes:
+      - ./ai_worker:/app/ai_worker
     networks:
       - ws
     depends_on:
