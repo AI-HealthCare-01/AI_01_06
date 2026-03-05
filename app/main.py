@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from fastapi.responses import ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
 
 from app.apis.v1 import v1_routers
 from app.apis.v1.llm_routers import llm_router

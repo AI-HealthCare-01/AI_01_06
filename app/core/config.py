@@ -5,7 +5,7 @@ from dataclasses import field
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import Field, field_validator, ValidationInfo
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

@@ -1,5 +1,4 @@
 import httpx
-
 from fastapi import APIRouter, HTTPException
 
 from app.core import config
