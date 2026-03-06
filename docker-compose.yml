@@ -24,7 +24,8 @@ services:
 
   api:
     build:
-      context: ./app
+      context: .
+      dockerfile: app/Dockerfile
     env_file: .env
     environment:
       DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/sullivan
@@ -39,7 +40,8 @@ services:
 
   worker:
     build:
-      context: ./ai_worker
+      context: .
+      dockerfile: ai_worker/Dockerfile
     env_file: .env
     environment:
       DATABASE_URL: mysql://root:${MYSQL_ROOT_PASSWORD}@db:3306/sullivan
@@ -53,6 +55,7 @@ services:
   web:
     build:
       context: ./web
+      dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: /api
     ports:

@@ -4,9 +4,16 @@ WORKDIR /srv
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY pyproject.toml ./
-RUN uv sync --frozen --no-dev --no-install-project
+# Copy workspace root files + both packages' pyproject for dependency caching
+COPY pyproject.toml uv.lock ./
+COPY app/pyproject.toml app/pyproject.toml
+COPY ai_worker/pyproject.toml ai_worker/pyproject.toml
 
-COPY . .
+RUN uv sync --frozen --no-dev --no-install-project --package sullivan-worker
 
-CMD ["uv", "run", "arq", "worker.main.WorkerSettings"]
+COPY app/ app/
+COPY ai_worker/ ai_worker/
+
+RUN uv sync --frozen --no-dev --package sullivan-worker
+
+CMD ["uv", "run", "--package", "sullivan-worker", "arq", "worker.main.WorkerSettings"]
