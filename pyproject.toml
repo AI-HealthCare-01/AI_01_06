@@ -1,7 +1,14 @@
 [project]
-name = "claude-oz"
+name = "sullivan"
 version = "0.1.0"
-description = "Add your description here"
+description = "& Sullivan - AI Healthcare Service"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
+
+[tool.uv.workspace]
+members = ["app", "ai_worker"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
