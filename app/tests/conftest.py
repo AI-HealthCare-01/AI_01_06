@@ -5,7 +5,10 @@ from httpx import ASGITransport, AsyncClient
 from tortoise import Tortoise
 
 from app.main import app
+from app.models.guide import Guide
 from app.models.prescription import Medication, Prescription
+from app.models.user import User
+from app.services.guide_service import get_guide_service
 from app.services.ocr_service import get_ocr_service
 
 TEST_DB_URL = "sqlite://:memory:"
@@ -36,6 +39,32 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
                 duration=med_data.get("duration"),
                 instructions=med_data.get("instructions"),
             )
+    elif task_name == "guide_task":
+        guide_id = args[0]
+        user_id = args[1]
+        guide = await Guide.get(id=guide_id)
+        prescription = await Prescription.get(id=guide.prescription_id)
+        user = await User.get(id=user_id)
+
+        medications = await Medication.filter(prescription=prescription)
+        med_list = [
+            {
+                "name": m.name, "dosage": m.dosage, "frequency": m.frequency,
+                "duration": m.duration, "instructions": m.instructions,
+            }
+            for m in medications
+        ]
+        user_info = {
+            "name": user.name, "height": user.height, "weight": user.weight,
+            "allergies": user.allergies, "conditions": user.conditions,
+        }
+
+        guide_service = get_guide_service()
+        content = await guide_service.generate(med_list, user_info)
+        guide.content = content
+        guide.status = "completed"
+        await guide.save()
+
     return "fake-job-id"
 
 
@@ -52,7 +81,10 @@ async def setup_db():
 
 @pytest.fixture(autouse=True)
 def mock_enqueue():
-    with patch("app.api.prescriptions.enqueue", side_effect=_fake_enqueue):
+    with (
+        patch("app.api.prescriptions.enqueue", side_effect=_fake_enqueue),
+        patch("app.api.guides.enqueue", side_effect=_fake_enqueue),
+    ):
         yield
 
 

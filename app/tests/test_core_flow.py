@@ -113,8 +113,7 @@ async def test_create_guide(auth_client: AsyncClient):
     resp = await auth_client.post("/api/guides", json={"prescription_id": pid})
     body = resp.json()
     assert body["success"] is True
-    assert "medication_guides" in body["data"]["content"]
-    assert "disclaimer" in body["data"]["content"]
+    assert body["data"]["status"] in ("generating", "completed")
 
 
 @pytest.mark.asyncio

@@ -16,7 +16,7 @@
 
 - [x] 3-1. (행위) Redis 연결 + arq enqueue 헬퍼
 - [x] 3-2. (행위) prescriptions.py: OCR 직접호출 → 태스크 발행
-- [ ] 3-3. (행위) guides.py: LLM 직접호출 → 태스크 발행
+- [x] 3-3. (행위) guides.py: LLM 직접호출 → 태스크 발행
 - [ ] 3-4. (행위) ai_worker 태스크 구현 (ocr_task, guide_task)
 - [ ] 3-5. (행위) DB: SQLite → MySQL (프로덕션), 테스트는 SQLite 유지
 

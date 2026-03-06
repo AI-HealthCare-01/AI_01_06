@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.deps import get_current_user
+from app.core.redis import enqueue
 from app.core.response import success_response
 from app.models.guide import Guide
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.guide import GuideCreateRequest
-from app.services.guide_service import get_guide_service
 
 router = APIRouter(prefix="/api/guides", tags=["guides"])
 
@@ -17,39 +17,18 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
 
-    medications = await Medication.filter(prescription=prescription)
-    med_list = [
-        {
-            "name": m.name,
-            "dosage": m.dosage,
-            "frequency": m.frequency,
-            "duration": m.duration,
-            "instructions": m.instructions,
-        }
-        for m in medications
-    ]
-
-    user_info = {
-        "name": user.name,
-        "height": user.height,
-        "weight": user.weight,
-        "allergies": user.allergies,
-        "conditions": user.conditions,
-    }
-
-    guide_service = get_guide_service()
-    content = await guide_service.generate(med_list, user_info)
-
     guide = await Guide.create(
         user=user,
         prescription=prescription,
-        content=content,
+        status="generating",
     )
+
+    await enqueue("guide_task", guide.id, user.id)
 
     return success_response({
         "id": guide.id,
         "prescription_id": prescription.id,
-        "content": guide.content,
+        "status": guide.status,
         "created_at": str(guide.created_at),
     })
 
@@ -66,6 +45,7 @@ async def get_guide(guide_id: int, user: User = Depends(get_current_user)):
     return success_response({
         "id": guide.id,
         "prescription_id": prescription.id,
+        "status": guide.status,
         "prescription_info": {
             "hospital_name": prescription.hospital_name,
             "doctor_name": prescription.doctor_name,
