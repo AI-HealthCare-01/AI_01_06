@@ -1,6 +1,7 @@
 import os
 
 DATABASE_URL: str = os.environ.get("DATABASE_URL", "sqlite://db.sqlite3")
+REDIS_URL: str = os.environ.get("REDIS_URL", "redis://localhost:6379")
 SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
 ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 60

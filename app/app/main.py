@@ -5,12 +5,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import auth, guides, medications, prescriptions, users
 from app.core.database import close_db, init_db
+from app.core.redis import close_redis_pool
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
     yield
+    await close_redis_pool()
     await close_db()
 
 
