@@ -9,7 +9,12 @@ dependencies = [
     "tortoise-orm>=0.25.0,<2.0",
     "httpx>=0.27.0,<1.0",
     "openai>=1.60.0,<2.0",
+    "aiomysql>=0.2.0,<1.0",
+    "sullivan-backend",
 ]
+
+[tool.uv.sources]
+sullivan-backend = { workspace = true }
 
 [dependency-groups]
 dev = [
