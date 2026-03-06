@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+# dotenv will load the file locally; existing env vars (e.g., from Docker) take precedence
+load_dotenv("infra/env/.local.env")
 
 REDIS_URL: str = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
