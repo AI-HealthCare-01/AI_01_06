@@ -15,13 +15,16 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_signup_returns_user_info(client: AsyncClient):
-    resp = await client.post("/api/auth/signup", json={
-        "email": "user@test.com",
-        "password": "Pass1234!",
-        "nickname": "닉네임",
-        "name": "테스트",
-        "role": "patient",
-    })
+    resp = await client.post(
+        "/api/auth/signup",
+        json={
+            "email": "user@test.com",
+            "password": "Pass1234!",
+            "nickname": "닉네임",
+            "name": "테스트",
+            "role": "patient",
+        },
+    )
     body = resp.json()
     assert body["success"] is True
     assert body["data"]["email"] == "user@test.com"
@@ -29,17 +32,23 @@ async def test_signup_returns_user_info(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_login_returns_tokens(client: AsyncClient):
-    await client.post("/api/auth/signup", json={
-        "email": "user@test.com",
-        "password": "Pass1234!",
-        "nickname": "닉네임",
-        "name": "테스트",
-        "role": "patient",
-    })
-    resp = await client.post("/api/auth/login", json={
-        "email": "user@test.com",
-        "password": "Pass1234!",
-    })
+    await client.post(
+        "/api/auth/signup",
+        json={
+            "email": "user@test.com",
+            "password": "Pass1234!",
+            "nickname": "닉네임",
+            "name": "테스트",
+            "role": "patient",
+        },
+    )
+    resp = await client.post(
+        "/api/auth/login",
+        json={
+            "email": "user@test.com",
+            "password": "Pass1234!",
+        },
+    )
     body = resp.json()
     assert body["success"] is True
     assert "access_token" in body["data"]
@@ -83,15 +92,18 @@ async def test_update_ocr_result(auth_client: AsyncClient):
     )
     pid = upload_resp.json()["data"]["id"]
 
-    resp = await auth_client.put(f"/api/prescriptions/{pid}/ocr", json={
-        "hospital_name": "수정병원",
-        "doctor_name": "박의사",
-        "prescription_date": "2026-03-01",
-        "diagnosis": "감기",
-        "medications": [
-            {"name": "타이레놀", "dosage": "500mg", "frequency": "1일 3회"},
-        ],
-    })
+    resp = await auth_client.put(
+        f"/api/prescriptions/{pid}/ocr",
+        json={
+            "hospital_name": "수정병원",
+            "doctor_name": "박의사",
+            "prescription_date": "2026-03-01",
+            "diagnosis": "감기",
+            "medications": [
+                {"name": "타이레놀", "dosage": "500mg", "frequency": "1일 3회"},
+            ],
+        },
+    )
     body = resp.json()
     assert body["success"] is True
 

@@ -3,8 +3,7 @@ import abc
 
 class OcrServiceBase(abc.ABC):
     @abc.abstractmethod
-    async def extract(self, image_path: str) -> dict:
-        ...
+    async def extract(self, image_path: str) -> dict: ...
 
 
 class DummyOcrService(OcrServiceBase):

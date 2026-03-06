@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 
 # dotenv will load the file locally; existing env vars (e.g., from Docker) take precedence

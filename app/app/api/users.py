@@ -10,20 +10,22 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 @router.get("/me")
 async def get_me(user: User = Depends(get_current_user)):
-    return success_response({
-        "id": user.id,
-        "email": user.email,
-        "nickname": user.nickname,
-        "name": user.name,
-        "role": user.role,
-        "birth_date": str(user.birth_date) if user.birth_date else None,
-        "gender": user.gender,
-        "phone": user.phone,
-        "height": user.height,
-        "weight": user.weight,
-        "allergies": user.allergies,
-        "conditions": user.conditions,
-    })
+    return success_response(
+        {
+            "id": user.id,
+            "email": user.email,
+            "nickname": user.nickname,
+            "name": user.name,
+            "role": user.role,
+            "birth_date": str(user.birth_date) if user.birth_date else None,
+            "gender": user.gender,
+            "phone": user.phone,
+            "height": user.height,
+            "weight": user.weight,
+            "allergies": user.allergies,
+            "conditions": user.conditions,
+        }
+    )
 
 
 @router.patch("/me")
