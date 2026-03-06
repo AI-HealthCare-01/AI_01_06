@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
@@ -32,13 +32,14 @@ interface GuideContent {
 interface GuideData {
   id: number;
   prescription_id: number;
+  status: string;
   prescription_info: {
     hospital_name: string;
     doctor_name: string;
     prescription_date: string;
     diagnosis: string;
   };
-  content: GuideContent;
+  content: GuideContent | null;
   created_at: string;
 }
 
@@ -46,14 +47,40 @@ export default function GuideDetailPage() {
   const params = useParams();
   const guideId = Number(params.id);
   const [guide, setGuide] = useState<GuideData | null>(null);
+  const [generating, setGenerating] = useState(true);
 
-  useEffect(() => {
-    api.getGuide(guideId).then((res) => {
-      if (res.success && res.data) setGuide(res.data as GuideData);
-    });
+  const pollGuide = useCallback(async () => {
+    const res = await api.getGuide(guideId);
+    if (!res.success || !res.data) return;
+    const data = res.data as GuideData;
+    setGuide(data);
+    if (data.status === "completed") {
+      setGenerating(false);
+    }
   }, [guideId]);
 
-  if (!guide) {
+  useEffect(() => {
+    pollGuide();
+    const interval = setInterval(() => {
+      if (generating) pollGuide();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [pollGuide, generating]);
+
+  if (generating && (!guide || !guide.content)) {
+    return (
+      <AppLayout>
+        <h1 className="text-2xl font-bold mb-2">AI 복약 가이드 생성 중</h1>
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-gray-600">AI가 맞춤형 복약 가이드를 생성하고 있습니다...</p>
+          <p className="text-sm text-gray-400 mt-1">잠시만 기다려주세요</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!guide || !guide.content) {
     return <AppLayout><p className="text-gray-500">로딩 중...</p></AppLayout>;
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
@@ -30,12 +30,26 @@ export default function OcrReviewPage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [processing, setProcessing] = useState(true);
+
+  const pollOcrStatus = useCallback(async () => {
+    const res = await api.getPrescription(prescriptionId);
+    if (!res.success || !res.data) return;
+    const pData = res.data as { ocr_status: string };
+    if (pData.ocr_status === "completed") {
+      setProcessing(false);
+      const ocrRes = await api.getOcr(prescriptionId);
+      if (ocrRes.success && ocrRes.data) setData(ocrRes.data as OcrData);
+    }
+  }, [prescriptionId]);
 
   useEffect(() => {
-    api.getOcr(prescriptionId).then((res) => {
-      if (res.success && res.data) setData(res.data as OcrData);
-    });
-  }, [prescriptionId]);
+    pollOcrStatus();
+    const interval = setInterval(() => {
+      if (processing) pollOcrStatus();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [pollOcrStatus, processing]);
 
   const handleSave = async () => {
     if (!data) return;
@@ -65,6 +79,19 @@ export default function OcrReviewPage() {
     if (!data) return;
     setData({ ...data, medications: data.medications.filter((_, i) => i !== index) });
   };
+
+  if (processing) {
+    return (
+      <AppLayout>
+        <h1 className="text-2xl font-bold mb-2">처방전 분석 중</h1>
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-gray-600">OCR로 처방전을 분석하고 있습니다...</p>
+          <p className="text-sm text-gray-400 mt-1">잠시만 기다려주세요</p>
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!data) {
     return <AppLayout><p className="text-gray-500">로딩 중...</p></AppLayout>;

@@ -22,4 +22,4 @@
 
 ## Phase 4: 프론트엔드 대응
 
-- [ ] 4-1. (행위) 프론트에서 비동기 상태(processing/generating) 폴링 처리
+- [x] 4-1. (행위) 프론트에서 비동기 상태(processing/generating) 폴링 처리
