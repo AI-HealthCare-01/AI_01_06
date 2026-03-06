@@ -55,7 +55,7 @@ async def test_upload_prescription_triggers_ocr(auth_client: AsyncClient):
     )
     body = resp.json()
     assert body["success"] is True
-    assert body["data"]["ocr_status"] == "completed"
+    assert body["data"]["ocr_status"] == "processing"
 
 
 @pytest.mark.asyncio

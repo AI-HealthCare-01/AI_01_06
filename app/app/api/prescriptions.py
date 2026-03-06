@@ -4,11 +4,11 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 
 from app.core.deps import get_current_user
+from app.core.redis import enqueue
 from app.core.response import error_response, success_response
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.prescription import OcrUpdateRequest
-from app.services.ocr_service import get_ocr_service
 
 router = APIRouter(prefix="/api/prescriptions", tags=["prescriptions"])
 
@@ -26,28 +26,11 @@ async def upload_prescription(file: UploadFile, user: User = Depends(get_current
     with open(filepath, "wb") as f:
         f.write(content)
 
-    prescription = await Prescription.create(user=user, image_path=filepath)
+    prescription = await Prescription.create(
+        user=user, image_path=filepath, ocr_status="processing",
+    )
 
-    ocr_service = get_ocr_service()
-    ocr_result = await ocr_service.extract(filepath)
-
-    prescription.hospital_name = ocr_result.get("hospital_name")
-    prescription.doctor_name = ocr_result.get("doctor_name")
-    prescription.prescription_date = ocr_result.get("prescription_date")
-    prescription.diagnosis = ocr_result.get("diagnosis")
-    prescription.ocr_raw = ocr_result
-    prescription.ocr_status = "completed"
-    await prescription.save()
-
-    for med_data in ocr_result.get("medications", []):
-        await Medication.create(
-            prescription=prescription,
-            name=med_data["name"],
-            dosage=med_data.get("dosage"),
-            frequency=med_data.get("frequency"),
-            duration=med_data.get("duration"),
-            instructions=med_data.get("instructions"),
-        )
+    await enqueue("ocr_task", prescription.id)
 
     return success_response({
         "id": prescription.id,

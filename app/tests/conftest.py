@@ -1,10 +1,42 @@
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from tortoise import Tortoise
 
 from app.main import app
+from app.models.prescription import Medication, Prescription
+from app.services.ocr_service import get_ocr_service
 
 TEST_DB_URL = "sqlite://:memory:"
+
+
+async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
+    """Simulate worker inline: run OCR/guide synchronously for tests."""
+    if task_name == "ocr_task":
+        prescription_id = args[0]
+        prescription = await Prescription.get(id=prescription_id)
+        ocr_service = get_ocr_service()
+        ocr_result = await ocr_service.extract(prescription.image_path)
+
+        prescription.hospital_name = ocr_result.get("hospital_name")
+        prescription.doctor_name = ocr_result.get("doctor_name")
+        prescription.prescription_date = ocr_result.get("prescription_date")
+        prescription.diagnosis = ocr_result.get("diagnosis")
+        prescription.ocr_raw = ocr_result
+        prescription.ocr_status = "completed"
+        await prescription.save()
+
+        for med_data in ocr_result.get("medications", []):
+            await Medication.create(
+                prescription=prescription,
+                name=med_data["name"],
+                dosage=med_data.get("dosage"),
+                frequency=med_data.get("frequency"),
+                duration=med_data.get("duration"),
+                instructions=med_data.get("instructions"),
+            )
+    return "fake-job-id"
 
 
 @pytest.fixture(autouse=True)
@@ -16,6 +48,12 @@ async def setup_db():
     await Tortoise.generate_schemas()
     yield
     await Tortoise._drop_databases()
+
+
+@pytest.fixture(autouse=True)
+def mock_enqueue():
+    with patch("app.api.prescriptions.enqueue", side_effect=_fake_enqueue):
+        yield
 
 
 @pytest.fixture
