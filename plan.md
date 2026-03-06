@@ -10,7 +10,7 @@
 - [x] 2-1. (구조) backend/ → app/, frontend/ → web/
 - [x] 2-2. (구조) ai_worker/ 스캐폴딩 + services 이동
 - [x] 2-3. (구조) uv workspace 설정 (루트 pyproject.toml)
-- [ ] 2-4. (구조) 인프라 파일 생성 (Dockerfile, docker-compose, nginx, envs)
+- [x] 2-4. (구조) 인프라 파일 생성 (Dockerfile, docker-compose, nginx, envs)
 
 ## Phase 3: 행위 변경 (Redis + 비동기 태스크)
 
