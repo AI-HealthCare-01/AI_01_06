@@ -25,12 +25,14 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
 
     await enqueue("guide_task", guide.id, user.id)
 
-    return success_response({
-        "id": guide.id,
-        "prescription_id": prescription.id,
-        "status": guide.status,
-        "created_at": str(guide.created_at),
-    })
+    return success_response(
+        {
+            "id": guide.id,
+            "prescription_id": prescription.id,
+            "status": guide.status,
+            "created_at": str(guide.created_at),
+        }
+    )
 
 
 @router.get("/{guide_id}")
@@ -42,25 +44,27 @@ async def get_guide(guide_id: int, user: User = Depends(get_current_user)):
     prescription = await Prescription.get(id=guide.prescription_id)
     medications = await Medication.filter(prescription=prescription)
 
-    return success_response({
-        "id": guide.id,
-        "prescription_id": prescription.id,
-        "status": guide.status,
-        "prescription_info": {
-            "hospital_name": prescription.hospital_name,
-            "doctor_name": prescription.doctor_name,
-            "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
-            "diagnosis": prescription.diagnosis,
-        },
-        "medications": [
-            {
-                "id": m.id,
-                "name": m.name,
-                "dosage": m.dosage,
-                "frequency": m.frequency,
-            }
-            for m in medications
-        ],
-        "content": guide.content,
-        "created_at": str(guide.created_at),
-    })
+    return success_response(
+        {
+            "id": guide.id,
+            "prescription_id": prescription.id,
+            "status": guide.status,
+            "prescription_info": {
+                "hospital_name": prescription.hospital_name,
+                "doctor_name": prescription.doctor_name,
+                "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
+                "diagnosis": prescription.diagnosis,
+            },
+            "medications": [
+                {
+                    "id": m.id,
+                    "name": m.name,
+                    "dosage": m.dosage,
+                    "frequency": m.frequency,
+                }
+                for m in medications
+            ],
+            "content": guide.content,
+            "created_at": str(guide.created_at),
+        }
+    )

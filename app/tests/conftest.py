@@ -1,15 +1,14 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
-from httpx import ASGITransport, AsyncClient
-from tortoise import Tortoise
-
 from app.main import app
 from app.models.guide import Guide
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.services.guide_service import get_guide_service
 from app.services.ocr_service import get_ocr_service
+from httpx import ASGITransport, AsyncClient
+from tortoise import Tortoise
 
 TEST_DB_URL = "sqlite://:memory:"
 
@@ -49,14 +48,20 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
         medications = await Medication.filter(prescription=prescription)
         med_list = [
             {
-                "name": m.name, "dosage": m.dosage, "frequency": m.frequency,
-                "duration": m.duration, "instructions": m.instructions,
+                "name": m.name,
+                "dosage": m.dosage,
+                "frequency": m.frequency,
+                "duration": m.duration,
+                "instructions": m.instructions,
             }
             for m in medications
         ]
         user_info = {
-            "name": user.name, "height": user.height, "weight": user.weight,
-            "allergies": user.allergies, "conditions": user.conditions,
+            "name": user.name,
+            "height": user.height,
+            "weight": user.weight,
+            "allergies": user.allergies,
+            "conditions": user.conditions,
         }
 
         guide_service = get_guide_service()

@@ -12,14 +12,14 @@ router = APIRouter(prefix="/api/medications", tags=["medications"])
 async def get_medication(medication_id: int, user: User = Depends(get_current_user)):
     medication = await Medication.get_or_none(id=medication_id)
     if not medication:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="약물 정보를 찾을 수 없습니다."
-        )
-    return success_response({
-        "id": medication.id,
-        "name": medication.name,
-        "dosage": medication.dosage,
-        "frequency": medication.frequency,
-        "duration": medication.duration,
-        "instructions": medication.instructions,
-    })
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="약물 정보를 찾을 수 없습니다.")
+    return success_response(
+        {
+            "id": medication.id,
+            "name": medication.name,
+            "dosage": medication.dosage,
+            "frequency": medication.frequency,
+            "duration": medication.duration,
+            "instructions": medication.instructions,
+        }
+    )
