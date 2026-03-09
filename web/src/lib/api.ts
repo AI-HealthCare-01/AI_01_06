@@ -99,6 +99,8 @@ export const api = {
       body: JSON.stringify({ prescription_id: prescriptionId }),
     }),
 
+  listGuides: () => request("/api/guides"),
+
   getGuide: (guideId: number) => request(`/api/guides/${guideId}`),
 
   // Medications
