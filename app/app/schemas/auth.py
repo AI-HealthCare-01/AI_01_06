@@ -8,7 +8,7 @@ class SignupRequest(BaseModel):
     password: str
     nickname: str
     name: str
-    role: str = "patient"
+    role: str = "PATIENT"
     birth_date: str | None = None
     gender: str | None = None
     phone: str | None = None
