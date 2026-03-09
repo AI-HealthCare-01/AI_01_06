@@ -115,6 +115,8 @@ async def auth_client(client: AsyncClient):
         "nickname": "테스트유저",
         "name": "홍길동",
         "role": "patient",
+        "terms_of_service": True,
+        "privacy_policy": True,
     }
     await client.post("/api/auth/signup", json=signup_data)
     login_resp = await client.post(
