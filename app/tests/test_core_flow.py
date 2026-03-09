@@ -46,6 +46,8 @@ async def test_signup_returns_user_info(client: AsyncClient):
             "nickname": "닉네임",
             "name": "테스트",
             "role": "patient",
+            "terms_of_service": True,
+            "privacy_policy": True,
         },
     )
     body = resp.json()
@@ -63,6 +65,8 @@ async def test_login_returns_tokens(client: AsyncClient):
             "nickname": "닉네임",
             "name": "테스트",
             "role": "patient",
+            "terms_of_service": True,
+            "privacy_policy": True,
         },
     )
     resp = await client.post(

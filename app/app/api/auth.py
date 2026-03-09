@@ -12,6 +12,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models.auth_provider import AuthProvider
+from app.models.terms_consent import TermsConsent
 from app.models.user import User
 from app.schemas.auth import LoginRequest, SignupRequest
 
@@ -20,6 +21,9 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/signup")
 async def signup(req: SignupRequest):
+    if not req.terms_of_service or not req.privacy_policy:
+        return error_response("필수 약관(이용약관, 개인정보처리방침)에 동의해야 합니다.")
+
     existing = await User.filter(email=req.email).first()
     if existing:
         return error_response("이미 등록된 이메일입니다.")
@@ -42,6 +46,12 @@ async def signup(req: SignupRequest):
         user=user,
         provider="LOCAL",
         provider_user_id=req.email,
+    )
+    await TermsConsent.create(
+        user=user,
+        terms_of_service=req.terms_of_service,
+        privacy_policy=req.privacy_policy,
+        marketing_consent=req.marketing_consent,
     )
     return success_response(
         {
