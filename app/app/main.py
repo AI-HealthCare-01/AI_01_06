@@ -5,8 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import RegisterTortoise
 
 from app.api import auth, chat, guides, medications, prescriptions, users
-from app.core.database import close_db, init_db
-from app.api import auth, guides, medications, prescriptions, users
 from app.core.database import TORTOISE_ORM
 from app.core.redis import close_redis_pool
 
