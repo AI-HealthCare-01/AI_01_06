@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 
 from app.core.deps import get_current_user
 from app.core.redis import enqueue
-from app.core.response import error_response, success_response
+from app.core.response import success_response
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.prescription import OcrUpdateRequest
@@ -27,15 +27,19 @@ async def upload_prescription(file: UploadFile, user: User = Depends(get_current
         f.write(content)
 
     prescription = await Prescription.create(
-        user=user, image_path=filepath, ocr_status="processing",
+        user=user,
+        image_path=filepath,
+        ocr_status="processing",
     )
 
     await enqueue("ocr_task", prescription.id)
 
-    return success_response({
-        "id": prescription.id,
-        "ocr_status": prescription.ocr_status,
-    })
+    return success_response(
+        {
+            "id": prescription.id,
+            "ocr_status": prescription.ocr_status,
+        }
+    )
 
 
 @router.get("")
@@ -44,16 +48,18 @@ async def list_prescriptions(user: User = Depends(get_current_user)):
     result = []
     for p in prescriptions:
         med_count = await Medication.filter(prescription=p).count()
-        result.append({
-            "id": p.id,
-            "hospital_name": p.hospital_name,
-            "doctor_name": p.doctor_name,
-            "prescription_date": str(p.prescription_date) if p.prescription_date else None,
-            "diagnosis": p.diagnosis,
-            "ocr_status": p.ocr_status,
-            "medication_count": med_count,
-            "created_at": str(p.created_at),
-        })
+        result.append(
+            {
+                "id": p.id,
+                "hospital_name": p.hospital_name,
+                "doctor_name": p.doctor_name,
+                "prescription_date": str(p.prescription_date) if p.prescription_date else None,
+                "diagnosis": p.diagnosis,
+                "ocr_status": p.ocr_status,
+                "medication_count": med_count,
+                "created_at": str(p.created_at),
+            }
+        )
     return success_response(result)
 
 
@@ -62,16 +68,18 @@ async def get_prescription(prescription_id: int, user: User = Depends(get_curren
     prescription = await Prescription.get_or_none(id=prescription_id, user=user)
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
-    return success_response({
-        "id": prescription.id,
-        "image_path": prescription.image_path,
-        "hospital_name": prescription.hospital_name,
-        "doctor_name": prescription.doctor_name,
-        "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
-        "diagnosis": prescription.diagnosis,
-        "ocr_status": prescription.ocr_status,
-        "created_at": str(prescription.created_at),
-    })
+    return success_response(
+        {
+            "id": prescription.id,
+            "image_path": prescription.image_path,
+            "hospital_name": prescription.hospital_name,
+            "doctor_name": prescription.doctor_name,
+            "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
+            "diagnosis": prescription.diagnosis,
+            "ocr_status": prescription.ocr_status,
+            "created_at": str(prescription.created_at),
+        }
+    )
 
 
 @router.delete("/{prescription_id}")
@@ -101,13 +109,15 @@ async def get_ocr_result(prescription_id: int, user: User = Depends(get_current_
         }
         for m in medications
     ]
-    return success_response({
-        "hospital_name": prescription.hospital_name,
-        "doctor_name": prescription.doctor_name,
-        "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
-        "diagnosis": prescription.diagnosis,
-        "medications": med_list,
-    })
+    return success_response(
+        {
+            "hospital_name": prescription.hospital_name,
+            "doctor_name": prescription.doctor_name,
+            "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
+            "diagnosis": prescription.diagnosis,
+            "medications": med_list,
+        }
+    )
 
 
 @router.put("/{prescription_id}/ocr")

@@ -9,8 +9,7 @@ MEDICAL_DISCLAIMER = (
 
 class GuideServiceBase(abc.ABC):
     @abc.abstractmethod
-    async def generate(self, medications: list[dict], user_info: dict) -> dict:
-        ...
+    async def generate(self, medications: list[dict], user_info: dict) -> dict: ...
 
 
 class DummyGuideService(GuideServiceBase):
@@ -19,15 +18,17 @@ class DummyGuideService(GuideServiceBase):
     async def generate(self, medications: list[dict], user_info: dict) -> dict:
         medication_guides = []
         for med in medications:
-            medication_guides.append({
-                "name": med.get("name", ""),
-                "dosage": med.get("dosage", ""),
-                "frequency": med.get("frequency", ""),
-                "duration": med.get("duration", ""),
-                "instructions": med.get("instructions", ""),
-                "effect": "증상 완화 및 관리",
-                "precautions": "공복 복용 시 위장 장애 가능",
-            })
+            medication_guides.append(
+                {
+                    "name": med.get("name", ""),
+                    "dosage": med.get("dosage", ""),
+                    "frequency": med.get("frequency", ""),
+                    "duration": med.get("duration", ""),
+                    "instructions": med.get("instructions", ""),
+                    "effect": "증상 완화 및 관리",
+                    "precautions": "공복 복용 시 위장 장애 가능",
+                }
+            )
 
         return {
             "medication_guides": medication_guides,

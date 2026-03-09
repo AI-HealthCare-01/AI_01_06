@@ -1,13 +1,47 @@
-.venv
-__pycache__
+# Python & Caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+
+# Environment Variables
 .env
 .env.local
-*.pyc
-node_modules
-.next
-uploads/
-db.sqlite3
-*.db
-.pytest_cache
-.ruff_cache
+.*.env
+
+# Build & Packaging
+build/
+dist/
+wheels/
 *.egg-info/
+
+# IDEs & Editors
+.idea/
+.vscode/
+
+# Testing & Coverage
+.coverage
+*.coverage
+.coverage.*
+
+# Frontend & Node.js
+node_modules/
+.next/
+
+# Databases
+*.db
+db.sqlite3
+
+# Uploads & Media
+uploads/
+
+# OS Specific
+.DS_Store
+
+# Project Specific
+docs/*
+.agents/*
+.claude/*

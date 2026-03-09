@@ -37,12 +37,14 @@ async def signup(req: SignupRequest):
         gender=req.gender,
         phone=req.phone,
     )
-    return success_response({
-        "id": user.id,
-        "email": user.email,
-        "nickname": user.nickname,
-        "role": user.role,
-    })
+    return success_response(
+        {
+            "id": user.id,
+            "email": user.email,
+            "nickname": user.nickname,
+            "role": user.role,
+        }
+    )
 
 
 @router.post("/login")
@@ -55,11 +57,13 @@ async def login(req: LoginRequest):
         )
     access_token = create_access_token(user.id, user.role)
     refresh_token = create_refresh_token(user.id)
-    return success_response({
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-    })
+    return success_response(
+        {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        }
+    )
 
 
 @router.post("/refresh")
@@ -73,11 +77,13 @@ async def refresh(token: dict):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     access_token = create_access_token(user.id, user.role)
     refresh_token = create_refresh_token(user.id)
-    return success_response({
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-    })
+    return success_response(
+        {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        }
+    )
 
 
 @router.post("/logout")

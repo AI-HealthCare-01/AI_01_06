@@ -1,5 +1,10 @@
 import os
 
+from dotenv import load_dotenv
+
+# dotenv will load the file locally; existing env vars (e.g., from Docker) take precedence
+load_dotenv("infra/env/.local.env")
+
 DATABASE_URL: str = os.environ.get("DATABASE_URL", "sqlite://db.sqlite3")
 REDIS_URL: str = os.environ.get("REDIS_URL", "redis://localhost:6379")
 SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")

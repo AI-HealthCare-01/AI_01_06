@@ -796,6 +796,22 @@ name = "sullivan"
 version = "0.1.0"
 source = { virtual = "." }
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.25.0" },
+    { name = "ruff", specifier = ">=0.9.0" },
+]
+
 [[package]]
 name = "sullivan-backend"
 version = "0.1.0"
@@ -812,6 +828,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "pyjwt" },
+    { name = "python-dotenv" },
     { name = "python-multipart" },
     { name = "redis" },
     { name = "tortoise-orm" },
@@ -840,6 +857,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9.0,<3.0" },
     { name = "pydantic-settings", specifier = ">=2.7.0,<3.0" },
     { name = "pyjwt", specifier = ">=2.10.0,<3.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0,<2.0" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "redis", specifier = ">=5.0.0,<8.0" },
     { name = "tortoise-orm", specifier = ">=0.25.0,<2.0" },
