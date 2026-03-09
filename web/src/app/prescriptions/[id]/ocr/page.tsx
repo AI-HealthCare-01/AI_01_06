@@ -36,7 +36,7 @@ export default function OcrReviewPage() {
     const res = await api.getPrescription(prescriptionId);
     if (!res.success || !res.data) return;
     const pData = res.data as { ocr_status: string };
-    if (pData.ocr_status === "completed") {
+    if (pData.ocr_status === "ocr_completed" || pData.ocr_status === "guide_completed") {
       setProcessing(false);
       const ocrRes = await api.getOcr(prescriptionId);
       if (ocrRes.success && ocrRes.data) setData(ocrRes.data as OcrData);
