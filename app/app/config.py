@@ -17,3 +17,6 @@ OPENAI_MODEL: str = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
 NAVER_OCR_SECRET: str = os.environ.get("NAVER_OCR_SECRET", "")
 NAVER_OCR_URL: str = os.environ.get("NAVER_OCR_URL", "")
+
+CHAT_CONTEXT_MESSAGE_COUNT: int = int(os.environ.get("CHAT_CONTEXT_MESSAGE_COUNT", "3"))
+CHAT_STREAMING_TIMEOUT_SECONDS: int = int(os.environ.get("CHAT_STREAMING_TIMEOUT_SECONDS", "60"))

@@ -106,4 +106,84 @@ export const api = {
 
   listMedications: (prescriptionId: number) =>
     request(`/api/prescriptions/${prescriptionId}/medications`),
+
+  // Chat
+  createThread: (prescriptionId?: number) =>
+    request("/api/chat/threads", {
+      method: "POST",
+      body: JSON.stringify({ prescription_id: prescriptionId ?? null }),
+    }),
+
+  listThreads: () => request("/api/chat/threads"),
+
+  getMessages: (threadId: number) =>
+    request(`/api/chat/threads/${threadId}/messages`),
+
+  endThread: (threadId: number) =>
+    request(`/api/chat/threads/${threadId}/end`, { method: "PATCH" }),
+
+  sendFeedback: (data: {
+    thread_id?: number;
+    message_id?: number;
+    feedback_type: string;
+    reason?: string;
+    reason_text?: string;
+  }) =>
+    request("/api/chat/feedback", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
+
+export async function streamChat(
+  threadId: number,
+  content: string,
+  onChunk: (text: string) => void,
+  onDone: (messageId: number) => void,
+  onError: (message: string) => void,
+) {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}/api/chat/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ thread_id: threadId, content }),
+  });
+
+  if (!res.ok || !res.body) {
+    onError("서버 연결에 실패했습니다.");
+    return;
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const jsonStr = line.slice(6);
+      try {
+        const event = JSON.parse(jsonStr);
+        if (event.type === "chunk") {
+          onChunk(event.content);
+        } else if (event.type === "done") {
+          onDone(event.message_id);
+        } else if (event.type === "error") {
+          onError(event.message);
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }
+}
