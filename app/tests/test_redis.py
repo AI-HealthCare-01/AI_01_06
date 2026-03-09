@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from app.core.redis import close_redis_pool, enqueue
 
 
@@ -9,6 +8,7 @@ from app.core.redis import close_redis_pool, enqueue
 async def _reset_pool():
     """Reset global pool before/after each test."""
     from app.core import redis
+
     redis._pool = None
     yield
     redis._pool = None
