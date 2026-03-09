@@ -1,0 +1,42 @@
+# compose.override.yaml
+#
+# 목적: 개발 환경 전용 설정. HMR(Hot Module Replacement) 활성화.
+# 병합: docker compose up 실행 시 compose.yaml과 자동으로 병합된다.
+# 커밋: 팀 전체가 공유하는 dev 설정이므로 .gitignore 대상 아님.
+# 운영 배포: docker compose -f compose.prod.yaml up --build 사용 (이 파일 제외됨).
+#
+# HMR 워크플로우:
+#   docker compose up --build --watch   <- HMR 활성 (권장)
+#   docker compose up --build           <- HMR 없이 기동 (빠른 확인용)
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_BASE_URL=/api
+    restart: "no"
+    develop:
+      watch:
+        # src 변경 → 컨테이너에 sync → Turbopack이 inotify로 감지 → HMR
+        - action: sync
+          path: ./web/src
+          target: /app/src
+
+        # public 변경 → sync
+        - action: sync
+          path: ./web/public
+          target: /app/public
+
+        # 의존성 변경 → 전체 rebuild (npm ci 재실행)
+        - action: rebuild
+          path: ./web/package.json
+
+        - action: rebuild
+          path: ./web/package-lock.json
+
+        # Next.js 설정 변경 → rebuild
+        - action: rebuild
+          path: ./web/next.config.ts
