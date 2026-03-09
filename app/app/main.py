@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     await close_redis_pool()
 
 
-app = FastAPI(title="& Sullivan API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Project & Sullivan API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
