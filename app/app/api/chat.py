@@ -22,19 +22,19 @@ async def create_thread(req: ThreadCreateRequest, user: User = Depends(get_curre
     if req.prescription_id is not None:
         prescription = await Prescription.get_or_none(id=req.prescription_id, user=user)
         if not prescription:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다."
+            )
         kwargs["prescription"] = prescription
 
     thread = await ChatThread.create(**kwargs)
-    return success_response(
-        {
-            "id": thread.id,
-            "prescription_id": req.prescription_id,
-            "title": thread.title,
-            "is_active": thread.is_active,
-            "created_at": str(thread.created_at),
-        }
-    )
+    return success_response({
+        "id": thread.id,
+        "prescription_id": req.prescription_id,
+        "title": thread.title,
+        "is_active": thread.is_active,
+        "created_at": str(thread.created_at),
+    })
 
 
 @router.get("/threads")
@@ -42,16 +42,14 @@ async def list_threads(user: User = Depends(get_current_user)):
     threads = await ChatThread.filter(user=user).order_by("-updated_at")
     result = []
     for t in threads:
-        result.append(
-            {
-                "id": t.id,
-                "title": t.title,
-                "prescription_id": t.prescription_id,
-                "is_active": t.is_active,
-                "created_at": str(t.created_at),
-                "updated_at": str(t.updated_at),
-            }
-        )
+        result.append({
+            "id": t.id,
+            "title": t.title,
+            "prescription_id": t.prescription_id,
+            "is_active": t.is_active,
+            "created_at": str(t.created_at),
+            "updated_at": str(t.updated_at),
+        })
     return success_response(result)
 
 
@@ -64,15 +62,13 @@ async def list_messages(thread_id: int, user: User = Depends(get_current_user)):
     messages = await ChatMessage.filter(thread=thread).order_by("created_at")
     result = []
     for m in messages:
-        result.append(
-            {
-                "id": m.id,
-                "role": m.role,
-                "content": m.content,
-                "status": m.status,
-                "created_at": str(m.created_at),
-            }
-        )
+        result.append({
+            "id": m.id,
+            "role": m.role,
+            "content": m.content,
+            "status": m.status,
+            "created_at": str(m.created_at),
+        })
     return success_response(result)
 
 
@@ -111,12 +107,10 @@ async def _build_context(thread: ChatThread, current_content: str) -> list[dict]
             summary_parts.append(f"기저질환: {user.conditions}")
 
         if summary_parts:
-            messages.append(
-                {
-                    "role": "system",
-                    "content": "[처방전 요약]\n" + "\n".join(summary_parts),
-                }
-            )
+            messages.append({
+                "role": "system",
+                "content": "[처방전 요약]\n" + "\n".join(summary_parts),
+            })
 
     # 최근 completed 메시지
     recent = (
@@ -148,12 +142,16 @@ async def send_message(req: MessageSendRequest, user: User = Depends(get_current
     if stale:
         elapsed = time.time() - stale.created_at.timestamp()
         if elapsed < config.CHAT_STREAMING_TIMEOUT_SECONDS:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이전 응답이 생성 중입니다.")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="이전 응답이 생성 중입니다."
+            )
         stale.status = "failed"
         await stale.save()
 
     # user 메시지 저장
-    await ChatMessage.create(thread=thread, role="user", content=req.content, status="completed")
+    user_msg = await ChatMessage.create(
+        thread=thread, role="user", content=req.content, status="completed"
+    )
 
     # 첫 메시지면 제목 자동 생성
     if not thread.title:
@@ -161,7 +159,9 @@ async def send_message(req: MessageSendRequest, user: User = Depends(get_current
         await thread.save()
 
     # assistant 메시지 생성 (streaming 상태)
-    assistant_msg = await ChatMessage.create(thread=thread, role="assistant", content="", status="streaming")
+    assistant_msg = await ChatMessage.create(
+        thread=thread, role="assistant", content="", status="streaming"
+    )
 
     # 컨텍스트 구성
     context = await _build_context(thread, req.content)
@@ -210,13 +210,17 @@ async def send_feedback(req: FeedbackRequest, user: User = Depends(get_current_u
     if req.thread_id:
         thread = await ChatThread.get_or_none(id=req.thread_id, user=user)
         if not thread:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다."
+            )
         kwargs["thread"] = thread
 
     if req.message_id:
         message = await ChatMessage.get_or_none(id=req.message_id)
         if not message:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="메시지를 찾을 수 없습니다.")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="메시지를 찾을 수 없습니다."
+            )
         kwargs["message"] = message
 
     if req.reason:
