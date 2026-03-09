@@ -77,7 +77,7 @@ async def test_send_message_sse_streaming(auth_client: AsyncClient):
 
     # SSE 이벤트 파싱
     text = resp.text
-    lines = [l for l in text.strip().split("\n") if l.startswith("data: ")]
+    lines = [line for line in text.strip().split("\n") if line.startswith("data: ")]
     assert len(lines) >= 2  # chunk들 + done
 
     import json
