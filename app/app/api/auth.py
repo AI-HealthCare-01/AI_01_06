@@ -28,6 +28,10 @@ async def signup(req: SignupRequest):
     if existing:
         return error_response("이미 등록된 이메일입니다.")
 
+    existing_nickname = await User.filter(nickname=req.nickname).first()
+    if existing_nickname:
+        return error_response("이미 사용 중인 닉네임입니다.")
+
     birth = None
     if req.birth_date:
         birth = date.fromisoformat(req.birth_date)
