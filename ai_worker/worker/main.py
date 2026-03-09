@@ -7,14 +7,9 @@ from worker.tasks.ocr_task import ocr_task
 
 TORTOISE_ORM = {
     "db_url": config.DATABASE_URL,
-    "modules": {
-        "models": [
-            "app.models.user",
-            "app.models.prescription",
-            "app.models.guide",
-            "app.models.chat",
-        ]
-    },
+    "modules": {"models": [
+        "app.models.user", "app.models.prescription", "app.models.guide", "app.models.chat",
+    ]},
 }
 
 

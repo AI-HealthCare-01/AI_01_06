@@ -5,7 +5,9 @@ from tortoise.models import Model
 class ChatThread(Model):
     id = fields.IntField(primary_key=True)
     user = fields.ForeignKeyField("models.User", related_name="chat_threads")
-    prescription = fields.ForeignKeyField("models.Prescription", null=True, related_name="chat_threads")
+    prescription = fields.ForeignKeyField(
+        "models.Prescription", null=True, related_name="chat_threads"
+    )
     title = fields.CharField(max_length=40, null=True)
     is_active = fields.BooleanField(default=True)
     created_at = fields.DatetimeField(auto_now_add=True)
