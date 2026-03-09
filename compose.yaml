@@ -41,8 +41,11 @@ services:
       context: .
       dockerfile: app/Dockerfile
     env_file: ./infra/env/.local.env
+    environment:
+      UPLOAD_DIR: /uploads
     volumes:
       - ./app:/app/app
+      - uploads_data:/uploads
     ports:
       - "8000:8000"
     restart: always
@@ -51,6 +54,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   worker:
     container_name: worker
@@ -58,8 +67,11 @@ services:
       context: .
       dockerfile: ai_worker/Dockerfile
     env_file: ./infra/env/.local.env
+    environment:
+      UPLOAD_DIR: /uploads
     volumes:
       - ./ai_worker:/app/ai_worker
+      - uploads_data:/uploads
     restart: always
     depends_on:
       mysql:
@@ -96,9 +108,10 @@ services:
     restart: always
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
       web:
         condition: service_healthy
 
 volumes:
   db_data:
+  uploads_data:

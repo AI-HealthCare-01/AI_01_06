@@ -10,7 +10,7 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       TZ: 'Asia/Seoul'
     ports:
-      - "${DB_EXPOSE_PORT:-3306}:3306"
+      - "127.0.0.1:${DB_EXPOSE_PORT:-3306}:3306"
     volumes:
       - db_data:/var/lib/mysql
       # Initialize schema and tables
@@ -29,8 +29,6 @@ services:
     container_name: redis
     image: redis:7-alpine
     restart: always
-    ports:
-      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -48,16 +46,21 @@ services:
       # Dynamically inject the DATABASE_URL mapping to the new 'mysql' container
       DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@mysql:3306/${DB_NAME}
       REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /uploads
     volumes:
-      - ./app:/app/app
-    ports:
-      - "8000:8000"
+      - uploads_data:/uploads
     restart: always
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   worker:
     container_name: worker
@@ -68,8 +71,9 @@ services:
     environment:
       DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@mysql:3306/${DB_NAME}
       REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /uploads
     volumes:
-      - ./ai_worker:/app/ai_worker
+      - uploads_data:/uploads
     restart: always
     depends_on:
       mysql:
@@ -104,9 +108,10 @@ services:
     restart: always
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
       web:
         condition: service_healthy
 
 volumes:
   db_data:
+  uploads_data:
