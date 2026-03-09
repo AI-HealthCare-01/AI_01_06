@@ -46,8 +46,7 @@ SYSTEM_PROMPT = (
 
 class ChatServiceBase(abc.ABC):
     @abc.abstractmethod
-    async def stream_reply(self, messages: list[dict]) -> AsyncIterator[str]:
-        ...
+    async def stream_reply(self, messages: list[dict]) -> AsyncIterator[str]: ...
 
 
 class DummyChatService(ChatServiceBase):
