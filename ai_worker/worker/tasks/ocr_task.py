@@ -1,3 +1,4 @@
+from app.models.guide import Guide
 from app.models.prescription import Medication, Prescription
 from app.services.ocr_service import get_ocr_service
 
@@ -14,7 +15,7 @@ async def ocr_task(ctx: dict, prescription_id: int) -> None:
     prescription.prescription_date = ocr_result.get("prescription_date")
     prescription.diagnosis = ocr_result.get("diagnosis")
     prescription.ocr_raw = ocr_result
-    prescription.ocr_status = "completed"
+    prescription.ocr_status = "ocr_completed"
     await prescription.save()
 
     for med_data in ocr_result.get("medications", []):
@@ -26,3 +27,7 @@ async def ocr_task(ctx: dict, prescription_id: int) -> None:
             duration=med_data.get("duration"),
             instructions=med_data.get("instructions"),
         )
+
+    user = await prescription.user
+    guide = await Guide.create(user=user, prescription=prescription, status="generating")
+    await ctx["redis"].enqueue_job("guide_task", guide.id, user.id)
