@@ -6,7 +6,13 @@ TORTOISE_ORM = {
     "connections": {"default": config.DATABASE_URL},
     "apps": {
         "models": {
-            "models": ["app.models.user", "app.models.prescription", "app.models.guide"],
+            "models": [
+                "app.models.user",
+                "app.models.auth_provider",
+                "app.models.terms_consent",
+                "app.models.prescription",
+                "app.models.guide",
+            ],
             "default_connection": "default",
         },
     },

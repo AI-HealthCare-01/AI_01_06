@@ -11,6 +11,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.models.auth_provider import AuthProvider
 from app.models.user import User
 from app.schemas.auth import LoginRequest, SignupRequest
 
@@ -36,6 +37,11 @@ async def signup(req: SignupRequest):
         birth_date=birth,
         gender=req.gender,
         phone=req.phone,
+    )
+    await AuthProvider.create(
+        user=user,
+        provider="LOCAL",
+        provider_user_id=req.email,
     )
     return success_response(
         {
