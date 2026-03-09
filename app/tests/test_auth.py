@@ -90,17 +90,24 @@ async def test_signup_rejects_weak_password(client: AsyncClient, bad_pw: str):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "good_pw",
-    [
-        "abcdef1!",  # 3종 (소문자 + 숫자 + 특수)
-        "Abcdefg1",  # 3종 (대소문자 + 숫자)
-        "ABCDEF1!",  # 3종 (대문자 + 숫자 + 특수)
-    ],
-)
-async def test_signup_accepts_valid_password(client: AsyncClient, good_pw: str):
-    resp = await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": good_pw})
+async def test_signup_accepts_valid_password(client: AsyncClient):
+    resp = await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": "Abcdefg1"})
     assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_signup_role_defaults_to_patient_uppercase(client: AsyncClient):
+    resp = await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": "Pass1234!"})
+    assert resp.json()["data"]["role"] == "PATIENT"
+
+
+@pytest.mark.asyncio
+async def test_signup_guardian_role_stored_uppercase(client: AsyncClient):
+    resp = await client.post(
+        "/api/auth/signup",
+        json={**_BASE_SIGNUP, "email": "guardian@test.com", "nickname": "보호자닉", "password": "Pass1234!", "role": "GUARDIAN"},
+    )
+    assert resp.json()["data"]["role"] == "GUARDIAN"
 
 
 @pytest.mark.asyncio

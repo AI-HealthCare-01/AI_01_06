@@ -12,10 +12,6 @@ class User(Model):
     birth_date = fields.DateField(null=True)
     gender = fields.CharField(max_length=10, null=True)
     phone = fields.CharField(max_length=20, null=True)
-    height = fields.FloatField(null=True)
-    weight = fields.FloatField(null=True)
-    allergies = fields.TextField(null=True)
-    conditions = fields.TextField(null=True)
     font_size_mode = fields.CharField(max_length=20, null=True)  # SMALL | LARGE
     failed_login_attempts = fields.IntField(default=0)
     locked_until = fields.DatetimeField(null=True)

@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 from app.main import app
 from app.models.guide import Guide
+from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.services.guide_service import get_guide_service
@@ -56,12 +57,13 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
             }
             for m in medications
         ]
+        profile = await PatientProfile.get_or_none(user=user)
         user_info = {
             "name": user.name,
-            "height": user.height,
-            "weight": user.weight,
-            "allergies": user.allergies,
-            "conditions": user.conditions,
+            "height_cm": float(profile.height_cm) if profile and profile.height_cm is not None else None,
+            "weight_kg": float(profile.weight_kg) if profile and profile.weight_kg is not None else None,
+            "allergy_details": profile.allergy_details if profile else None,
+            "disease_details": profile.disease_details if profile else None,
         }
 
         guide_service = get_guide_service()
@@ -82,7 +84,12 @@ async def setup_db():
                 "app.models.user",
                 "app.models.auth_provider",
                 "app.models.terms_consent",
+                "app.models.patient_profile",
+                "app.models.caregiver_patient",
                 "app.models.prescription",
+                "app.models.schedule",
+                "app.models.notification",
+                "app.models.audit",
                 "app.models.guide",
                 "app.models.chat",
             ]
@@ -117,7 +124,7 @@ async def auth_client(client: AsyncClient):
         "password": "Test1234!",
         "nickname": "테스트유저",
         "name": "홍길동",
-        "role": "patient",
+        "role": "PATIENT",
         "terms_of_service": True,
         "privacy_policy": True,
     }

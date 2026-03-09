@@ -14,7 +14,7 @@ async def get_current_user(
     if payload is None or payload.get("type") != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     user_id = int(payload["sub"])
-    user = await User.get_or_none(id=user_id)
+    user = await User.get_or_none(id=user_id, deleted_at__isnull=True)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user
