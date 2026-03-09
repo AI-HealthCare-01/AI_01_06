@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AppLayout from "@/components/AppLayout";
+import { api, streamChat } from "@/lib/api";
 
 const DISCLAIMER = "AI가 제공하는 정보는 참고용입니다. 정확한 진단과 처방은 의료 전문가와 상담하세요.";
 
@@ -12,20 +13,84 @@ const quickActions = [
   "약을 깜빡하고 안 먹었어요",
 ];
 
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+  status?: string;
+}
+
 export default function ChatPage() {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "안녕하세요! AI 복약 상담 챗봇입니다. 복약과 관련하여 궁금하신 점을 물어보세요." },
   ]);
   const [input, setInput] = useState("");
+  const [threadId, setThreadId] = useState<number | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: text },
-      { role: "assistant", content: "죄송합니다. 현재 AI 상담 기능은 준비 중입니다. 빠른 시일 내에 서비스를 제공하겠습니다.\n\n" + DISCLAIMER },
-    ]);
+  useEffect(() => {
+    api.createThread().then((res) => {
+      if (res.success && res.data) {
+        setThreadId((res.data as { id: number }).id);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || !threadId || isStreaming) return;
+
     setInput("");
+    setShowQuickActions(false);
+    setIsStreaming(true);
+
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setMessages((prev) => [...prev, { role: "assistant", content: "", status: "streaming" }]);
+
+    await streamChat(
+      threadId,
+      text,
+      (chunk) => {
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last.role === "assistant") {
+            updated[updated.length - 1] = { ...last, content: last.content + chunk };
+          }
+          return updated;
+        });
+      },
+      () => {
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last.role === "assistant") {
+            updated[updated.length - 1] = { ...last, status: "completed" };
+          }
+          return updated;
+        });
+        setIsStreaming(false);
+      },
+      (errorMsg) => {
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last.role === "assistant") {
+            updated[updated.length - 1] = {
+              ...last,
+              content: errorMsg || "오류가 발생했습니다.",
+              status: "failed",
+            };
+          }
+          return updated;
+        });
+        setIsStreaming(false);
+      },
+    );
   };
 
   return (
@@ -34,36 +99,43 @@ export default function ChatPage() {
         {/* Header */}
         <div className="bg-white rounded-t-lg border p-4 flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">AI</div>
-          <div>
+          <div className="flex-1">
             <h1 className="font-bold">AI 복약 상담 챗봇</h1>
             <p className="text-xs text-green-500">온라인</p>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="bg-white border-x p-4 min-h-[400px] space-y-4">
+        <div className="bg-white border-x p-4 min-h-[400px] max-h-[500px] overflow-y-auto space-y-4">
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] rounded-lg p-3 text-sm ${
-                msg.role === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
+              <div className={`max-w-[70%] rounded-lg p-3 text-sm whitespace-pre-wrap ${
+                msg.role === "user"
+                  ? "bg-blue-600 text-white"
+                  : msg.status === "failed"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-gray-100 text-gray-800"
               }`}>
-                {msg.content}
+                {msg.content || (msg.status === "streaming" ? "..." : "")}
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Quick actions */}
-        <div className="bg-white border-x px-4 pb-2">
-          <p className="text-xs text-gray-400 mb-2">자주 묻는 질문</p>
-          <div className="grid grid-cols-2 gap-2">
-            {quickActions.map((q) => (
-              <button key={q} onClick={() => sendMessage(q)} className="text-sm border rounded-lg px-3 py-2 text-left hover:bg-gray-50">
-                {q}
-              </button>
-            ))}
+        {showQuickActions && (
+          <div className="bg-white border-x px-4 pb-2">
+            <p className="text-xs text-gray-400 mb-2">자주 묻는 질문</p>
+            <div className="grid grid-cols-2 gap-2">
+              {quickActions.map((q) => (
+                <button key={q} onClick={() => sendMessage(q)} className="text-sm border rounded-lg px-3 py-2 text-left hover:bg-gray-50">
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Input */}
         <div className="bg-white rounded-b-lg border p-4">
@@ -71,11 +143,16 @@ export default function ChatPage() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
+              onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
               placeholder="메시지를 입력하세요..."
               className="flex-1 border rounded-lg px-4 py-2"
+              disabled={isStreaming}
             />
-            <button onClick={() => sendMessage(input)} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            <button
+              onClick={() => sendMessage(input)}
+              disabled={isStreaming}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
               전송
             </button>
           </div>
