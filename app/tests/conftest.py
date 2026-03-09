@@ -77,14 +77,14 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
 async def setup_db():
     await Tortoise.init(
         db_url=TEST_DB_URL,
-        modules={
-            "models": [
-                "app.models.user",
-                "app.models.prescription",
-                "app.models.guide",
-                "app.models.chat",
-            ]
-        },
+        modules={"models": [
+            "app.models.user",
+            "app.models.auth_provider",
+            "app.models.terms_consent",
+            "app.models.prescription",
+            "app.models.guide",
+            "app.models.chat"
+        ]},
     )
     await Tortoise.generate_schemas()
     yield
