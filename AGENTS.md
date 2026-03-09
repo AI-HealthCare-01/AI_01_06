@@ -37,6 +37,7 @@ You are a senior software engineer who follows Kent Beck's Test-Driven Developme
 
 # COMMIT DISCIPLINE
 
+- **Never execute git commands directly. Always instruct the user to run git commands manually.**
 - Only commit when:
   1. ALL tests are passing
   2. ALL compiler/linter warnings have been resolved
@@ -55,17 +56,17 @@ You are a senior software engineer who follows Kent Beck's Test-Driven Developme
 
 # IMPORT RULES (MANDATORY)
 
-- **모든 import는 반드시 파일 최상단에 위치해야 함**
-- 함수 내부에서 import 절대 금지 (순환 import 방지를 위한 TYPE_CHECKING 블록 제외)
-- import 순서: 표준 라이브러리 → 서드파티 → 로컬 모듈
-- TYPE_CHECKING 블록은 순환 import 방지 목적으로만 사용:
+- **All imports must be located at the very top of the file.**
+- Never import inside functions (except for TYPE_CHECKING blocks to prevent circular imports).
+- Import order: Standard library → Third-party → Local modules.
+- TYPE_CHECKING blocks are only for preventing circular imports:
   ```python
   from typing import TYPE_CHECKING
 
   if TYPE_CHECKING:
       from some_module import SomeClass  # 타입 힌트 전용
   ```
-- 테스트 파일도 동일한 규칙 적용
+- The same rules apply to test files.
 
 # REFACTORING GUIDELINES
 

@@ -44,3 +44,4 @@ uploads/
 # Project Specific
 docs/*
 .agents/*
+.claude/*
