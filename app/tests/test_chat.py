@@ -35,13 +35,23 @@ async def test_list_threads_own_only(auth_client: AsyncClient, client: AsyncClie
     await auth_client.post("/api/chat/threads", json={})
 
     # 다른 유저 생성
-    await client.post("/api/auth/signup", json={
-        "email": "other@test.com", "password": "Test1234!",
-        "nickname": "다른유저", "name": "이영희", "role": "patient",
-    })
-    login_resp = await client.post("/api/auth/login", json={
-        "email": "other@test.com", "password": "Test1234!",
-    })
+    await client.post(
+        "/api/auth/signup",
+        json={
+            "email": "other@test.com",
+            "password": "Test1234!",
+            "nickname": "다른유저",
+            "name": "이영희",
+            "role": "patient",
+        },
+    )
+    login_resp = await client.post(
+        "/api/auth/login",
+        json={
+            "email": "other@test.com",
+            "password": "Test1234!",
+        },
+    )
     other_token = login_resp.json()["data"]["access_token"]
 
     # 다른 유저의 thread 목록은 비어있어야 함
@@ -133,13 +143,23 @@ async def test_send_message_to_others_thread_returns_403(auth_client: AsyncClien
     thread_id = create_resp.json()["data"]["id"]
 
     # 다른 유저
-    await client.post("/api/auth/signup", json={
-        "email": "other2@test.com", "password": "Test1234!",
-        "nickname": "다른유저2", "name": "박철수", "role": "patient",
-    })
-    login_resp = await client.post("/api/auth/login", json={
-        "email": "other2@test.com", "password": "Test1234!",
-    })
+    await client.post(
+        "/api/auth/signup",
+        json={
+            "email": "other2@test.com",
+            "password": "Test1234!",
+            "nickname": "다른유저2",
+            "name": "박철수",
+            "role": "patient",
+        },
+    )
+    login_resp = await client.post(
+        "/api/auth/login",
+        json={
+            "email": "other2@test.com",
+            "password": "Test1234!",
+        },
+    )
     other_token = login_resp.json()["data"]["access_token"]
 
     resp = await client.post(
@@ -212,17 +232,23 @@ async def test_send_feedback(auth_client: AsyncClient):
     assistant_msg_id = msgs_resp.json()["data"][1]["id"]
 
     # thumbs_up 피드백
-    resp = await auth_client.post("/api/chat/feedback", json={
-        "message_id": assistant_msg_id,
-        "feedback_type": "thumbs_up",
-    })
+    resp = await auth_client.post(
+        "/api/chat/feedback",
+        json={
+            "message_id": assistant_msg_id,
+            "feedback_type": "thumbs_up",
+        },
+    )
     assert resp.json()["success"] is True
 
     # session_negative 피드백
-    resp = await auth_client.post("/api/chat/feedback", json={
-        "thread_id": thread_id,
-        "feedback_type": "session_negative",
-        "reason": "inaccurate",
-        "reason_text": "정보가 틀렸어요",
-    })
+    resp = await auth_client.post(
+        "/api/chat/feedback",
+        json={
+            "thread_id": thread_id,
+            "feedback_type": "session_negative",
+            "reason": "inaccurate",
+            "reason_text": "정보가 틀렸어요",
+        },
+    )
     assert resp.json()["success"] is True
