@@ -12,7 +12,7 @@ from app.schemas.prescription import OcrUpdateRequest
 
 router = APIRouter(prefix="/api/prescriptions", tags=["prescriptions"])
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 
 @router.post("")

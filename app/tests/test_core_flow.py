@@ -13,6 +13,29 @@ import pytest
 from httpx import AsyncClient
 
 
+def test_upload_dir_from_env(monkeypatch):
+    """UPLOAD_DIR 환경변수가 주입되면 해당 경로를 사용한다."""
+    import importlib
+
+    import app.api.prescriptions as pmod
+
+    monkeypatch.setenv("UPLOAD_DIR", "/tmp/test_uploads")
+    importlib.reload(pmod)
+    assert pmod.UPLOAD_DIR == "/tmp/test_uploads"
+    # 정리: 기본값으로 복원
+    monkeypatch.delenv("UPLOAD_DIR")
+    importlib.reload(pmod)
+
+
+@pytest.mark.asyncio
+async def test_health_check(client: AsyncClient):
+    resp = await client.get("/api/health")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert body["data"]["status"] == "ok"
+
+
 @pytest.mark.asyncio
 async def test_signup_returns_user_info(client: AsyncClient):
     resp = await client.post(
