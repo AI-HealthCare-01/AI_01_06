@@ -74,24 +74,30 @@ async def test_signup_stores_marketing_consent(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("bad_pw", [
-    "short1!",    # 7자 — 길이 부족
-    "abcdefgh",   # 1종 (소문자만)
-    "abcdef12",   # 2종 (소문자 + 숫자)
-    "ABCDEF12",   # 2종 (대문자 + 숫자)
-    "abcdABCD",   # 2종 (소문자 + 대문자)
-])
+@pytest.mark.parametrize(
+    "bad_pw",
+    [
+        "short1!",  # 7자 — 길이 부족
+        "abcdefgh",  # 1종 (소문자만)
+        "abcdef12",  # 2종 (소문자 + 숫자)
+        "ABCDEF12",  # 2종 (대문자 + 숫자)
+        "abcdABCD",  # 2종 (소문자 + 대문자)
+    ],
+)
 async def test_signup_rejects_weak_password(client: AsyncClient, bad_pw: str):
     resp = await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": bad_pw})
     assert resp.status_code == 422
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("good_pw", [
-    "abcdef1!",   # 3종 (소문자 + 숫자 + 특수)
-    "Abcdefg1",   # 3종 (대소문자 + 숫자)
-    "ABCDEF1!",   # 3종 (대문자 + 숫자 + 특수)
-])
+@pytest.mark.parametrize(
+    "good_pw",
+    [
+        "abcdef1!",  # 3종 (소문자 + 숫자 + 특수)
+        "Abcdefg1",  # 3종 (대소문자 + 숫자)
+        "ABCDEF1!",  # 3종 (대문자 + 숫자 + 특수)
+    ],
+)
 async def test_signup_accepts_valid_password(client: AsyncClient, good_pw: str):
     resp = await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": good_pw})
     assert resp.json()["success"] is True

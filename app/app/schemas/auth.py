@@ -23,12 +23,14 @@ class SignupRequest(BaseModel):
             raise ValueError("비밀번호는 최소 8자 이상이어야 합니다.")
         if len(v) > 72:
             raise ValueError("비밀번호는 최대 72자 이하여야 합니다.")
-        kinds = sum([
-            bool(re.search(r"[a-z]", v)),
-            bool(re.search(r"[A-Z]", v)),
-            bool(re.search(r"\d", v)),
-            bool(re.search(r"[^a-zA-Z0-9]", v)),
-        ])
+        kinds = sum(
+            [
+                bool(re.search(r"[a-z]", v)),
+                bool(re.search(r"[A-Z]", v)),
+                bool(re.search(r"\d", v)),
+                bool(re.search(r"[^a-zA-Z0-9]", v)),
+            ]
+        )
         if kinds < 3:
             raise ValueError("비밀번호는 영문 대문자, 소문자, 숫자, 특수문자 중 3종 이상을 포함해야 합니다.")
         return v
