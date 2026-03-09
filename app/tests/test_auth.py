@@ -95,3 +95,18 @@ async def test_signup_rejects_weak_password(client: AsyncClient, bad_pw: str):
 async def test_signup_accepts_valid_password(client: AsyncClient, good_pw: str):
     resp = await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": good_pw})
     assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_signup_rejects_duplicate_nickname(client: AsyncClient):
+    base = {
+        "password": "Pass1234!",
+        "name": "테스트",
+        "terms_of_service": True,
+        "privacy_policy": True,
+    }
+    await client.post("/api/auth/signup", json={**base, "email": "a@test.com", "nickname": "동일닉"})
+    resp = await client.post("/api/auth/signup", json={**base, "email": "b@test.com", "nickname": "동일닉"})
+    body = resp.json()
+    assert body["success"] is False
+    assert "닉네임" in body["error"]
