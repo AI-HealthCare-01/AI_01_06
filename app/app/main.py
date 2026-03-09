@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, guides, medications, prescriptions, users
+from app.api import auth, chat, guides, medications, prescriptions, users
 from app.core.database import close_db, init_db
 from app.core.redis import close_redis_pool
 
@@ -31,6 +31,7 @@ app.include_router(users.router)
 app.include_router(prescriptions.router)
 app.include_router(medications.router)
 app.include_router(guides.router)
+app.include_router(chat.router)
 
 
 @app.get("/api/health")

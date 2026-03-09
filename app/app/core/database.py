@@ -12,6 +12,7 @@ TORTOISE_ORM = {
                 "app.models.terms_consent",
                 "app.models.prescription",
                 "app.models.guide",
+                "app.models.chat",
             ],
             "default_connection": "default",
         },
