@@ -149,7 +149,7 @@ async def send_message(req: MessageSendRequest, user: User = Depends(get_current
         await stale.save()
 
     # user 메시지 저장
-    user_msg = await ChatMessage.create(
+    await ChatMessage.create(
         thread=thread, role="user", content=req.content, status="completed"
     )
 
