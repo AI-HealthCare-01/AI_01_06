@@ -1,14 +1,15 @@
 from unittest.mock import patch
 
 import pytest
+from httpx import ASGITransport, AsyncClient
+from tortoise import Tortoise
+
 from app.main import app
 from app.models.guide import Guide
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.services.guide_service import get_guide_service
 from app.services.ocr_service import get_ocr_service
-from httpx import ASGITransport, AsyncClient
-from tortoise import Tortoise
 
 TEST_DB_URL = "sqlite://:memory:"
 
@@ -77,13 +78,15 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
 async def setup_db():
     await Tortoise.init(
         db_url=TEST_DB_URL,
-        modules={"models": [
-            "app.models.user",
-            "app.models.auth_provider",
-            "app.models.terms_consent",
-            "app.models.prescription",
-            "app.models.guide",
-        ]},
+        modules={
+            "models": [
+                "app.models.user",
+                "app.models.auth_provider",
+                "app.models.terms_consent",
+                "app.models.prescription",
+                "app.models.guide",
+            ]
+        },
     )
     await Tortoise.generate_schemas()
     yield
