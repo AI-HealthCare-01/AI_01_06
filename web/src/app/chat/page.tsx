@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api, streamChat } from "@/lib/api";
 
@@ -13,6 +15,13 @@ const quickActions = [
   "약을 깜빡하고 안 먹었어요",
 ];
 
+const negativeReasons = [
+  { value: "inaccurate", label: "정보가 정확하지 않았어요" },
+  { value: "unhelpful", label: "도움이 되지 않았어요" },
+  { value: "hard_to_understand", label: "이해하기 어려웠어요" },
+  { value: "other", label: "기타" },
+];
+
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -20,6 +29,7 @@ interface Message {
 }
 
 export default function ChatPage() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "안녕하세요! AI 복약 상담 챗봇입니다. 복약과 관련하여 궁금하신 점을 물어보세요." },
   ]);
@@ -27,14 +37,34 @@ export default function ChatPage() {
   const [threadId, setThreadId] = useState<number | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // 피드백 모달 상태
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackStep, setFeedbackStep] = useState<"rating" | "reason">("rating");
+  const [selectedReason, setSelectedReason] = useState<string | null>(null);
+  const [reasonText, setReasonText] = useState("");
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+
+  const initThread = () => {
+    setInitError(null);
+    api
+      .createThread()
+      .then((res) => {
+        if (res.success && res.data) {
+          setThreadId((res.data as { id: number }).id);
+        } else {
+          setInitError(res.error || "채팅을 시작할 수 없습니다. 로그인 상태를 확인해주세요.");
+        }
+      })
+      .catch(() => {
+        setInitError("서버에 연결할 수 없습니다.");
+      });
+  };
+
   useEffect(() => {
-    api.createThread().then((res) => {
-      if (res.success && res.data) {
-        setThreadId((res.data as { id: number }).id);
-      }
-    });
+    initThread();
   }, []);
 
   useEffect(() => {
@@ -93,6 +123,49 @@ export default function ChatPage() {
     );
   };
 
+  const endThreadAndRedirect = async () => {
+    if (threadId) {
+      await api.endThread(threadId);
+    }
+    router.push("/chat/history");
+  };
+
+  const handleEndClick = () => {
+    if (!threadId || isStreaming) return;
+    setShowFeedbackModal(true);
+    setFeedbackStep("rating");
+    setSelectedReason(null);
+    setReasonText("");
+  };
+
+  const handlePositiveFeedback = async () => {
+    if (!threadId) return;
+    setFeedbackSubmitting(true);
+    await api.sendFeedback({ thread_id: threadId, feedback_type: "session_positive" });
+    await endThreadAndRedirect();
+  };
+
+  const handleNegativeFeedback = () => {
+    setFeedbackStep("reason");
+  };
+
+  const handleSubmitNegativeFeedback = async () => {
+    if (!threadId || !selectedReason) return;
+    setFeedbackSubmitting(true);
+    await api.sendFeedback({
+      thread_id: threadId,
+      feedback_type: "session_negative",
+      reason: selectedReason,
+      reason_text: reasonText || undefined,
+    });
+    await endThreadAndRedirect();
+  };
+
+  const handleSkipFeedback = async () => {
+    setFeedbackSubmitting(true);
+    await endThreadAndRedirect();
+  };
+
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto">
@@ -103,7 +176,33 @@ export default function ChatPage() {
             <h1 className="font-bold">AI 복약 상담 챗봇</h1>
             <p className="text-xs text-green-500">온라인</p>
           </div>
+          <Link
+            href="/chat/history"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            대화 기록
+          </Link>
+          <button
+            onClick={handleEndClick}
+            disabled={isStreaming || !threadId}
+            className="text-sm border border-red-300 text-red-600 px-3 py-1 rounded-lg hover:bg-red-50 disabled:opacity-50"
+          >
+            상담 종료
+          </button>
         </div>
+
+        {/* Init Error */}
+        {initError && (
+          <div className="bg-red-50 border-x border-red-200 p-4 text-center">
+            <p className="text-red-600 text-sm mb-2">{initError}</p>
+            <button
+              onClick={initThread}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              다시 시도
+            </button>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="bg-white border-x p-4 min-h-[400px] max-h-[500px] overflow-y-auto space-y-4">
@@ -169,6 +268,92 @@ export default function ChatPage() {
           </ul>
         </div>
       </div>
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            {feedbackStep === "rating" ? (
+              <>
+                <h2 className="text-lg font-bold text-center mb-2">상담이 도움이 되셨나요?</h2>
+                <p className="text-sm text-gray-500 text-center mb-6">
+                  피드백을 남겨주시면 서비스 개선에 큰 도움이 됩니다.
+                </p>
+                <div className="flex justify-center gap-6 mb-6">
+                  <button
+                    onClick={handlePositiveFeedback}
+                    disabled={feedbackSubmitting}
+                    className="flex flex-col items-center gap-2 px-6 py-4 border rounded-lg hover:bg-blue-50 disabled:opacity-50"
+                  >
+                    <span className="text-3xl">👍</span>
+                    <span className="text-sm font-medium">도움이 됐어요</span>
+                  </button>
+                  <button
+                    onClick={handleNegativeFeedback}
+                    disabled={feedbackSubmitting}
+                    className="flex flex-col items-center gap-2 px-6 py-4 border rounded-lg hover:bg-red-50 disabled:opacity-50"
+                  >
+                    <span className="text-3xl">👎</span>
+                    <span className="text-sm font-medium">아쉬웠어요</span>
+                  </button>
+                </div>
+                <button
+                  onClick={handleSkipFeedback}
+                  disabled={feedbackSubmitting}
+                  className="w-full text-sm text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                >
+                  건너뛰기
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-bold mb-2">어떤 점이 아쉬우셨나요?</h2>
+                <p className="text-sm text-gray-500 mb-4">사유를 선택해주세요.</p>
+                <div className="space-y-2 mb-4">
+                  {negativeReasons.map((r) => (
+                    <button
+                      key={r.value}
+                      onClick={() => setSelectedReason(r.value)}
+                      className={`w-full text-left text-sm px-4 py-3 border rounded-lg ${
+                        selectedReason === r.value
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+                {selectedReason === "other" && (
+                  <textarea
+                    value={reasonText}
+                    onChange={(e) => setReasonText(e.target.value)}
+                    placeholder="자세한 내용을 입력해주세요 (선택)"
+                    className="w-full border rounded-lg px-3 py-2 text-sm mb-4 resize-none"
+                    rows={3}
+                  />
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setFeedbackStep("rating")}
+                    disabled={feedbackSubmitting}
+                    className="flex-1 border py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    뒤로
+                  </button>
+                  <button
+                    onClick={handleSubmitNegativeFeedback}
+                    disabled={!selectedReason || feedbackSubmitting}
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    제출
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
