@@ -83,6 +83,41 @@ export const api = {
 
   logout: () => request("/api/auth/logout", { method: "POST" }),
 
+  // Kakao Auth
+  getKakaoUrl: () =>
+    request<{ url: string; state: string }>("/api/auth/kakao/url"),
+
+  kakaoCallback: (code: string, state: string) =>
+    request<{
+      status: "login" | "new_user";
+      access_token?: string;
+      refresh_token?: string;
+      token_type?: string;
+      registration_token?: string;
+      kakao_profile?: { email: string; nickname: string };
+    }>("/api/auth/kakao/callback", {
+      method: "POST",
+      body: JSON.stringify({ code, state }),
+    }),
+
+  kakaoRegister: (data: {
+    registration_token: string;
+    email: string;
+    name: string;
+    nickname: string;
+    role: string;
+    birth_date?: string | null;
+    gender?: string | null;
+    phone?: string | null;
+    terms_of_service: boolean;
+    privacy_policy: boolean;
+    marketing_consent: boolean;
+  }) =>
+    request<{ access_token: string; refresh_token: string; token_type: string }>(
+      "/api/auth/kakao/register",
+      { method: "POST", body: JSON.stringify(data) }
+    ),
+
   // User
   getMe: () => request("/api/users/me"),
   updateMe: (data: Record<string, unknown>) =>

@@ -2,7 +2,18 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
-from app.api import auth, caregivers, chat, guides, medications, notifications, prescriptions, schedules, users
+from app.api import (
+    auth,
+    caregivers,
+    chat,
+    guides,
+    kakao_auth,
+    medications,
+    notifications,
+    prescriptions,
+    schedules,
+    users,
+)
 from app.core.database import TORTOISE_ORM
 
 app = FastAPI(title="Project & Sullivan API", version="0.1.0")
@@ -16,6 +27,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(kakao_auth.router)
 app.include_router(users.router)
 app.include_router(prescriptions.router)
 app.include_router(medications.router)

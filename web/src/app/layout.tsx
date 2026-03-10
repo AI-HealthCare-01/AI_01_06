@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { KakaoRegistrationProvider } from "@/lib/kakao-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${geistSans.variable} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <KakaoRegistrationProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </KakaoRegistrationProvider>
       </body>
     </html>
   );
