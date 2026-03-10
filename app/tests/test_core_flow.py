@@ -7,24 +7,22 @@
 6. 복약 가이드 조회
 """
 
+import importlib
 import io
 
+import app.api.prescriptions as prescriptions_api
 import pytest
 from httpx import AsyncClient
 
 
 def test_upload_dir_from_env(monkeypatch):
     """UPLOAD_DIR 환경변수가 주입되면 해당 경로를 사용한다."""
-    import importlib
-
-    import app.api.prescriptions as pmod
-
     monkeypatch.setenv("UPLOAD_DIR", "/tmp/test_uploads")
-    importlib.reload(pmod)
-    assert pmod.UPLOAD_DIR == "/tmp/test_uploads"
+    importlib.reload(prescriptions_api)
+    assert prescriptions_api.UPLOAD_DIR == "/tmp/test_uploads"
     # 정리: 기본값으로 복원
     monkeypatch.delenv("UPLOAD_DIR")
-    importlib.reload(pmod)
+    importlib.reload(prescriptions_api)
 
 
 @pytest.mark.asyncio

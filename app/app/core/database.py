@@ -22,7 +22,7 @@ TORTOISE_ORM = {
 
 async def init_db() -> None:
     await Tortoise.init(config=TORTOISE_ORM)
-    await Tortoise.generate_schemas()
+    await Tortoise.generate_schemas(safe=True)
 
 
 async def close_db() -> None:

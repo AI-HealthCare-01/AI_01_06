@@ -1,6 +1,11 @@
 """채팅 기능 테스트: Thread CRUD, SSE 스트리밍, 피드백"""
 
+import io
+import json
+
 import pytest
+from app.api.chat import _build_context
+from app.models.chat import ChatMessage, ChatThread
 from httpx import AsyncClient
 
 
@@ -15,8 +20,6 @@ async def test_create_thread(auth_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_create_thread_with_prescription(auth_client: AsyncClient):
-    import io
-
     upload_resp = await auth_client.post(
         "/api/prescriptions",
         files={"file": ("test.png", io.BytesIO(b"fake"), "image/png")},
@@ -90,16 +93,12 @@ async def test_send_message_sse_streaming(auth_client: AsyncClient):
     lines = [line for line in text.strip().split("\n") if line.startswith("data: ")]
     assert len(lines) >= 2  # chunk들 + done
 
-    import json
-
     # 마지막 이벤트가 done인지 확인
     last_event = json.loads(lines[-1].removeprefix("data: "))
     assert last_event["type"] == "done"
     assert "message_id" in last_event
 
     # DB에서 assistant 메시지 확인
-    from app.models.chat import ChatMessage
-
     assistant_msg = await ChatMessage.get(id=last_event["message_id"])
     assert assistant_msg.status == "completed"
     assert len(assistant_msg.content) > 0
@@ -115,8 +114,6 @@ async def test_send_message_auto_title(auth_client: AsyncClient):
         "/api/chat/messages",
         json={"thread_id": thread_id, "content": long_message},
     )
-
-    from app.models.chat import ChatThread
 
     thread = await ChatThread.get(id=thread_id)
     assert thread.title is not None
@@ -202,14 +199,10 @@ async def test_context_excludes_failed_messages(auth_client: AsyncClient):
     )
 
     # failed 메시지 수동 생성
-    from app.models.chat import ChatMessage, ChatThread
-
     thread = await ChatThread.get(id=thread_id)
     await ChatMessage.create(thread=thread, role="assistant", content="미완성", status="failed")
 
     # 컨텍스트 빌더 확인
-    from app.api.chat import _build_context
-
     context = await _build_context(thread, "새 질문")
 
     # failed 메시지("미완성")가 컨텍스트에 포함되어서는 안 됨

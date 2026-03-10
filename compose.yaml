@@ -44,7 +44,7 @@ services:
     environment:
       UPLOAD_DIR: /uploads
     volumes:
-      - ./app:/app/app
+      - ./app/app:/srv/app/app
       - uploads_data:/uploads
     ports:
       - "8000:8000"
@@ -70,7 +70,7 @@ services:
     environment:
       UPLOAD_DIR: /uploads
     volumes:
-      - ./ai_worker:/app/ai_worker
+      - ./ai_worker/worker:/srv/ai_worker/worker
       - uploads_data:/uploads
     restart: always
     depends_on:
