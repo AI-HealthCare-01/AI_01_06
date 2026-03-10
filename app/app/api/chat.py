@@ -87,7 +87,7 @@ async def end_thread(thread_id: int, user: User = Depends(get_current_user)):
     return success_response({"id": thread.id, "is_active": False})
 
 
-async def _build_context(thread: ChatThread, current_content: str) -> list[dict]:
+async def _build_context(thread: ChatThread) -> list[dict]:
     """LLM에 전달할 메시지 컨텍스트를 구성합니다."""
     messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
 
@@ -118,7 +118,7 @@ async def _build_context(thread: ChatThread, current_content: str) -> list[dict]
                 }
             )
 
-    # 최근 completed 메시지
+    # 최근 completed 메시지 (현재 사용자 메시지 포함)
     recent = (
         await ChatMessage.filter(thread=thread, status="completed")
         .order_by("-created_at")
@@ -127,8 +127,6 @@ async def _build_context(thread: ChatThread, current_content: str) -> list[dict]
     for m in reversed(recent):
         messages.append({"role": m.role, "content": m.content})
 
-    # 현재 사용자 메시지
-    messages.append({"role": "user", "content": current_content})
     return messages
 
 
@@ -164,7 +162,7 @@ async def send_message(req: MessageSendRequest, user: User = Depends(get_current
     assistant_msg = await ChatMessage.create(thread=thread, role="assistant", content="", status="streaming")
 
     # 컨텍스트 구성
-    context = await _build_context(thread, req.content)
+    context = await _build_context(thread)
 
     async def sse_generator():
         chat_service = get_chat_service()
@@ -217,6 +215,9 @@ async def send_feedback(req: FeedbackRequest, user: User = Depends(get_current_u
         message = await ChatMessage.get_or_none(id=req.message_id)
         if not message:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="메시지를 찾을 수 없습니다.")
+        msg_thread = await ChatThread.get_or_none(id=message.thread_id, user=user)
+        if not msg_thread:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
         kwargs["message"] = message
 
     if req.reason:

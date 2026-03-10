@@ -50,7 +50,24 @@ async function request<T>(
     headers,
   });
 
-  return res.json();
+  if (!res.ok) {
+    try {
+      const body = await res.json();
+      return {
+        success: false,
+        data: null,
+        error: body.detail || body.error || `요청에 실패했습니다. (${res.status})`,
+      };
+    } catch {
+      return { success: false, data: null, error: `서버 오류가 발생했습니다. (${res.status})` };
+    }
+  }
+
+  try {
+    return await res.json();
+  } catch {
+    return { success: false, data: null, error: "응답을 처리할 수 없습니다." };
+  }
 }
 
 export const api = {
