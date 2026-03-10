@@ -1,22 +1,11 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from tortoise.contrib.fastapi import register_tortoise
 
 from app.api import auth, caregivers, chat, guides, medications, notifications, prescriptions, schedules, users
-from app.core.database import close_db, init_db
-from app.core.redis import close_redis_pool
+from app.core.database import TORTOISE_ORM
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await init_db()
-    yield
-    await close_redis_pool()
-    await close_db()
-
-
-app = FastAPI(title="Project & Sullivan API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Project & Sullivan API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,6 +24,13 @@ app.include_router(caregivers.router)
 app.include_router(schedules.router)
 app.include_router(notifications.router)
 app.include_router(chat.router)
+
+register_tortoise(
+    app,
+    config=TORTOISE_ORM,
+    generate_schemas=True,
+    add_exception_handlers=True,
+)
 
 
 @app.get("/api/health")
