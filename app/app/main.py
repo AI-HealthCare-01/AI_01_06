@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, chat, caregivers, guides, medications, notifications, prescriptions, schedules, users
+from app.api import auth, caregivers, chat, guides, medications, notifications, prescriptions, schedules, users
 from app.core.database import close_db, init_db
 from app.core.redis import close_redis_pool
 

@@ -11,6 +11,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [form, setForm] = useState({ height_cm: "", weight_kg: "", allergy_details: "", disease_details: "" });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!authLoading && user && user.role !== "PATIENT") {
@@ -21,12 +22,18 @@ export default function OnboardingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await api.updateMe({
+    setError("");
+    const res = await api.updateMe({
       height_cm: form.height_cm ? parseFloat(form.height_cm) : null,
       weight_kg: form.weight_kg ? parseFloat(form.weight_kg) : null,
       allergy_details: form.allergy_details || null,
       disease_details: form.disease_details || null,
     });
+    if (!res.success) {
+      setError(res.error || "저장에 실패했습니다.");
+      setLoading(false);
+      return;
+    }
     await refreshUser();
     router.push("/dashboard");
   };
@@ -44,6 +51,7 @@ export default function OnboardingPage() {
             <h1 className="text-xl font-bold">안녕하세요, {user?.name || "회원"}님!</h1>
             <p className="text-gray-300 mt-1">저희 서비스를 이용하시기 전에 몇 가지 더 알려주세요.</p>
           </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
           <h2 className="text-lg font-bold">사용자 정보</h2>
           <div className="bg-gray-100 rounded-lg p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">

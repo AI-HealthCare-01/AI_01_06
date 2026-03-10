@@ -1,15 +1,15 @@
 import re
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, EmailStr, field_validator
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     PATIENT = "PATIENT"
     GUARDIAN = "GUARDIAN"
 
 
-class Gender(str, Enum):
+class Gender(StrEnum):
     M = "M"
     F = "F"
 

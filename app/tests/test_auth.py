@@ -105,7 +105,13 @@ async def test_signup_role_defaults_to_patient_uppercase(client: AsyncClient):
 async def test_signup_guardian_role_stored_uppercase(client: AsyncClient):
     resp = await client.post(
         "/api/auth/signup",
-        json={**_BASE_SIGNUP, "email": "guardian@test.com", "nickname": "보호자닉", "password": "Pass1234!", "role": "GUARDIAN"},
+        json={
+            **_BASE_SIGNUP,
+            "email": "guardian@test.com",
+            "nickname": "보호자닉",
+            "password": "Pass1234!",
+            "role": "GUARDIAN",
+        },
     )
     assert resp.json()["data"]["role"] == "GUARDIAN"
 
@@ -146,7 +152,13 @@ async def test_signup_accepts_valid_gender(client: AsyncClient, good_gender: str
     unique_nick = f"닉_{good_gender or 'none'}"
     resp = await client.post(
         "/api/auth/signup",
-        json={**_BASE_SIGNUP, "email": unique_email, "nickname": unique_nick, "password": "Pass1234!", "gender": good_gender},
+        json={
+            **_BASE_SIGNUP,
+            "email": unique_email,
+            "nickname": unique_nick,
+            "password": "Pass1234!",
+            "gender": good_gender,
+        },
     )
     assert resp.json()["success"] is True
     user = await User.filter(email=unique_email).first()
