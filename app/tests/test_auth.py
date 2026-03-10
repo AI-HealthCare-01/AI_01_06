@@ -175,3 +175,31 @@ async def test_login_fails_with_wrong_password(client: AsyncClient):
 async def test_login_fails_with_unknown_email(client: AsyncClient):
     resp = await client.post("/api/auth/login", json={"email": "nobody@test.com", "password": "Pass1234!"})
     assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_returns_new_access_token(client: AsyncClient):
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": "Pass1234!"})
+    login_resp = await client.post("/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": "Pass1234!"})
+    refresh_token = login_resp.json()["data"]["refresh_token"]
+
+    resp = await client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
+    body = resp.json()
+    assert body["success"] is True
+    assert "access_token" in body["data"]
+
+
+@pytest.mark.asyncio
+async def test_logout_requires_authentication(auth_client: AsyncClient):
+    resp = await auth_client.post("/api/auth/logout")
+    assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_login_locks_account_after_max_attempts(client: AsyncClient):
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": "Pass1234!"})
+    for _ in range(5):
+        await client.post("/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": "Wrong1234!"})
+
+    resp = await client.post("/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": "Pass1234!"})
+    assert resp.status_code == 401
