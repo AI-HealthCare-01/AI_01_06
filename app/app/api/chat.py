@@ -217,6 +217,9 @@ async def send_feedback(req: FeedbackRequest, user: User = Depends(get_current_u
         message = await ChatMessage.get_or_none(id=req.message_id)
         if not message:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="메시지를 찾을 수 없습니다.")
+        msg_thread = await ChatThread.get_or_none(id=message.thread_id, user=user)
+        if not msg_thread:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
         kwargs["message"] = message
 
     if req.reason:
