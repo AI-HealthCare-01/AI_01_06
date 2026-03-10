@@ -1,6 +1,17 @@
 import re
+from enum import Enum
 
 from pydantic import BaseModel, EmailStr, field_validator
+
+
+class UserRole(str, Enum):
+    PATIENT = "PATIENT"
+    GUARDIAN = "GUARDIAN"
+
+
+class Gender(str, Enum):
+    M = "M"
+    F = "F"
 
 
 class SignupRequest(BaseModel):
@@ -8,9 +19,9 @@ class SignupRequest(BaseModel):
     password: str
     nickname: str
     name: str
-    role: str = "PATIENT"
+    role: UserRole = UserRole.PATIENT
     birth_date: str | None = None
-    gender: str | None = None
+    gender: Gender | None = None
     phone: str | None = None
     terms_of_service: bool = False
     privacy_policy: bool = False

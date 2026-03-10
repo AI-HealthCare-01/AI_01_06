@@ -123,3 +123,55 @@ async def test_signup_rejects_duplicate_nickname(client: AsyncClient):
     body = resp.json()
     assert body["success"] is False
     assert "닉네임" in body["error"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("bad_role", ["patient", "guardian", "Patient", "Guardian", "ADMIN", "USER"])
+async def test_signup_rejects_invalid_role(client: AsyncClient, bad_role: str):
+    resp = await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": "Pass1234!", "role": bad_role})
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("bad_gender", ["male", "female", "Male", "OTHER"])
+async def test_signup_rejects_invalid_gender(client: AsyncClient, bad_gender: str):
+    resp = await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": "Pass1234!", "gender": bad_gender})
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("good_gender", ["M", "F", None])
+async def test_signup_accepts_valid_gender(client: AsyncClient, good_gender: str | None):
+    unique_email = f"gender_{good_gender or 'none'}@test.com"
+    unique_nick = f"닉_{good_gender or 'none'}"
+    resp = await client.post(
+        "/api/auth/signup",
+        json={**_BASE_SIGNUP, "email": unique_email, "nickname": unique_nick, "password": "Pass1234!", "gender": good_gender},
+    )
+    assert resp.json()["success"] is True
+    user = await User.filter(email=unique_email).first()
+    assert user.gender == good_gender
+
+
+@pytest.mark.asyncio
+async def test_login_success_returns_tokens(client: AsyncClient):
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": "Pass1234!"})
+    resp = await client.post("/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": "Pass1234!"})
+    body = resp.json()
+    assert body["success"] is True
+    assert "access_token" in body["data"]
+    assert "refresh_token" in body["data"]
+    assert body["data"]["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_login_fails_with_wrong_password(client: AsyncClient):
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "password": "Pass1234!"})
+    resp = await client.post("/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": "Wrong1234!"})
+    assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_login_fails_with_unknown_email(client: AsyncClient):
+    resp = await client.post("/api/auth/login", json={"email": "nobody@test.com", "password": "Pass1234!"})
+    assert resp.status_code == 401
