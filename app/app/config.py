@@ -20,3 +20,7 @@ NAVER_OCR_URL: str = os.environ.get("NAVER_OCR_URL", "")
 
 CHAT_CONTEXT_MESSAGE_COUNT: int = int(os.environ.get("CHAT_CONTEXT_MESSAGE_COUNT", "3"))
 CHAT_STREAMING_TIMEOUT_SECONDS: int = int(os.environ.get("CHAT_STREAMING_TIMEOUT_SECONDS", "60"))
+
+KAKAO_CLIENT_ID: str = os.environ.get("KAKAO_CLIENT_ID", "")
+KAKAO_CLIENT_SECRET: str = os.environ.get("KAKAO_CLIENT_SECRET", "")
+KAKAO_REDIRECT_URI: str = os.environ.get("KAKAO_REDIRECT_URI", "http://localhost:3000/auth/kakao/callback")

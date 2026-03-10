@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 export default function LoginPage() {
@@ -13,6 +14,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+
+  const handleKakaoLogin = async () => {
+    const res = await api.getKakaoUrl();
+    if (res.success && res.data) {
+      window.location.href = res.data.url;
+    } else {
+      setError("카카오 로그인을 시작할 수 없습니다.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +70,21 @@ export default function LoginPage() {
             className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "로그인 중..." : "로그인"}
+          </button>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-2 text-gray-400">또는</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleKakaoLogin}
+            className="w-full flex items-center justify-center gap-2 bg-[#FEE500] text-[#191919] py-2 rounded-lg hover:bg-[#F6DC00] font-medium"
+          >
+            카카오로 시작하기
           </button>
           <p className="text-center text-sm text-gray-500">
             계정이 없으신가요?{" "}
