@@ -1,18 +1,15 @@
 """핵심 E2E 플로우 테스트:
-1. 회원가입 + 로그인
-2. 처방전 업로드 (OCR 자동 실행)
-3. OCR 결과 조회
-4. OCR 결과 수정/확정
-5. 복약 가이드 생성
-6. 복약 가이드 조회
+처방전 업로드 → OCR → 수정 → 가이드 생성 → 가이드 조회
+(signup/login 단독 검증은 test_auth.py 참고)
 """
 
 import importlib
 import io
 
-import app.api.prescriptions as prescriptions_api
 import pytest
 from httpx import AsyncClient
+
+import app.api.prescriptions as prescriptions_api
 
 
 def test_upload_dir_from_env(monkeypatch):
@@ -32,48 +29,6 @@ async def test_health_check(client: AsyncClient):
     body = resp.json()
     assert body["success"] is True
     assert body["data"]["status"] == "ok"
-
-
-@pytest.mark.asyncio
-async def test_signup_returns_user_info(client: AsyncClient):
-    resp = await client.post(
-        "/api/auth/signup",
-        json={
-            "email": "user@test.com",
-            "password": "Pass1234!",
-            "nickname": "닉네임",
-            "name": "테스트",
-            "role": "patient",
-        },
-    )
-    body = resp.json()
-    assert body["success"] is True
-    assert body["data"]["email"] == "user@test.com"
-
-
-@pytest.mark.asyncio
-async def test_login_returns_tokens(client: AsyncClient):
-    await client.post(
-        "/api/auth/signup",
-        json={
-            "email": "user@test.com",
-            "password": "Pass1234!",
-            "nickname": "닉네임",
-            "name": "테스트",
-            "role": "patient",
-        },
-    )
-    resp = await client.post(
-        "/api/auth/login",
-        json={
-            "email": "user@test.com",
-            "password": "Pass1234!",
-        },
-    )
-    body = resp.json()
-    assert body["success"] is True
-    assert "access_token" in body["data"]
-    assert "refresh_token" in body["data"]
 
 
 @pytest.mark.asyncio
@@ -125,11 +80,9 @@ async def test_update_ocr_result(auth_client: AsyncClient):
             ],
         },
     )
-    body = resp.json()
-    assert body["success"] is True
+    assert resp.json()["success"] is True
 
-    ocr_resp = await auth_client.get(f"/api/prescriptions/{pid}/ocr")
-    ocr_body = ocr_resp.json()
+    ocr_body = (await auth_client.get(f"/api/prescriptions/{pid}/ocr")).json()
     assert ocr_body["data"]["hospital_name"] == "수정병원"
     assert len(ocr_body["data"]["medications"]) == 1
 

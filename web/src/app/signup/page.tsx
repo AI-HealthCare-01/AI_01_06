@@ -34,14 +34,32 @@ export default function SignupPage() {
     }
     setLoading(true);
     setError("");
-    const res = await api.signup({ ...form, role });
+    const roleValue = role === "patient" ? "PATIENT" : "GUARDIAN";
+    const res = await api.signup({
+      email: form.email,
+      nickname: form.nickname,
+      password: form.password,
+      name: form.name,
+      birth_date: form.birth_date || null,
+      gender: form.gender || null,
+      phone: form.phone || null,
+      role: roleValue,
+      terms_of_service: agreements.terms,
+      privacy_policy: agreements.privacy,
+      marketing_consent: agreements.marketing,
+    });
     if (!res.success) {
       setError(res.error || "회원가입에 실패했습니다.");
       setLoading(false);
       return;
     }
-    await login(form.email, form.password);
-    router.push("/onboarding");
+    const loginError = await login(form.email, form.password);
+    if (loginError) {
+      setError(loginError);
+      setLoading(false);
+      return;
+    }
+    router.push(roleValue === "PATIENT" ? "/onboarding" : "/dashboard");
   };
 
   if (step === "role") {
@@ -51,7 +69,7 @@ export default function SignupPage() {
         <div className="flex items-center justify-center py-20">
           <div className="bg-white p-8 rounded-lg shadow-sm w-full max-w-md space-y-6 text-center">
             <h1 className="text-2xl font-bold">회원가입</h1>
-            <p className="text-gray-600">계정 유형을 선택해주세요</p>
+            <p className="text-gray-800">계정 유형을 선택해주세요</p>
             <div className="space-y-4">
               <button
                 onClick={() => { setRole("patient"); setStep("form"); }}
@@ -78,7 +96,7 @@ export default function SignupPage() {
       <div className="flex items-center justify-center py-10">
         <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-sm w-full max-w-lg space-y-4">
           <h1 className="text-2xl font-bold">회원가입</h1>
-          <p className="text-sm text-gray-500">계정 유형 : {role === "patient" ? "일반" : "보호자"}</p>
+          <p className="text-sm text-gray-700">계정 유형 : {role === "patient" ? "일반" : "보호자"}</p>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -113,16 +131,14 @@ export default function SignupPage() {
               <input type="date" value={form.birth_date} onChange={(e) => updateForm("birth_date", e.target.value)} className="w-full border rounded px-3 py-2" />
             </div>
           </div>
-          {role === "caregiver" && (
-            <div>
-              <label className="block text-sm font-medium mb-1">성별</label>
-              <select value={form.gender} onChange={(e) => updateForm("gender", e.target.value)} className="w-full border rounded px-3 py-2">
-                <option value="">선택</option>
-                <option value="male">남성</option>
-                <option value="female">여성</option>
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium mb-1">성별</label>
+            <select value={form.gender} onChange={(e) => updateForm("gender", e.target.value)} className="w-full border rounded px-3 py-2">
+              <option value="">선택</option>
+              <option value="M">남성</option>
+              <option value="F">여성</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1">핸드폰 번호</label>
             <input type="tel" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} className="w-full border rounded px-3 py-2" />

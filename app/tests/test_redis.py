@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from app.core import redis as redis_module
 from app.core.redis import close_redis_pool, enqueue
 
