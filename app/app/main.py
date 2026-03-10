@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from tortoise.contrib.fastapi import RegisterTortoise
 
 from app.api import auth, chat, guides, medications, prescriptions, users
 from app.core.database import close_db, init_db
