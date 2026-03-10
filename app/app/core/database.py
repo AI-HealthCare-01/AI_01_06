@@ -1,5 +1,3 @@
-from tortoise import Tortoise
-
 from app import config
 
 TORTOISE_ORM = {
@@ -10,7 +8,12 @@ TORTOISE_ORM = {
                 "app.models.user",
                 "app.models.auth_provider",
                 "app.models.terms_consent",
+                "app.models.patient_profile",
+                "app.models.caregiver_patient",
                 "app.models.prescription",
+                "app.models.schedule",
+                "app.models.notification",
+                "app.models.audit",
                 "app.models.guide",
                 "app.models.chat",
             ],
@@ -18,12 +21,3 @@ TORTOISE_ORM = {
         },
     },
 }
-
-
-async def init_db() -> None:
-    await Tortoise.init(config=TORTOISE_ORM)
-    await Tortoise.generate_schemas(safe=True)
-
-
-async def close_db() -> None:
-    await Tortoise.close_connections()
