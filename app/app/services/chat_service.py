@@ -1,6 +1,8 @@
 import abc
 from collections.abc import AsyncIterator
 
+from openai import AsyncOpenAI
+
 from app import config
 
 SYSTEM_PROMPT = (
@@ -62,8 +64,6 @@ class OpenAIChatService(ChatServiceBase):
     """OpenAI 기반 채팅 서비스."""
 
     def __init__(self, api_key: str, model: str) -> None:
-        from openai import AsyncOpenAI
-
         self.client = AsyncOpenAI(api_key=api_key)
         self.model = model
 

@@ -26,7 +26,7 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
         prescription.prescription_date = ocr_result.get("prescription_date")
         prescription.diagnosis = ocr_result.get("diagnosis")
         prescription.ocr_raw = ocr_result
-        prescription.ocr_status = "completed"
+        prescription.ocr_status = "ocr_completed"
         await prescription.save()
 
         for med_data in ocr_result.get("medications", []):
