@@ -49,7 +49,9 @@ async def list_guides(user: User = Depends(get_current_user)):
                 "prescription_info": {
                     "hospital_name": prescription.hospital_name,
                     "doctor_name": prescription.doctor_name,
-                    "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
+                    "prescription_date": str(prescription.prescription_date)
+                    if prescription.prescription_date
+                    else None,
                     "diagnosis": prescription.diagnosis,
                 },
                 "created_at": str(guide.created_at),
