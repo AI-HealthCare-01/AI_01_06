@@ -38,7 +38,9 @@ async def test_guardian_signup_has_no_profile(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_get_me_returns_patient_profile(client: AsyncClient):
     await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "role": "PATIENT"})
-    login_resp = await client.post("/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]})
+    login_resp = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
     token = login_resp.json()["data"]["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"
 
@@ -52,7 +54,9 @@ async def test_get_me_returns_patient_profile(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_update_patient_profile(client: AsyncClient):
     await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "role": "PATIENT"})
-    login_resp = await client.post("/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]})
+    login_resp = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
     token = login_resp.json()["data"]["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"
 

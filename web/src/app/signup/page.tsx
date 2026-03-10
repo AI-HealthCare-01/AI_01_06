@@ -53,7 +53,12 @@ export default function SignupPage() {
       setLoading(false);
       return;
     }
-    await login(form.email, form.password);
+    const loginError = await login(form.email, form.password);
+    if (loginError) {
+      setError(loginError);
+      setLoading(false);
+      return;
+    }
     router.push(roleValue === "PATIENT" ? "/onboarding" : "/dashboard");
   };
 

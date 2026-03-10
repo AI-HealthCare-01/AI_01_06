@@ -6,9 +6,10 @@
 import importlib
 import io
 
-import app.api.prescriptions as prescriptions_api
 import pytest
 from httpx import AsyncClient
+
+import app.api.prescriptions as prescriptions_api
 
 
 def test_upload_dir_from_env(monkeypatch):
