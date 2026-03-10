@@ -39,9 +39,7 @@ async def test_kakao_url_returns_authorization_url(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_kakao_callback_logs_in_existing_kakao_user(client: AsyncClient):
     """이미 Kakao로 가입한 사용자 → JWT 즉시 발급."""
-    user = await User.create(
-        email="kakao@test.com", nickname="카카오유저", name="카카오", password_hash=None
-    )
+    user = await User.create(email="kakao@test.com", nickname="카카오유저", name="카카오", password_hash=None)
     await AuthProvider.create(user=user, provider="KAKAO", provider_user_id="9999")
     await TermsConsent.create(user=user, terms_of_service=True, privacy_policy=True)
 
@@ -63,9 +61,7 @@ async def test_kakao_callback_logs_in_existing_kakao_user(client: AsyncClient):
         patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis),
         patch("app.api.kakao_auth.get_kakao_service", return_value=mock_svc),
     ):
-        resp = await client.post(
-            "/api/auth/kakao/callback", json={"code": "code", "state": "state"}
-        )
+        resp = await client.post("/api/auth/kakao/callback", json={"code": "code", "state": "state"})
 
     body = resp.json()
     assert body["success"] is True
@@ -82,9 +78,7 @@ async def test_kakao_callback_logs_in_existing_kakao_user(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_kakao_callback_rejects_email_conflict_with_local_account(client: AsyncClient):
     """LOCAL 계정과 동일 이메일로 Kakao 로그인 시도 → 에러."""
-    existing = await User.create(
-        email="conflict@test.com", nickname="기존유저", name="기존", password_hash="hashed"
-    )
+    existing = await User.create(email="conflict@test.com", nickname="기존유저", name="기존", password_hash="hashed")
     await AuthProvider.create(user=existing, provider="LOCAL", provider_user_id="conflict@test.com")
 
     mock_redis = AsyncMock()
@@ -102,9 +96,7 @@ async def test_kakao_callback_rejects_email_conflict_with_local_account(client: 
         patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis),
         patch("app.api.kakao_auth.get_kakao_service", return_value=mock_svc),
     ):
-        resp = await client.post(
-            "/api/auth/kakao/callback", json={"code": "code", "state": "state"}
-        )
+        resp = await client.post("/api/auth/kakao/callback", json={"code": "code", "state": "state"})
 
     body = resp.json()
     assert body["success"] is False
@@ -130,9 +122,7 @@ async def test_kakao_callback_new_user_with_email_returns_registration_token(cli
         patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis),
         patch("app.api.kakao_auth.get_kakao_service", return_value=mock_svc),
     ):
-        resp = await client.post(
-            "/api/auth/kakao/callback", json={"code": "code", "state": "state"}
-        )
+        resp = await client.post("/api/auth/kakao/callback", json={"code": "code", "state": "state"})
 
     body = resp.json()
     assert body["success"] is True
@@ -161,9 +151,7 @@ async def test_kakao_callback_new_user_without_email_returns_empty_email(client:
         patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis),
         patch("app.api.kakao_auth.get_kakao_service", return_value=mock_svc),
     ):
-        resp = await client.post(
-            "/api/auth/kakao/callback", json={"code": "code", "state": "state"}
-        )
+        resp = await client.post("/api/auth/kakao/callback", json={"code": "code", "state": "state"})
 
     body = resp.json()
     assert body["success"] is True
@@ -265,8 +253,13 @@ async def test_kakao_register_rejects_without_required_terms(client: AsyncClient
     with patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis):
         resp = await client.post(
             "/api/auth/kakao/register",
-            json={**_REGISTER_BASE, "registration_token": "tok3", "email": "t@k.com",
-                  "nickname": "닉3", "terms_of_service": False},
+            json={
+                **_REGISTER_BASE,
+                "registration_token": "tok3",
+                "email": "t@k.com",
+                "nickname": "닉3",
+                "terms_of_service": False,
+            },
         )
 
     body = resp.json()
@@ -287,8 +280,7 @@ async def test_kakao_register_rejects_duplicate_email(client: AsyncClient):
     with patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis):
         resp = await client.post(
             "/api/auth/kakao/register",
-            json={**_REGISTER_BASE, "registration_token": "tok4",
-                  "email": "dup@test.com", "nickname": "새닉"},
+            json={**_REGISTER_BASE, "registration_token": "tok4", "email": "dup@test.com", "nickname": "새닉"},
         )
 
     body = resp.json()

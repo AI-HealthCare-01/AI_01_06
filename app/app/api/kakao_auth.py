@@ -18,7 +18,7 @@ from app.services.kakao_service import get_kakao_service
 
 router = APIRouter(prefix="/api/auth/kakao", tags=["kakao-auth"])
 
-_STATE_TTL = 300    # 5분
+_STATE_TTL = 300  # 5분
 _PENDING_TTL = 600  # 10분
 
 
@@ -65,11 +65,7 @@ async def kakao_callback(req: KakaoCallbackRequest):
     kakao_nickname = kakao_account.get("profile", {}).get("nickname", "")
 
     # 기존 Kakao 사용자 확인
-    provider = (
-        await AuthProvider.filter(provider="KAKAO", provider_user_id=kakao_id)
-        .select_related("user")
-        .first()
-    )
+    provider = await AuthProvider.filter(provider="KAKAO", provider_user_id=kakao_id).select_related("user").first()
     if provider:
         user = provider.user
         return success_response(
@@ -83,15 +79,11 @@ async def kakao_callback(req: KakaoCallbackRequest):
 
     # 이메일 충돌 확인 (Kakao가 이메일 제공한 경우만)
     if kakao_email and await User.filter(email=kakao_email).exists():
-        return error_response(
-            "이미 해당 이메일로 가입된 계정이 있습니다. 이메일 로그인을 이용하세요."
-        )
+        return error_response("이미 해당 이메일로 가입된 계정이 있습니다. 이메일 로그인을 이용하세요.")
 
     # 신규 사용자 — registration_token 발급
     registration_token = secrets.token_urlsafe(32)
-    pending_data = json.dumps(
-        {"kakao_id": kakao_id, "kakao_email": kakao_email, "kakao_nickname": kakao_nickname}
-    )
+    pending_data = json.dumps({"kakao_id": kakao_id, "kakao_email": kakao_email, "kakao_nickname": kakao_nickname})
     await redis.set(f"kakao:pending:{registration_token}", pending_data, ex=_PENDING_TTL)
 
     return success_response(
