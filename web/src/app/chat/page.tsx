@@ -208,14 +208,20 @@ export default function ChatPage() {
         <div className="bg-white border-x p-4 min-h-[400px] max-h-[500px] overflow-y-auto space-y-4">
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] rounded-lg p-3 text-sm whitespace-pre-wrap ${
+              <div className={`max-w-[70%] rounded-lg p-3 whitespace-pre-wrap ${
                 msg.role === "user"
-                  ? "bg-blue-600 text-white"
+                  ? "bg-blue-600 text-white text-sm"
                   : msg.status === "failed"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
+                    ? "bg-red-100 text-red-800 text-base"
+                    : "bg-gray-100 text-gray-800 text-base"
               }`}>
-                {msg.content || (msg.status === "streaming" ? "..." : "")}
+                {msg.content || (msg.status === "streaming" ? (
+                  <span className="inline-flex gap-1 py-1">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </span>
+                ) : "")}
               </div>
             </div>
           ))}
@@ -228,7 +234,7 @@ export default function ChatPage() {
             <p className="text-xs text-gray-400 mb-2">자주 묻는 질문</p>
             <div className="grid grid-cols-2 gap-2">
               {quickActions.map((q) => (
-                <button key={q} onClick={() => sendMessage(q)} className="text-sm border rounded-lg px-3 py-2 text-left hover:bg-gray-50">
+                <button key={q} onClick={() => sendMessage(q)} className="text-sm border rounded-lg px-3 py-3 text-left hover:bg-gray-50">
                   {q}
                 </button>
               ))}
@@ -244,13 +250,13 @@ export default function ChatPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
               placeholder="메시지를 입력하세요..."
-              className="flex-1 border rounded-lg px-4 py-2"
+              className="flex-1 border rounded-lg px-4 py-3 text-base"
               disabled={isStreaming}
             />
             <button
               onClick={() => sendMessage(input)}
               disabled={isStreaming}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
               전송
             </button>
@@ -297,13 +303,22 @@ export default function ChatPage() {
                     <span className="text-sm font-medium">아쉬웠어요</span>
                   </button>
                 </div>
-                <button
-                  onClick={handleSkipFeedback}
-                  disabled={feedbackSubmitting}
-                  className="w-full text-sm text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                >
-                  건너뛰기
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={handleSkipFeedback}
+                    disabled={feedbackSubmitting}
+                    className="w-full text-sm text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                  >
+                    피드백 없이 종료
+                  </button>
+                  <button
+                    onClick={() => { setShowFeedbackModal(false); setFeedbackSubmitting(false); }}
+                    disabled={feedbackSubmitting}
+                    className="w-full text-sm text-blue-500 hover:text-blue-700 disabled:opacity-50"
+                  >
+                    취소
+                  </button>
+                </div>
               </>
             ) : (
               <>
