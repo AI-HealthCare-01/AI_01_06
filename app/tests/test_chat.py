@@ -4,9 +4,10 @@ import io
 import json
 
 import pytest
+from httpx import AsyncClient
+
 from app.api.chat import _build_context
 from app.models.chat import ChatMessage, ChatThread
-from httpx import AsyncClient
 
 from app.api.chat import _build_context
 from app.models.chat import ChatMessage, ChatThread
