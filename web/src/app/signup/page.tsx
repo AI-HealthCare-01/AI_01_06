@@ -36,7 +36,13 @@ export default function SignupPage() {
     setError("");
     const roleValue = role === "patient" ? "PATIENT" : "GUARDIAN";
     const res = await api.signup({
-      ...form,
+      email: form.email,
+      nickname: form.nickname,
+      password: form.password,
+      name: form.name,
+      birth_date: form.birth_date || null,
+      gender: form.gender || null,
+      phone: form.phone || null,
       role: roleValue,
       terms_of_service: agreements.terms,
       privacy_policy: agreements.privacy,
@@ -48,7 +54,7 @@ export default function SignupPage() {
       return;
     }
     await login(form.email, form.password);
-    router.push("/onboarding");
+    router.push(roleValue === "PATIENT" ? "/onboarding" : "/dashboard");
   };
 
   if (step === "role") {
@@ -120,16 +126,14 @@ export default function SignupPage() {
               <input type="date" value={form.birth_date} onChange={(e) => updateForm("birth_date", e.target.value)} className="w-full border rounded px-3 py-2" />
             </div>
           </div>
-          {role === "caregiver" && (
-            <div>
-              <label className="block text-sm font-medium mb-1">성별</label>
-              <select value={form.gender} onChange={(e) => updateForm("gender", e.target.value)} className="w-full border rounded px-3 py-2">
-                <option value="">선택</option>
-                <option value="male">남성</option>
-                <option value="female">여성</option>
-              </select>
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium mb-1">성별</label>
+            <select value={form.gender} onChange={(e) => updateForm("gender", e.target.value)} className="w-full border rounded px-3 py-2">
+              <option value="">선택</option>
+              <option value="M">남성</option>
+              <option value="F">여성</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium mb-1">핸드폰 번호</label>
             <input type="tel" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} className="w-full border rounded px-3 py-2" />
