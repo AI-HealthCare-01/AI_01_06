@@ -36,3 +36,6 @@ async def guide_task(ctx: dict, guide_id: int, user_id: int) -> None:
     guide.content = content
     guide.status = "completed"
     await guide.save()
+
+    prescription.ocr_status = "guide_completed"
+    await prescription.save()

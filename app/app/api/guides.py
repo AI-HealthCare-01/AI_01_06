@@ -35,6 +35,31 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
     )
 
 
+@router.get("")
+async def list_guides(user: User = Depends(get_current_user)):
+    guides = await Guide.filter(user=user, status="completed").order_by("-created_at")
+    result = []
+    for guide in guides:
+        prescription = await Prescription.get(id=guide.prescription_id)
+        result.append(
+            {
+                "id": guide.id,
+                "prescription_id": prescription.id,
+                "status": guide.status,
+                "prescription_info": {
+                    "hospital_name": prescription.hospital_name,
+                    "doctor_name": prescription.doctor_name,
+                    "prescription_date": str(prescription.prescription_date)
+                    if prescription.prescription_date
+                    else None,
+                    "diagnosis": prescription.diagnosis,
+                },
+                "created_at": str(guide.created_at),
+            }
+        )
+    return success_response(result)
+
+
 @router.get("/{guide_id}")
 async def get_guide(guide_id: int, user: User = Depends(get_current_user)):
     guide = await Guide.get_or_none(id=guide_id, user=user)
