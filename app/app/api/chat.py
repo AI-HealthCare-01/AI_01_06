@@ -145,7 +145,7 @@ async def _build_retrieved_context(
         return []
 
 
-async def _build_context(thread: ChatThread) -> list[dict]:
+async def _build_context(thread: ChatThread) -> list[dict]: # noqa: C901
     """LLM에 전달할 메시지 컨텍스트를 구성합니다."""
     system_content = SYSTEM_PROMPT
     if config.RAG_ENABLED:
