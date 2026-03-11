@@ -6,7 +6,7 @@ import pytest
 from tortoise import Tortoise
 
 from app.api.chat import _build_context
-from app.models.chat import ChatMessage, ChatThread
+from app.models.chat import ChatThread
 from app.models.drug_document import DrugDocument
 from app.services.retrieval_service import (
     KeywordRetrievalService,

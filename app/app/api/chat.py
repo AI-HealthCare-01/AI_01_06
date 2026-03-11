@@ -156,7 +156,6 @@ async def _build_context(thread: ChatThread) -> list[dict]: # noqa: C901
     medications = []
     if thread.prescription_id:
         prescription = await Prescription.get(id=thread.prescription_id)
-        user = await User.get(id=thread.user_id)
         medications = await Medication.filter(prescription=prescription)
 
         summary_parts = []
