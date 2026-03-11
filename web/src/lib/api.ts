@@ -118,6 +118,41 @@ export const api = {
       { method: "POST", body: JSON.stringify(data) }
     ),
 
+  // Google Auth
+  getGoogleUrl: () =>
+    request<{ url: string; state: string }>("/api/auth/google/url"),
+
+  googleCallback: (code: string, state: string) =>
+    request<{
+      status: "login" | "new_user";
+      access_token?: string;
+      refresh_token?: string;
+      token_type?: string;
+      registration_token?: string;
+      google_profile?: { email: string; nickname: string; name: string };
+    }>("/api/auth/google/callback", {
+      method: "POST",
+      body: JSON.stringify({ code, state }),
+    }),
+
+  googleRegister: (data: {
+    registration_token: string;
+    email: string;
+    name: string;
+    nickname: string;
+    role: string;
+    birth_date?: string | null;
+    gender?: string | null;
+    phone?: string | null;
+    terms_of_service: boolean;
+    privacy_policy: boolean;
+    marketing_consent: boolean;
+  }) =>
+    request<{ access_token: string; refresh_token: string; token_type: string }>(
+      "/api/auth/google/register",
+      { method: "POST", body: JSON.stringify(data) }
+    ),
+
   // User
   getMe: () => request("/api/users/me"),
   updateMe: (data: Record<string, unknown>) =>

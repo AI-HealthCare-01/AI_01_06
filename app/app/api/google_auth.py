@@ -18,7 +18,7 @@ from app.services.google_service import get_google_service
 
 router = APIRouter(prefix="/api/auth/google", tags=["google-auth"])
 
-_STATE_TTL = 300    # 5분
+_STATE_TTL = 300  # 5분
 _PENDING_TTL = 600  # 10분
 
 
@@ -60,22 +60,22 @@ async def google_callback(req: GoogleCallbackRequest):
     except httpx.RequestError:
         return error_response("Google 서버 연결에 실패했습니다.")
 
-    google_id = google_user["sub"]            # Google 안정적 ID (이메일 변경에도 불변)
+    google_id = google_user["sub"]  # Google 안정적 ID (이메일 변경에도 불변)
     google_email = google_user.get("email", "")
     google_name = google_user.get("name", "")  # 표시 이름 → 닉네임 + 이름 자동 채우기
 
     # 기존 Google 사용자 확인
-    provider = await AuthProvider.filter(
-        provider="GOOGLE", provider_user_id=google_id
-    ).select_related("user").first()
+    provider = await AuthProvider.filter(provider="GOOGLE", provider_user_id=google_id).select_related("user").first()
     if provider:
         user = provider.user
-        return success_response({
-            "status": "login",
-            "access_token": create_access_token(user.id, user.role),
-            "refresh_token": create_refresh_token(user.id),
-            "token_type": "bearer",
-        })
+        return success_response(
+            {
+                "status": "login",
+                "access_token": create_access_token(user.id, user.role),
+                "refresh_token": create_refresh_token(user.id),
+                "token_type": "bearer",
+            }
+        )
 
     # 이메일 충돌 확인 (다른 provider로 이미 가입된 경우)
     if google_email and await User.filter(email=google_email).exists():
@@ -83,23 +83,27 @@ async def google_callback(req: GoogleCallbackRequest):
 
     # 신규 사용자 — registration_token 발급
     registration_token = secrets.token_urlsafe(32)
-    pending_data = json.dumps({
-        "google_id": google_id,
-        "google_email": google_email,
-        "google_name": google_name,
-    })
+    pending_data = json.dumps(
+        {
+            "google_id": google_id,
+            "google_email": google_email,
+            "google_name": google_name,
+        }
+    )
     await redis.set(f"google:pending:{registration_token}", pending_data, ex=_PENDING_TTL)
 
-    return success_response({
-        "status": "new_user",
-        "registration_token": registration_token,
-        # email, nickname, name 모두 전달 → 회원가입 폼 자동 채우기
-        "google_profile": {
-            "email": google_email,
-            "nickname": google_name,
-            "name": google_name,
-        },
-    })
+    return success_response(
+        {
+            "status": "new_user",
+            "registration_token": registration_token,
+            # email, nickname, name 모두 전달 → 회원가입 폼 자동 채우기
+            "google_profile": {
+                "email": google_email,
+                "nickname": google_name,
+                "name": google_name,
+            },
+        }
+    )
 
 
 @router.post("/register")
@@ -150,8 +154,10 @@ async def google_register(req: GoogleRegisterRequest):
     if user.role == "PATIENT":
         await PatientProfile.create(user=user)
 
-    return success_response({
-        "access_token": create_access_token(user.id, user.role),
-        "refresh_token": create_refresh_token(user.id),
-        "token_type": "bearer",
-    })
+    return success_response(
+        {
+            "access_token": create_access_token(user.id, user.role),
+            "refresh_token": create_refresh_token(user.id),
+            "token_type": "bearer",
+        }
+    )
