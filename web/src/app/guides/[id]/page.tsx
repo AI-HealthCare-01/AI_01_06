@@ -179,7 +179,7 @@ export default function GuideDetailPage() {
         <Link href="/guides" className="flex-1 border py-3 rounded-lg text-center">
           AI 가이드 기록 저장
         </Link>
-        <Link href="/chat" className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-center hover:bg-blue-700">
+        <Link href={`/chat?prescriptionId=${guide.prescription_id}`} className="flex-1 bg-blue-600 text-white py-3 rounded-lg text-center hover:bg-blue-700">
           AI에게 질문하기
         </Link>
       </div>

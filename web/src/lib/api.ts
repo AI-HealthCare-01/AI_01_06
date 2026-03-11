@@ -242,7 +242,14 @@ export async function streamChat(
   });
 
   if (!res.ok || !res.body) {
-    onError("서버 연결에 실패했습니다.");
+    let errorMsg = `서버 연결에 실패했습니다. (${res.status})`;
+    try {
+      const body = await res.json();
+      errorMsg = body.detail || body.error || errorMsg;
+    } catch {
+      // non-JSON response
+    }
+    onError(errorMsg);
     return;
   }
 
