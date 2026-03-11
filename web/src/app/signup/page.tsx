@@ -6,13 +6,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import { api, setRefreshToken, setToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { useKakaoRegistration } from "@/lib/kakao-context";
-
-interface KakaoData {
-  token: string;
-  email: string;
-  nickname: string;
-}
+import { useSocialRegistration, type SocialRegistrationData } from "@/lib/social-registration-context";
 
 export default function SignupPage() {
   const [step, setStep] = useState<"role" | "form">("role");
@@ -22,22 +16,33 @@ export default function SignupPage() {
     name: "", birth_date: "", gender: "", phone: "",
   });
   const [agreements, setAgreements] = useState({ terms: false, privacy: false, marketing: false });
-  const [kakaoData, setKakaoData] = useState<KakaoData | null>(null);
+  const [socialData, setSocialData] = useState<SocialRegistrationData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, refreshUser } = useAuth();
-  const { kakaoRegistration, setKakaoRegistration } = useKakaoRegistration();
+  const { socialRegistration, setSocialRegistration } = useSocialRegistration();
 
-  // Kakao 모드 감지: Context(인메모리)에서 등록 데이터 읽기
+  // source=kakao 또는 source=google 인 경우 소셜 플로우 감지
+  const source = searchParams.get("source");
+  const isSocialFlow = source === "kakao" || source === "google";
+
+  // 소셜 모드 감지: Context(인메모리)에서 등록 데이터 읽기
+  // !socialData 가드: 이미 읽은 경우 재실행 방지
   useEffect(() => {
-    if (searchParams.get("source") === "kakao" && kakaoRegistration) {
-      setKakaoData(kakaoRegistration);
-      setKakaoRegistration(null);
-      setForm((f) => ({ ...f, email: kakaoRegistration.email, nickname: kakaoRegistration.nickname }));
+    if (isSocialFlow && socialRegistration && !socialData) {
+      setSocialData(socialRegistration);
+      setSocialRegistration(null);
+      setForm((f) => ({
+        ...f,
+        email: socialRegistration.email,
+        nickname: socialRegistration.nickname,
+        // Google은 name 제공 → 자동 채우기, Kakao는 undefined → 유지
+        ...(socialRegistration.name ? { name: socialRegistration.name } : {}),
+      }));
     }
-  }, [searchParams, kakaoRegistration, setKakaoRegistration]);
+  }, [isSocialFlow, socialRegistration, setSocialRegistration, socialData]);
 
   const updateForm = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -53,7 +58,7 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!kakaoData && form.password !== form.passwordConfirm) {
+    if (!socialData && form.password !== form.passwordConfirm) {
       setError("비밀번호가 일치하지 않습니다.");
       return;
     }
@@ -66,10 +71,10 @@ export default function SignupPage() {
     setError("");
     const roleValue = role === "patient" ? "PATIENT" : "GUARDIAN";
 
-    if (kakaoData) {
+    if (socialData?.provider === "KAKAO") {
       // Kakao 회원가입 플로우
       const res = await api.kakaoRegister({
-        registration_token: kakaoData.token,
+        registration_token: socialData.token,
         email: form.email,
         name: form.name,
         nickname: form.nickname,
@@ -143,21 +148,26 @@ export default function SignupPage() {
                 보호자
               </button>
             </div>
-            <div className="relative mt-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-400">소셜 계정으로 간편 가입</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleKakaoSignup}
-              className="w-full flex items-center justify-center gap-2 bg-[#FEE500] text-[#191919] py-4 rounded-lg hover:bg-[#F6DC00] font-medium"
-            >
-              카카오로 시작하기
-            </button>
+            {/* 소셜 버튼: OAuth 인증 후 재진입 시 숨김 (#6 요구사항) */}
+            {!isSocialFlow && (
+              <>
+                <div className="relative mt-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="bg-white px-2 text-gray-400">소셜 계정으로 간편 가입</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleKakaoSignup}
+                  className="w-full flex items-center justify-center gap-2 bg-[#FEE500] text-[#191919] py-4 rounded-lg hover:bg-[#F6DC00] font-medium"
+                >
+                  카카오로 시작하기
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -172,7 +182,12 @@ export default function SignupPage() {
           <h1 className="text-2xl font-bold">회원가입</h1>
           <p className="text-sm text-gray-700">
             계정 유형 : {role === "patient" ? "일반" : "보호자"}
-            {kakaoData && <span className="ml-2 text-yellow-600 font-medium">· 카카오 연동</span>}
+            {socialData?.provider === "KAKAO" && (
+              <span className="ml-2 text-yellow-600 font-medium">· 카카오 연동</span>
+            )}
+            {socialData?.provider === "GOOGLE" && (
+              <span className="ml-2 text-blue-600 font-medium">· Google 연동</span>
+            )}
           </p>
           {error && <p className="text-red-500 text-sm">{error}</p>}
 
@@ -180,14 +195,17 @@ export default function SignupPage() {
             <div>
               <label className="block text-sm font-medium mb-1">
                 이메일
-                {kakaoData && kakaoData.email && (
+                {socialData?.provider === "KAKAO" && socialData.email && (
                   <span className="text-xs text-gray-400 ml-1">(카카오 계정)</span>
+                )}
+                {socialData?.provider === "GOOGLE" && (
+                  <span className="text-xs text-gray-400 ml-1">(Google 계정)</span>
                 )}
               </label>
               <input
                 type="email" required value={form.email}
                 onChange={(e) => updateForm("email", e.target.value)}
-                placeholder={kakaoData && !kakaoData.email ? "이메일을 입력해주세요" : ""}
+                placeholder={socialData?.provider === "KAKAO" && !socialData.email ? "이메일을 입력해주세요" : ""}
                 className="w-full border rounded px-3 py-2"
               />
             </div>
@@ -198,14 +216,14 @@ export default function SignupPage() {
                 onChange={(e) => updateForm("nickname", e.target.value)}
                 className="w-full border rounded px-3 py-2"
               />
-              {kakaoData && (
-                <p className="text-xs text-gray-400 mt-1">카카오 닉네임 자동 입력, 변경 가능</p>
+              {socialData && (
+                <p className="text-xs text-gray-400 mt-1">자동 입력됨, 변경 가능</p>
               )}
             </div>
           </div>
 
           {/* 비밀번호: LOCAL 전용 */}
-          {!kakaoData && (
+          {!socialData && (
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">비밀번호</label>
@@ -237,6 +255,9 @@ export default function SignupPage() {
                 onChange={(e) => updateForm("name", e.target.value)}
                 className="w-full border rounded px-3 py-2"
               />
+              {socialData?.provider === "GOOGLE" && socialData.name && (
+                <p className="text-xs text-gray-400 mt-1">Google 이름 자동 입력, 변경 가능</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">생년월일</label>
@@ -294,7 +315,7 @@ export default function SignupPage() {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => { setStep("role"); setKakaoData(null); }}
+              onClick={() => { setStep("role"); setSocialData(null); }}
               className="flex-1 border py-2 rounded-lg"
             >
               이전
@@ -306,7 +327,7 @@ export default function SignupPage() {
               {loading ? "가입 중..." : "회원가입"}
             </button>
           </div>
-          {!kakaoData && (
+          {!socialData && (
             <p className="text-center text-sm text-gray-500">
               이미 계정이 있으신가요?{" "}
               <Link href="/login" className="text-blue-600 hover:underline">로그인</Link>
