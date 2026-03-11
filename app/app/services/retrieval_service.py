@@ -131,9 +131,7 @@ def format_retrieved_docs(docs: list[dict]) -> str:
 
 class RetrievalServiceBase(abc.ABC):
     @abc.abstractmethod
-    async def retrieve(
-        self, drug_names: list[str], query: str
-    ) -> list[dict]:
+    async def retrieve(self, drug_names: list[str], query: str) -> list[dict]:
         """약품명 목록과 사용자 질문을 받아 관련 문서를 반환한다.
 
         Returns:
@@ -145,9 +143,7 @@ class RetrievalServiceBase(abc.ABC):
 class KeywordRetrievalService(RetrievalServiceBase):
     """v1: 약품명 정규화 + 부분 매칭 + 섹션 키워드 매칭"""
 
-    async def retrieve(
-        self, drug_names: list[str], query: str
-    ) -> list[dict]:
+    async def retrieve(self, drug_names: list[str], query: str) -> list[dict]:
         sections = detect_sections(query)
 
         # 1) 약품명 정규화 (브랜드→성분, 접미사 제거)
@@ -156,9 +152,7 @@ class KeywordRetrievalService(RetrievalServiceBase):
         print(f"[RAG-DEBUG] normalized={normalized}, sections={sections}")
 
         # 2) 정확 매칭 시도
-        docs = await DrugDocument.filter(
-            drug_name__in=normalized, section__in=sections
-        )
+        docs = await DrugDocument.filter(drug_name__in=normalized, section__in=sections)
         print(f"[RAG-DEBUG] exact_match={len(docs)} docs")
 
         # 3) 정확 매칭 0건이면 부분 매칭(icontains) 시도
@@ -172,18 +166,13 @@ class KeywordRetrievalService(RetrievalServiceBase):
                 print(f"[RAG-DEBUG] partial_match={len(docs)} docs")
                 logger.info("[RAG] partial match found %d docs", len(docs))
 
-        return [
-            {"drug_name": d.drug_name, "section": d.section, "content": d.content}
-            for d in docs
-        ]
+        return [{"drug_name": d.drug_name, "section": d.section, "content": d.content} for d in docs]
 
 
 class DummyRetrievalService(RetrievalServiceBase):
     """테스트용 더미 검색 서비스. 빈 결과를 반환한다."""
 
-    async def retrieve(
-        self, drug_names: list[str], query: str
-    ) -> list[dict]:
+    async def retrieve(self, drug_names: list[str], query: str) -> list[dict]:
         return []
 
 

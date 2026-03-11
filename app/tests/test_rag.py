@@ -271,9 +271,7 @@ async def test_build_context_rag_enabled_with_docs(auth_client, sample_docs):
     )
 
     # 처방전 연결 thread 생성
-    create_resp = await auth_client.post(
-        "/api/chat/threads", json={"prescription_id": pid}
-    )
+    create_resp = await auth_client.post("/api/chat/threads", json={"prescription_id": pid})
     thread_id = create_resp.json()["data"]["id"]
 
     # 메시지 전송

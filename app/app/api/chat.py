@@ -100,9 +100,7 @@ RAG_INSTRUCTION = (
 )
 
 
-async def _build_retrieved_context(
-    thread: ChatThread, medications: list, user_query: str
-) -> list[dict]:
+async def _build_retrieved_context(thread: ChatThread, medications: list, user_query: str) -> list[dict]:
     """처방전 약품 기반 RAG 검색 결과를 system message로 반환한다.
 
     retrieval 실패 시 빈 리스트를 반환하여 기존 채팅 흐름을 유지한다.
@@ -145,7 +143,7 @@ async def _build_retrieved_context(
         return []
 
 
-async def _build_context(thread: ChatThread) -> list[dict]: # noqa: C901
+async def _build_context(thread: ChatThread) -> list[dict]:  # noqa: C901
     """LLM에 전달할 메시지 컨텍스트를 구성합니다."""
     system_content = SYSTEM_PROMPT
     if config.RAG_ENABLED:
@@ -192,8 +190,7 @@ async def _build_context(thread: ChatThread) -> list[dict]: # noqa: C901
     # RAG: 처방전이 연결된 경우에만 검색 수행
     med_count = len(medications)
     recent_count = len(recent_list)
-    logger.info("[RAG] enabled=%s, medications=%d, recent=%d",
-                config.RAG_ENABLED, med_count, recent_count)
+    logger.info("[RAG] enabled=%s, medications=%d, recent=%d", config.RAG_ENABLED, med_count, recent_count)
     print(f"[RAG-DEBUG] enabled={config.RAG_ENABLED}, medications={med_count}, recent={recent_count}")
 
     if config.RAG_ENABLED and medications and recent_list:
