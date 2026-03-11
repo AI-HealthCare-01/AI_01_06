@@ -9,9 +9,6 @@ from httpx import AsyncClient
 from app.api.chat import _build_context
 from app.models.chat import ChatMessage, ChatThread
 
-from app.api.chat import _build_context
-from app.models.chat import ChatMessage, ChatThread
-
 
 @pytest.mark.asyncio
 async def test_create_thread(auth_client: AsyncClient):

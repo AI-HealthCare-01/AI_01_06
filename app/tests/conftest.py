@@ -1,6 +1,9 @@
 from unittest.mock import patch
 
 import pytest
+from httpx import ASGITransport, AsyncClient
+from tortoise import Tortoise
+
 from app.main import app
 from app.models.guide import Guide
 from app.models.patient_profile import PatientProfile
@@ -8,8 +11,6 @@ from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.services.guide_service import get_guide_service
 from app.services.ocr_service import get_ocr_service
-from httpx import ASGITransport, AsyncClient
-from tortoise import Tortoise
 
 TEST_DB_URL = "sqlite://:memory:"
 
