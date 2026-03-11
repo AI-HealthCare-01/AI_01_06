@@ -43,9 +43,7 @@ async def test_google_callback_rejects_invalid_state(client: AsyncClient):
     mock_redis.get = AsyncMock(return_value=None)
 
     with patch("app.api.google_auth.get_state_redis", return_value=mock_redis):
-        resp = await client.post(
-            "/api/auth/google/callback", json={"code": "code", "state": "tampered"}
-        )
+        resp = await client.post("/api/auth/google/callback", json={"code": "code", "state": "tampered"})
 
     body = resp.json()
     assert body["success"] is False
@@ -59,9 +57,7 @@ async def test_google_callback_rejects_invalid_state(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_google_callback_logs_in_existing_google_user(client: AsyncClient):
     """이미 Google로 가입한 사용자 → JWT 즉시 발급."""
-    user = await User.create(
-        email="google@test.com", nickname="구글유저", name="구글유저", password_hash=None
-    )
+    user = await User.create(email="google@test.com", nickname="구글유저", name="구글유저", password_hash=None)
     await AuthProvider.create(user=user, provider="GOOGLE", provider_user_id="google-sub-9999")
     await TermsConsent.create(user=user, terms_of_service=True, privacy_policy=True)
 
@@ -81,9 +77,7 @@ async def test_google_callback_logs_in_existing_google_user(client: AsyncClient)
         patch("app.api.google_auth.get_state_redis", return_value=mock_redis),
         patch("app.api.google_auth.get_google_service", return_value=mock_svc),
     ):
-        resp = await client.post(
-            "/api/auth/google/callback", json={"code": "code", "state": "state"}
-        )
+        resp = await client.post("/api/auth/google/callback", json={"code": "code", "state": "state"})
 
     body = resp.json()
     assert body["success"] is True
@@ -100,12 +94,8 @@ async def test_google_callback_logs_in_existing_google_user(client: AsyncClient)
 @pytest.mark.asyncio
 async def test_google_callback_rejects_email_conflict(client: AsyncClient):
     """다른 provider로 가입된 이메일로 Google 로그인 시도 → 에러."""
-    existing = await User.create(
-        email="conflict@test.com", nickname="기존유저", name="기존", password_hash="hashed"
-    )
-    await AuthProvider.create(
-        user=existing, provider="LOCAL", provider_user_id="conflict@test.com"
-    )
+    existing = await User.create(email="conflict@test.com", nickname="기존유저", name="기존", password_hash="hashed")
+    await AuthProvider.create(user=existing, provider="LOCAL", provider_user_id="conflict@test.com")
 
     mock_redis = AsyncMock()
     mock_redis.get = AsyncMock(return_value="1")
@@ -123,9 +113,7 @@ async def test_google_callback_rejects_email_conflict(client: AsyncClient):
         patch("app.api.google_auth.get_state_redis", return_value=mock_redis),
         patch("app.api.google_auth.get_google_service", return_value=mock_svc),
     ):
-        resp = await client.post(
-            "/api/auth/google/callback", json={"code": "code", "state": "state"}
-        )
+        resp = await client.post("/api/auth/google/callback", json={"code": "code", "state": "state"})
 
     body = resp.json()
     assert body["success"] is False
@@ -154,9 +142,7 @@ async def test_google_callback_new_user_returns_registration_token_and_profile(
         patch("app.api.google_auth.get_state_redis", return_value=mock_redis),
         patch("app.api.google_auth.get_google_service", return_value=mock_svc),
     ):
-        resp = await client.post(
-            "/api/auth/google/callback", json={"code": "code", "state": "state"}
-        )
+        resp = await client.post("/api/auth/google/callback", json={"code": "code", "state": "state"})
 
     body = resp.json()
     assert body["success"] is True
@@ -184,11 +170,13 @@ _REGISTER_BASE = {
 
 
 def _make_pending(google_id: str = "google-sub-5555", email: str = "reg@gmail.com") -> str:
-    return json.dumps({
-        "google_id": google_id,
-        "google_email": email,
-        "google_name": "홍길동",
-    })
+    return json.dumps(
+        {
+            "google_id": google_id,
+            "google_email": email,
+            "google_name": "홍길동",
+        }
+    )
 
 
 @pytest.mark.asyncio
@@ -263,9 +251,7 @@ async def test_google_register_rejects_without_required_terms(client: AsyncClien
 @pytest.mark.asyncio
 async def test_google_register_rejects_duplicate_email(client: AsyncClient):
     """register 시점 이메일 중복 재확인 (race condition 방지)."""
-    await User.create(
-        email="dup@test.com", nickname="기존유저", name="기존", password_hash="pw"
-    )
+    await User.create(email="dup@test.com", nickname="기존유저", name="기존", password_hash="pw")
 
     mock_redis = AsyncMock()
     mock_redis.get = AsyncMock(return_value=_make_pending(google_id="google-sub-2222", email=""))
