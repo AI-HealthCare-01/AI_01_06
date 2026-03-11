@@ -110,17 +110,22 @@ async def _build_retrieved_context(
     try:
         drug_names = [m.name for m in medications]
         logger.info("[RAG] drug_names=%s, query=%s", drug_names, user_query[:50])
+        print(f"[RAG-DEBUG] drug_names={drug_names}")
         if not drug_names:
             return []
 
         retrieval_service = get_retrieval_service()
+        print(f"[RAG-DEBUG] service_type={type(retrieval_service).__name__}")
         docs = await retrieval_service.retrieve(drug_names, user_query)
         logger.info("[RAG] retrieved %d docs", len(docs))
+        print(f"[RAG-DEBUG] retrieved_docs={len(docs)}")
         if not docs:
+            print("[RAG-DEBUG] 0 docs retrieved — no matching DrugDocument found")
             return []
 
         ref_text = format_retrieved_docs(docs)
         logger.info("[RAG] context length=%d chars", len(ref_text))
+        print(f"[RAG-DEBUG] context_length={len(ref_text)} chars")
         if not ref_text:
             return []
 
@@ -136,6 +141,7 @@ async def _build_retrieved_context(
         ]
     except Exception:
         logger.exception("[RAG] retrieval failed")
+        print("[RAG-DEBUG] EXCEPTION in retrieval — see logger.exception above")
         return []
 
 
@@ -185,8 +191,12 @@ async def _build_context(thread: ChatThread) -> list[dict]:
     recent_list = list(reversed(recent))
 
     # RAG: 처방전이 연결된 경우에만 검색 수행
+    med_count = len(medications)
+    recent_count = len(recent_list)
     logger.info("[RAG] enabled=%s, medications=%d, recent=%d",
-                config.RAG_ENABLED, len(medications), len(recent_list))
+                config.RAG_ENABLED, med_count, recent_count)
+    print(f"[RAG-DEBUG] enabled={config.RAG_ENABLED}, medications={med_count}, recent={recent_count}")
+
     if config.RAG_ENABLED and medications and recent_list:
         # 가장 최근 user 메시지에서 질문 추출
         user_query = ""
@@ -195,9 +205,18 @@ async def _build_context(thread: ChatThread) -> list[dict]:
                 user_query = m.content
                 break
 
+        print(f"[RAG-DEBUG] user_query={user_query[:80]!r}")
         if user_query:
             retrieved = await _build_retrieved_context(thread, medications, user_query)
+            print(f"[RAG-DEBUG] retrieved_context_count={len(retrieved)}")
             messages.extend(retrieved)
+    else:
+        if not config.RAG_ENABLED:
+            print("[RAG-DEBUG] SKIPPED: RAG_ENABLED is False")
+        elif not medications:
+            print("[RAG-DEBUG] SKIPPED: no medications (prescription_id may be null)")
+        elif not recent_list:
+            print("[RAG-DEBUG] SKIPPED: no recent messages")
 
     for m in recent_list:
         messages.append({"role": m.role, "content": m.content})

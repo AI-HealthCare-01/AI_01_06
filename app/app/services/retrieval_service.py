@@ -153,11 +153,13 @@ class KeywordRetrievalService(RetrievalServiceBase):
         # 1) 약품명 정규화 (브랜드→성분, 접미사 제거)
         normalized = _normalize_drug_names(drug_names)
         logger.info("[RAG] normalized_names=%s (from %s)", normalized, drug_names)
+        print(f"[RAG-DEBUG] normalized={normalized}, sections={sections}")
 
         # 2) 정확 매칭 시도
         docs = await DrugDocument.filter(
             drug_name__in=normalized, section__in=sections
         )
+        print(f"[RAG-DEBUG] exact_match={len(docs)} docs")
 
         # 3) 정확 매칭 0건이면 부분 매칭(icontains) 시도
         if not docs:
@@ -167,6 +169,7 @@ class KeywordRetrievalService(RetrievalServiceBase):
                     q |= Q(drug_name__icontains=name)
             if q:
                 docs = await DrugDocument.filter(q, section__in=sections)
+                print(f"[RAG-DEBUG] partial_match={len(docs)} docs")
                 logger.info("[RAG] partial match found %d docs", len(docs))
 
         return [
