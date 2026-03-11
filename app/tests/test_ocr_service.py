@@ -148,9 +148,9 @@ async def test_call_clova_api_returns_text_list(tmp_path):
     mock_response.raise_for_status = MagicMock()
     mock_client = AsyncMock()
     mock_client.post = AsyncMock(return_value=mock_response)
-    with patch("app.services.ocr_service.httpx.AsyncClient") as MockClient:
-        MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-        MockClient.return_value.__aexit__ = AsyncMock(return_value=False)
+    with patch("app.services.ocr_service.httpx.AsyncClient") as mock_client_cls:
+        mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
         texts = await service._call_clova_api(str(image_file))
     assert "서울대학교병원" in texts
     assert "아스피린" in texts
@@ -165,9 +165,9 @@ async def test_call_clova_api_sends_correct_headers(tmp_path):
     mock_response.raise_for_status = MagicMock()
     mock_client = AsyncMock()
     mock_client.post = AsyncMock(return_value=mock_response)
-    with patch("app.services.ocr_service.httpx.AsyncClient") as MockClient:
-        MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-        MockClient.return_value.__aexit__ = AsyncMock(return_value=False)
+    with patch("app.services.ocr_service.httpx.AsyncClient") as mock_client_cls:
+        mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
         await service._call_clova_api(str(image_file))
     _, call_kwargs = mock_client.post.call_args
     assert call_kwargs["headers"]["X-OCR-SECRET"] == "my-secret"
@@ -182,9 +182,9 @@ async def test_extract_returns_structured_dict_with_medications(tmp_path):
     mock_response.raise_for_status = MagicMock()
     mock_client = AsyncMock()
     mock_client.post = AsyncMock(return_value=mock_response)
-    with patch("app.services.ocr_service.httpx.AsyncClient") as MockClient:
-        MockClient.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-        MockClient.return_value.__aexit__ = AsyncMock(return_value=False)
+    with patch("app.services.ocr_service.httpx.AsyncClient") as mock_client_cls:
+        mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
         result = await service.extract(str(image_file))
     assert result["hospital_name"] == "서울대학교병원"
     assert result["doctor_name"] == "김의사"
