@@ -12,8 +12,6 @@ _MED_TABLE_HEADER = "처방의약품의명칭"
 _NUM_MED_COLS = 5  # 처방의약품의명칭 | 1회투여량 | 1일투여횟수 | 총투여일수 | 용법
 
 
-
-
 class OcrServiceBase(abc.ABC):
     @abc.abstractmethod
     async def extract(self, image_path: str) -> dict: ...
@@ -166,9 +164,7 @@ class NaverOcrService(OcrServiceBase):
                 # 다음 블록부터 값 탐색 (라벨 건너뛰기)
                 for skip in range(1, 4):
                     val = _get_next_value(bi, skip)
-                    if val and not any(x in val.replace(" ", "") for x in [
-                        "면허", "번호", "종별", "기호"
-                    ]):
+                    if val and not any(x in val.replace(" ", "") for x in ["면허", "번호", "종별", "기호"]):
                         result["doctor_name"] = val
                         break
                 break
@@ -190,9 +186,7 @@ class NaverOcrService(OcrServiceBase):
                 bi = _find_block_index(pos)
                 for skip in range(1, 4):
                     val = _get_next_value(bi, skip)
-                    if val and not any(x in val.replace(" ", "") for x in [
-                        "처방의", "면허", "성명", "종별"
-                    ]):
+                    if val and not any(x in val.replace(" ", "") for x in ["처방의", "면허", "성명", "종별"]):
                         result["diagnosis"] = val
                         break
                 break
@@ -259,9 +253,12 @@ class NaverOcrService(OcrServiceBase):
                     next_after_dosage = med_blocks[i + 2] if i + 2 < len(med_blocks) else None
 
                     extra_skip = 0
-                    if (raw_dosage and raw_dosage.replace(" ", "").replace(".", "").isdigit()
-                            and next_after_dosage
-                            and next_after_dosage.strip().upper() in ("MG", "G", "ML", "T", "C", "TAB", "CAP")):
+                    if (
+                        raw_dosage
+                        and raw_dosage.replace(" ", "").replace(".", "").isdigit()
+                        and next_after_dosage
+                        and next_after_dosage.strip().upper() in ("MG", "G", "ML", "T", "C", "TAB", "CAP")
+                    ):
                         dosage = f"{raw_dosage} {next_after_dosage.strip()}"
                         extra_skip = 1
                     else:
@@ -271,13 +268,15 @@ class NaverOcrService(OcrServiceBase):
                     duration = med_blocks[i + 3 + extra_skip] if i + 3 + extra_skip < len(med_blocks) else None
 
                     if drug_name:
-                        result["medications"].append({
-                            "name": drug_name,
-                            "dosage": dosage,
-                            "frequency": f"1일 {frequency}회" if frequency and frequency.isdigit() else frequency,
-                            "duration": f"{duration}일" if duration and duration.isdigit() else duration,
-                            "instructions": None,
-                        })
+                        result["medications"].append(
+                            {
+                                "name": drug_name,
+                                "dosage": dosage,
+                                "frequency": f"1일 {frequency}회" if frequency and frequency.isdigit() else frequency,
+                                "duration": f"{duration}일" if duration and duration.isdigit() else duration,
+                                "instructions": None,
+                            }
+                        )
                     i += 5 + extra_skip  # 코드 + 투약량(+단위) + 횟수 + 일수 + 총량 건너뛰기
                     continue
 
