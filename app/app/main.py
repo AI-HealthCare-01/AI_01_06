@@ -6,6 +6,7 @@ from app.api import (
     auth,
     caregivers,
     chat,
+    google_auth,
     guides,
     kakao_auth,
     medications,
@@ -28,6 +29,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(kakao_auth.router)
+app.include_router(google_auth.router)
 app.include_router(users.router)
 app.include_router(prescriptions.router)
 app.include_router(medications.router)

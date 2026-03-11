@@ -6,7 +6,7 @@ import { api, setRefreshToken, setToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useSocialRegistration } from "@/lib/social-registration-context";
 
-export default function KakaoCallbackPage() {
+export default function GoogleCallbackPage() {
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -18,8 +18,8 @@ export default function KakaoCallbackPage() {
     const state = searchParams.get("state");
     const errorParam = searchParams.get("error");
 
-    // 사용자 카카오 인증 취소
-    if (errorParam === "access_denied") {
+    // 사용자 Google 인증 취소 또는 에러
+    if (errorParam) {
       router.replace("/login");
       return;
     }
@@ -29,9 +29,9 @@ export default function KakaoCallbackPage() {
     }
 
     (async () => {
-      const res = await api.kakaoCallback(code, state);
+      const res = await api.googleCallback(code, state);
       if (!res.success || !res.data) {
-        setError(res.error || "카카오 로그인에 실패했습니다.");
+        setError(res.error || "Google 로그인에 실패했습니다.");
         return;
       }
 
@@ -41,15 +41,15 @@ export default function KakaoCallbackPage() {
         await refreshUser();
         router.replace("/dashboard");
       } else if (res.data.status === "new_user") {
-        // in-memory Context 저장 (sessionStorage XSS 방지)
+        // in-memory Context 저장 (sessionStorage 회피 → XSS 방지)
         setSocialRegistration({
-          provider: "KAKAO",
+          provider: "GOOGLE",
           token: res.data.registration_token!,
-          email: res.data.kakao_profile!.email,
-          nickname: res.data.kakao_profile!.nickname,
-          // name: undefined — Kakao는 비즈앱 없이 실명 미제공
+          email: res.data.google_profile?.email ?? "",
+          nickname: res.data.google_profile?.nickname ?? "",
+          name: res.data.google_profile?.name ?? "",
         });
-        router.replace("/signup?source=kakao");
+        router.replace("/signup?source=google");
       }
     })();
   }, [searchParams, router, refreshUser, setSocialRegistration]);
@@ -72,7 +72,7 @@ export default function KakaoCallbackPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-500">카카오 인증 처리 중...</p>
+      <p className="text-gray-500">Google 인증 처리 중...</p>
     </div>
   );
 }

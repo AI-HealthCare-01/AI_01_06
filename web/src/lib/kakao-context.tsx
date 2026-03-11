@@ -1,44 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
-import type { ReactNode } from "react";
+// Kakao 전용 import 경로 호환 레이어
+// 실제 구현은 social-registration-context.tsx 로 통합됨
+export {
+  SocialRegistrationProvider as KakaoRegistrationProvider,
+  useSocialRegistration as useKakaoRegistration,
+} from "@/lib/social-registration-context";
 
-interface KakaoRegistrationData {
-  token: string;
-  email: string;
-  nickname: string;
-}
-
-interface KakaoRegistrationContextType {
-  kakaoRegistration: KakaoRegistrationData | null;
-  setKakaoRegistration: (data: KakaoRegistrationData | null) => void;
-}
-
-const KakaoRegistrationContext =
-  createContext<KakaoRegistrationContextType | null>(null);
-
-export function KakaoRegistrationProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const [kakaoRegistration, setKakaoRegistration] =
-    useState<KakaoRegistrationData | null>(null);
-
-  return (
-    <KakaoRegistrationContext.Provider
-      value={{ kakaoRegistration, setKakaoRegistration }}
-    >
-      {children}
-    </KakaoRegistrationContext.Provider>
-  );
-}
-
-export function useKakaoRegistration(): KakaoRegistrationContextType {
-  const ctx = useContext(KakaoRegistrationContext);
-  if (!ctx)
-    throw new Error(
-      "useKakaoRegistration must be used within KakaoRegistrationProvider"
-    );
-  return ctx;
-}
+export type {
+  SocialRegistrationData as KakaoRegistrationData,
+} from "@/lib/social-registration-context";

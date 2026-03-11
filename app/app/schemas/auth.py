@@ -75,3 +75,22 @@ class KakaoRegisterRequest(BaseModel):
     terms_of_service: bool = False
     privacy_policy: bool = False
     marketing_consent: bool = False
+
+
+class GoogleCallbackRequest(BaseModel):
+    code: str
+    state: str
+
+
+class GoogleRegisterRequest(BaseModel):
+    registration_token: str
+    email: EmailStr
+    name: str
+    nickname: str
+    role: UserRole = UserRole.PATIENT
+    birth_date: str | None = None
+    gender: Gender | None = None
+    phone: str | None = None
+    terms_of_service: bool = False
+    privacy_policy: bool = False
+    marketing_consent: bool = False
