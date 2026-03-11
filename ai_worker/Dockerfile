@@ -16,4 +16,6 @@ COPY ai_worker/ ai_worker/
 
 RUN uv sync --frozen --no-dev --package sullivan-worker
 
+ENV PYTHONPATH=/srv/ai_worker
+
 CMD ["uv", "run", "--package", "sullivan-worker", "arq", "worker.main.WorkerSettings"]
