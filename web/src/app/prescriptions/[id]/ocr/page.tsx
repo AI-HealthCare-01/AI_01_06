@@ -89,12 +89,6 @@ export default function OcrReviewPage() {
   if (processing) {
     return (
       <div className="fixed inset-0 bg-[#f5f5f7] flex flex-col z-50">
-        <div className="absolute top-8 left-0 right-0 text-center z-10 w-full">
-          <h1 className="text-3xl font-bold text-gray-800 bg-white/70 px-6 py-2 rounded-full inline-block backdrop-blur-sm shadow-sm">
-            처방전 분석 중
-          </h1>
-        </div>
-
         <div className="flex-1 w-full relative">
           <img
             src={loadingImg}
