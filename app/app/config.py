@@ -24,3 +24,7 @@ CHAT_STREAMING_TIMEOUT_SECONDS: int = int(os.environ.get("CHAT_STREAMING_TIMEOUT
 KAKAO_CLIENT_ID: str = os.environ.get("KAKAO_CLIENT_ID", "")
 KAKAO_CLIENT_SECRET: str = os.environ.get("KAKAO_CLIENT_SECRET", "")
 KAKAO_REDIRECT_URI: str = os.environ.get("KAKAO_REDIRECT_URI", "http://localhost:3000/auth/kakao/callback")
+
+GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI: str = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/google/callback")
