@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, setRefreshToken, setToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { useKakaoRegistration } from "@/lib/kakao-context";
+import { useSocialRegistration } from "@/lib/social-registration-context";
 
 export default function KakaoCallbackPage() {
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
   const { refreshUser } = useAuth();
-  const { setKakaoRegistration } = useKakaoRegistration();
+  const { setSocialRegistration } = useSocialRegistration();
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -41,16 +41,18 @@ export default function KakaoCallbackPage() {
         await refreshUser();
         router.replace("/dashboard");
       } else if (res.data.status === "new_user") {
-        // 인메모리 Context에 저장 (sessionStorage XSS 방지)
-        setKakaoRegistration({
+        // in-memory Context 저장 (sessionStorage XSS 방지)
+        setSocialRegistration({
+          provider: "KAKAO",
           token: res.data.registration_token!,
           email: res.data.kakao_profile!.email,
           nickname: res.data.kakao_profile!.nickname,
+          // name: undefined — Kakao는 비즈앱 없이 실명 미제공
         });
         router.replace("/signup?source=kakao");
       }
     })();
-  }, [searchParams, router, refreshUser, setKakaoRegistration]);
+  }, [searchParams, router, refreshUser, setSocialRegistration]);
 
   if (error) {
     return (
