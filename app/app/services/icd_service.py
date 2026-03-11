@@ -64,10 +64,23 @@ def normalize_dosage(dosage: str | None) -> str | None:
     )
 
 
-_DOCTOR_BLACKLIST = frozenset([
-    "환자", "요구", "기관", "의료", "처방", "조제", "약국",
-    "번호", "면허", "종별", "기호", "성명", "진료",
-])
+_DOCTOR_BLACKLIST = frozenset(
+    [
+        "환자",
+        "요구",
+        "기관",
+        "의료",
+        "처방",
+        "조제",
+        "약국",
+        "번호",
+        "면허",
+        "종별",
+        "기호",
+        "성명",
+        "진료",
+    ]
+)
 
 
 def validate_doctor_name(name: str | None) -> str | None:
@@ -83,4 +96,3 @@ def validate_doctor_name(name: str | None) -> str | None:
     if any(kw in clean for kw in _DOCTOR_BLACKLIST):
         return None
     return clean
-
