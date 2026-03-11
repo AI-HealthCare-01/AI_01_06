@@ -80,16 +80,34 @@ export default function OcrReviewPage() {
     setData({ ...data, medications: data.medications.filter((_, i) => i !== index) });
   };
 
+  const [loadingImg] = useState(() => {
+    const idx = Math.floor(Math.random() * 16) + 1;
+    const ext = idx === 1 ? "jpeg" : "jpg";
+    return `/loading/loading_${idx}.${ext}`;
+  });
+
   if (processing) {
     return (
-      <AppLayout>
-        <h1 className="text-2xl font-bold mb-2">처방전 분석 중</h1>
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-600">OCR로 처방전을 분석하고 있습니다...</p>
-          <p className="text-sm text-gray-400 mt-1">잠시만 기다려주세요</p>
+      <div className="fixed inset-0 bg-[#f5f5f7] flex flex-col z-50">
+        <div className="absolute top-8 left-0 right-0 text-center z-10 w-full">
+          <h1 className="text-3xl font-bold text-gray-800 bg-white/70 px-6 py-2 rounded-full inline-block backdrop-blur-sm shadow-sm">
+            처방전 분석 중
+          </h1>
         </div>
-      </AppLayout>
+
+        <div className="flex-1 w-full relative">
+          <img
+            src={loadingImg}
+            alt="알쓸신약 로딩"
+            className="absolute inset-0 w-full h-full object-contain p-4"
+          />
+        </div>
+
+        <div className="pb-16 pt-8 text-center bg-white/80 backdrop-blur-md z-10 border-t border-gray-100 shadow-[0_-20px_25px_-5px_rgba(255,255,255,0.8)]">
+          <p className="text-xl font-semibold text-gray-800">OCR로 처방전을 분석하고 있습니다...</p>
+          <p className="text-gray-500 mt-2">지루하지 않게 잠시만 사진을 감상하며 기다려주세요</p>
+        </div>
+      </div>
     );
   }
 
@@ -123,36 +141,37 @@ export default function OcrReviewPage() {
           <div>
             <p className="text-sm text-gray-500">병원명</p>
             {editing ? (
-              <input value={data.hospital_name} onChange={(e) => setData({ ...data, hospital_name: e.target.value })} className="border rounded px-2 py-1 w-full" />
+              <input value={data.hospital_name || ""} onChange={(e) => setData({ ...data, hospital_name: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="border rounded px-2 py-1 w-full placeholder:text-gray-400" />
             ) : (
-              <p className="font-medium">{data.hospital_name}</p>
+              <p className="font-medium">{data.hospital_name || <span className="text-gray-400 italic">인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
           </div>
           <div>
             <p className="text-sm text-gray-500">담당의</p>
             {editing ? (
-              <input value={data.doctor_name} onChange={(e) => setData({ ...data, doctor_name: e.target.value })} className="border rounded px-2 py-1 w-full" />
+              <input value={data.doctor_name || ""} onChange={(e) => setData({ ...data, doctor_name: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="border rounded px-2 py-1 w-full placeholder:text-gray-400" />
             ) : (
-              <p className="font-medium">{data.doctor_name}</p>
+              <p className="font-medium">{data.doctor_name || <span className="text-gray-400 italic">인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
           </div>
           <div>
             <p className="text-sm text-gray-500">처방일</p>
             {editing ? (
-              <input type="date" value={data.prescription_date} onChange={(e) => setData({ ...data, prescription_date: e.target.value })} className="border rounded px-2 py-1 w-full" />
+              <input type="date" value={data.prescription_date || ""} onChange={(e) => setData({ ...data, prescription_date: e.target.value })} className="border rounded px-2 py-1 w-full" />
             ) : (
-              <p className="font-medium">{data.prescription_date}</p>
+              <p className="font-medium">{data.prescription_date || <span className="text-gray-400 italic">인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
           </div>
           <div>
             <p className="text-sm text-gray-500">진단명</p>
             {editing ? (
-              <input value={data.diagnosis} onChange={(e) => setData({ ...data, diagnosis: e.target.value })} className="border rounded px-2 py-1 w-full" />
+              <input value={data.diagnosis || ""} onChange={(e) => setData({ ...data, diagnosis: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="border rounded px-2 py-1 w-full placeholder:text-gray-400" />
             ) : (
-              <p className="font-medium">{data.diagnosis}</p>
+              <p className="font-medium">{data.diagnosis || <span className="text-gray-400 italic">인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
           </div>
         </div>
+        <p className="text-base font-semibold text-gray-600 mt-3">인식된 처방전 내용이 맞는지 반드시 확인해주세요. 맞지 않는 부분이 있으면 수정 버튼을 눌러 수정해주세요</p>
       </section>
 
       {/* Medications */}
@@ -183,12 +202,20 @@ export default function OcrReviewPage() {
                     <p>{med.dosage}</p>
                   )}
                 </div>
-                <div className="col-span-2">
+                <div>
                   <p className="text-xs text-gray-500">복용 방법</p>
                   {editing ? (
                     <input value={med.frequency} onChange={(e) => updateMed(i, "frequency", e.target.value)} className="border rounded px-2 py-1 w-full text-sm" />
                   ) : (
                     <p>{med.frequency}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">복용기간</p>
+                  {editing ? (
+                    <input value={med.duration || ""} onChange={(e) => updateMed(i, "duration", e.target.value)} className="border rounded px-2 py-1 w-full text-sm" />
+                  ) : (
+                    <p>{med.duration || "-"}</p>
                   )}
                 </div>
               </div>
