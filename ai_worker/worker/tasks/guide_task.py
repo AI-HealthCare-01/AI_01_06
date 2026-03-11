@@ -24,10 +24,8 @@ async def guide_task(ctx: dict, guide_id: int, user_id: int) -> None:
 
     user_info = {
         "name": user.name,
-        "height": user.height,
-        "weight": user.weight,
-        "allergies": user.allergies,
-        "conditions": user.conditions,
+        "birth_date": str(user.birth_date) if user.birth_date else None,
+        "gender": user.gender,
     }
 
     guide_service = get_guide_service()
