@@ -46,7 +46,9 @@ async def test_list_threads_own_only(auth_client: AsyncClient, client: AsyncClie
             "password": "Test1234!",
             "nickname": "다른유저",
             "name": "이영희",
-            "role": "patient",
+            "role": "PATIENT",
+            "terms_of_service": True,
+            "privacy_policy": True,
         },
     )
     login_resp = await client.post(
@@ -148,7 +150,9 @@ async def test_send_message_to_others_thread_returns_403(auth_client: AsyncClien
             "password": "Test1234!",
             "nickname": "다른유저2",
             "name": "박철수",
-            "role": "patient",
+            "role": "PATIENT",
+            "terms_of_service": True,
+            "privacy_policy": True,
         },
     )
     login_resp = await client.post(

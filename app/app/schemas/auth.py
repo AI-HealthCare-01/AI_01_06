@@ -56,3 +56,22 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+
+
+class KakaoCallbackRequest(BaseModel):
+    code: str
+    state: str
+
+
+class KakaoRegisterRequest(BaseModel):
+    registration_token: str
+    email: EmailStr
+    name: str
+    nickname: str
+    role: UserRole = UserRole.PATIENT
+    birth_date: str | None = None
+    gender: Gender | None = None
+    phone: str | None = None
+    terms_of_service: bool = False
+    privacy_policy: bool = False
+    marketing_consent: bool = False
