@@ -123,7 +123,13 @@ export default function SignupPage() {
         marketing_consent: agreements.marketing,
       });
       if (!res.success || !res.data) {
-        setError(res.error || `${providerLabel} 가입에 실패했습니다.`);
+        // 소셜 가입 에러 시 무조건 Step1 리셋 — 재인증 안내
+        // 에러 종류(만료/중복/서버오류) 무관하게 재인증이 올바른 동작
+        setSocialData(null);
+        setStep("role");
+        setForm({ ...INITIAL_FORM });
+        setAgreements({ ...INITIAL_AGREEMENTS });
+        setError(`${providerLabel} 가입에 실패했습니다. 다시 시도해주세요.`);
         setLoading(false);
         return;
       }
