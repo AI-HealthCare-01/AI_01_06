@@ -2,6 +2,8 @@ FROM python:3.13-slim
 
 WORKDIR /srv
 
+ENV PYTHONPATH=/srv/app
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy workspace root files + this package's pyproject for dependency caching
