@@ -42,24 +42,24 @@ export default function ChatHistoryPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">대화 기록</h1>
-          <p className="text-gray-600">이전 AI 상담 내역을 확인하세요</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>이전 AI 상담 내역을 확인하세요</p>
         </div>
         <Link
           href="/chat"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="px-4 py-2 rounded-lg btn-primary"
         >
           새 상담 시작
         </Link>
       </div>
 
       {loading ? (
-        <p className="text-gray-500 text-center py-8">로딩 중...</p>
+        <p className="text-center py-8" style={{ color: 'var(--color-text-muted)' }}>로딩 중...</p>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center text-red-600">
+        <div className="alert-danger rounded-lg p-8 text-center">
           {error}
         </div>
       ) : threads.length === 0 ? (
-        <div className="bg-white rounded-lg p-8 text-center text-gray-400 shadow-sm">
+        <div className="app-card rounded-lg p-8 text-center" style={{ color: 'var(--color-text-muted)' }}>
           아직 대화 기록이 없습니다.
         </div>
       ) : (
@@ -68,7 +68,7 @@ export default function ChatHistoryPage() {
             <Link
               key={thread.id}
               href={`/chat/${thread.id}`}
-              className="block bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+              className="block app-card rounded-lg p-4"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
@@ -77,19 +77,19 @@ export default function ChatHistoryPage() {
                       {thread.title || "제목 없음"}
                     </h3>
                     {thread.prescription_id && (
-                      <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full whitespace-nowrap">
+                      <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
                         처방전 연결
                       </span>
                     )}
                   </div>
-                  <div className="flex gap-4 text-sm text-gray-500 mt-1">
+                  <div className="flex gap-4 text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
                     <span>{thread.created_at.slice(0, 10)}</span>
                     <span>
                       {thread.is_active ? "진행 중" : "종료됨"}
                     </span>
                   </div>
                 </div>
-                <span className="text-gray-400 text-sm ml-4">&gt;</span>
+                <span className="text-sm ml-4" style={{ color: 'var(--color-text-muted)' }}>&gt;</span>
               </div>
             </Link>
           ))}

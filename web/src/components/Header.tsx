@@ -11,7 +11,7 @@ type FontSize = "normal" | "large";
 function LogoMark() {
   return (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="#2563EB" />
+      <rect width="32" height="32" rx="8" fill="#0D7C66" />
       <path d="M14 8h4v6h6v4h-6v6h-4v-6H8v-4h6V8z" fill="white" />
     </svg>
   );
@@ -67,7 +67,10 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b" style={{ borderColor: "var(--color-border)" }}>
+    <header
+      className="sticky top-0 z-50 border-b"
+      style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-bg)" }}
+    >
       <div className="h-14 sm:h-16 px-4 sm:px-6 flex items-center justify-between gap-3">
 
         {/* ── 로고 ── */}
@@ -79,7 +82,7 @@ export default function Header() {
           <LogoMark />
           <span
             className="font-bold text-base sm:text-lg leading-none"
-            style={{ color: "var(--color-primary)", fontFamily: "'DM Sans', sans-serif" }}
+            style={{ color: "var(--color-primary)", fontFamily: "'Gowun Batang', serif" }}
           >
             <span className="hidden sm:inline">Project &amp; </span>Sullivan
           </span>

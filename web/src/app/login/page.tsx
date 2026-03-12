@@ -47,58 +47,60 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
       <Header />
-      <div className="flex items-center justify-center py-20">
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-sm w-full max-w-md space-y-6">
+      <div className="flex items-center justify-center py-10 md:py-20 px-4 pb-24 md:pb-10">
+        <form onSubmit={handleSubmit} className="p-6 md:p-8 rounded-lg w-full max-w-md space-y-6" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
           <h1 className="text-2xl font-bold text-center">로그인</h1>
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {error && <p className="text-sm text-center" style={{ color: 'var(--color-danger)' }}>{error}</p>}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>이메일</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full px-4 py-2 input-field"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>비밀번호</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full px-4 py-2 input-field"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="w-full py-2 btn-primary"
           >
             {loading ? "로그인 중..." : "로그인"}
           </button>
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+              <div className="w-full border-t" style={{ borderColor: 'var(--color-border)' }} />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-400">또는</span>
+              <span className="px-2" style={{ background: 'var(--color-card-bg)', color: 'var(--color-text-muted)' }}>또는</span>
             </div>
           </div>
           <button
             type="button"
             onClick={handleKakaoLogin}
-            className="w-full flex items-center justify-center gap-2 bg-[#FEE500] text-[#191919] py-2 rounded-lg hover:bg-[#F6DC00] font-medium"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium hover:brightness-95 transition"
+            style={{ background: 'var(--color-kakao)', color: 'var(--color-kakao-text)' }}
           >
             카카오로 시작하기
           </button>
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 font-medium"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium transition"
+            style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -108,9 +110,9 @@ export default function LoginPage() {
             </svg>
             Google로 시작하기
           </button>
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
             계정이 없으신가요?{" "}
-            <Link href="/signup" className="text-blue-600 hover:underline">회원가입</Link>
+            <Link href="/signup" className="hover:underline" style={{ color: 'var(--color-primary)' }}>회원가입</Link>
           </p>
         </form>
       </div>
