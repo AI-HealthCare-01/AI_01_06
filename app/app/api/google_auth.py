@@ -77,8 +77,8 @@ async def google_callback(req: GoogleCallbackRequest):
             }
         )
 
-    # OpenID Connect Core 1.0: 신규 가입 시 email_verified=false 차단
-    # 의료 서비스에서 미인증 이메일로 계정 생성 허용 불가 (OWASP ASVS V2.7)
+    # OpenID Connect Core 1.0 §5.1: 신규 가입 시 email_verified=false 차단
+    # 의료 서비스에서 미인증 이메일로 계정 생성 허용 불가 (OWASP ASVS V2.5.6)
     if not google_user.get("email_verified", False):
         return error_response("이메일 인증이 완료되지 않은 Google 계정입니다.")
 

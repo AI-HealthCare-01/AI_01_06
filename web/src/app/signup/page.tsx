@@ -34,22 +34,20 @@ export default function SignupPage() {
 
   // B1/B2: source 파라미터 변화 감지 — 소셜 플로우 이탈 시 상태 전체 초기화
   // Next.js 16 App Router: 같은 경로에서 쿼리만 변경 시 컴포넌트 리마운트 없음
-  // didMountRef: 초기 마운트 실행 방지 (React 19 Strict Mode 2회 실행 대응)
-  const didMountRef = useRef(false);
+  // prevSourceRef: 이전 source 값 추적 (React 19 Strict Mode double-mount 안전)
+  const prevSourceRef = useRef(source);
   useEffect(() => {
-    if (!didMountRef.current) {
-      didMountRef.current = true;
-      return;
-    }
-    if (!source) {
+    const prevSource = prevSourceRef.current;
+    prevSourceRef.current = source;
+    // source가 실제로 있다가 null로 변한 경우만 초기화 (마운트 시 오발동 방지)
+    if (prevSource !== null && source === null) {
       setSocialData(null);
       setSocialRegistration(null);
       setStep("role");
       setForm({ ...INITIAL_FORM });
       setAgreements({ ...INITIAL_AGREEMENTS });
-      setError("");
     }
-  }, [source, setSocialRegistration]);
+  }, [source, setSocialRegistration, setSocialData]);
 
   // 소셜 모드 감지: Context(인메모리)에서 등록 데이터 읽기
   // !socialData 가드: 이미 읽은 경우 재실행 방지
@@ -123,14 +121,10 @@ export default function SignupPage() {
         marketing_consent: agreements.marketing,
       });
       if (!res.success || !res.data) {
-        // 소셜 가입 에러 시 무조건 Step1 리셋 — 재인증 안내
-        // 에러 종류(만료/중복/서버오류) 무관하게 재인증이 올바른 동작
-        setSocialData(null);
-        setStep("role");
-        setForm({ ...INITIAL_FORM });
-        setAgreements({ ...INITIAL_AGREEMENTS });
+        // 소셜 가입 에러: URL source 제거 → useEffect가 상태 리셋 → Step1 + 소셜 버튼 복원
         setError(`${providerLabel} 가입에 실패했습니다. 다시 시도해주세요.`);
         setLoading(false);
+        router.replace("/signup");
         return;
       }
       setToken(res.data.access_token);
@@ -175,6 +169,7 @@ export default function SignupPage() {
         <div className="flex items-center justify-center py-20">
           <div className="bg-white p-8 rounded-lg shadow-sm w-full max-w-md space-y-6 text-center">
             <h1 className="text-2xl font-bold">회원가입</h1>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
             <p className="text-gray-800">계정 유형을 선택해주세요</p>
             <div className="space-y-4">
               <button
