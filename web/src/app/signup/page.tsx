@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
@@ -31,6 +31,25 @@ export default function SignupPage() {
   // source=kakao 또는 source=google 인 경우 소셜 플로우 감지
   const source = searchParams.get("source");
   const isSocialFlow = source === "kakao" || source === "google";
+
+  // B1/B2: source 파라미터 변화 감지 — 소셜 플로우 이탈 시 상태 전체 초기화
+  // Next.js 16 App Router: 같은 경로에서 쿼리만 변경 시 컴포넌트 리마운트 없음
+  // didMountRef: 초기 마운트 실행 방지 (React 19 Strict Mode 2회 실행 대응)
+  const didMountRef = useRef(false);
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    if (!source) {
+      setSocialData(null);
+      setSocialRegistration(null);
+      setStep("role");
+      setForm({ ...INITIAL_FORM });
+      setAgreements({ ...INITIAL_AGREEMENTS });
+      setError("");
+    }
+  }, [source, setSocialRegistration]);
 
   // 소셜 모드 감지: Context(인메모리)에서 등록 데이터 읽기
   // !socialData 가드: 이미 읽은 경우 재실행 방지

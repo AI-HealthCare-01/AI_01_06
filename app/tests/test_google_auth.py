@@ -70,6 +70,7 @@ async def test_google_callback_logs_in_existing_google_user(client: AsyncClient)
     mock_svc.get_user_info.return_value = {
         "sub": "google-sub-9999",
         "email": "google@test.com",
+        "email_verified": True,
         "name": "구글유저",
     }
 
@@ -185,7 +186,7 @@ async def test_google_callback_rejects_unverified_email(client: AsyncClient):
 
     body = resp.json()
     assert body["success"] is False
-    assert "이메일" in body["error"]
+    assert "인증" in body["error"]  # 이메일 충돌 에러와 구분 ("이메일 인증이 완료되지 않은...")
 
 
 # ---------------------------------------------------------------------------
