@@ -172,22 +172,24 @@ export default function ChatPage() {
     <AppLayout>
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-t-lg border p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">AI</div>
+        <div className="rounded-t-lg p-4 flex items-center gap-3" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ background: 'var(--color-primary)' }}>AI</div>
           <div className="flex-1">
             <h1 className="font-bold">AI 복약 상담 챗봇</h1>
-            <p className="text-xs text-green-500">온라인</p>
+            <p className="text-xs" style={{ color: 'var(--color-success)' }}>온라인</p>
           </div>
           <Link
             href="/chat/history"
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm hover:underline"
+            style={{ color: 'var(--color-primary)' }}
           >
             대화 기록
           </Link>
           <button
             onClick={handleEndClick}
             disabled={isStreaming || !threadId}
-            className="text-sm border border-red-300 text-red-600 px-3 py-1 rounded-lg hover:bg-red-50 disabled:opacity-50"
+            className="text-sm px-3 py-1 rounded-lg disabled:opacity-50 transition-colors"
+            style={{ border: '1px solid var(--color-danger)', color: 'var(--color-danger)' }}
           >
             상담 종료
           </button>
@@ -195,11 +197,12 @@ export default function ChatPage() {
 
         {/* Init Error */}
         {initError && (
-          <div className="bg-red-50 border-x border-red-200 p-4 text-center">
-            <p className="text-red-600 text-sm mb-2">{initError}</p>
+          <div className="p-4 text-center" style={{ background: 'var(--color-danger-soft)', borderLeft: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }}>
+            <p className="text-sm mb-2" style={{ color: 'var(--color-danger)' }}>{initError}</p>
             <button
               onClick={initThread}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm hover:underline"
+              style={{ color: 'var(--color-primary)' }}
             >
               다시 시도
             </button>
@@ -207,21 +210,25 @@ export default function ChatPage() {
         )}
 
         {/* Messages */}
-        <div className="bg-white border-x p-4 min-h-[400px] max-h-[500px] overflow-y-auto space-y-4">
+        <div className="p-4 min-h-[300px] max-h-[50dvh] md:max-h-[500px] overflow-y-auto space-y-4" style={{ background: 'var(--color-card-bg)', borderLeft: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }}>
           {messages.map((msg, i) => (
             <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[70%] rounded-lg p-3 whitespace-pre-wrap ${
                 msg.role === "user"
-                  ? "bg-blue-600 text-white text-sm"
+                  ? "text-white text-sm"
+                  : "text-base"
+              }`} style={
+                msg.role === "user"
+                  ? { background: 'var(--color-primary)' }
                   : msg.status === "failed"
-                    ? "bg-red-100 text-red-800 text-base"
-                    : "bg-gray-100 text-gray-800 text-base"
-              }`}>
+                    ? { background: 'var(--color-danger-soft)', color: 'var(--color-danger-text)' }
+                    : { background: 'var(--color-surface)', color: 'var(--color-text)' }
+              }>
                 {msg.content || (msg.status === "streaming" ? (
                   <span className="inline-flex gap-1 py-1">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "300ms" }} />
                   </span>
                 ) : "")}
               </div>
@@ -232,11 +239,11 @@ export default function ChatPage() {
 
         {/* Quick actions */}
         {showQuickActions && (
-          <div className="bg-white border-x px-4 pb-2">
-            <p className="text-xs text-gray-400 mb-2">자주 묻는 질문</p>
+          <div className="px-4 pb-2" style={{ background: 'var(--color-card-bg)', borderLeft: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }}>
+            <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>자주 묻는 질문</p>
             <div className="grid grid-cols-2 gap-2">
               {quickActions.map((q) => (
-                <button key={q} onClick={() => sendMessage(q)} className="text-sm border rounded-lg px-3 py-3 text-left hover:bg-gray-50">
+                <button key={q} onClick={() => sendMessage(q)} className="text-sm rounded-lg px-3 py-3 text-left btn-outline">
                   {q}
                 </button>
               ))}
@@ -245,31 +252,32 @@ export default function ChatPage() {
         )}
 
         {/* Input */}
-        <div className="bg-white rounded-b-lg border p-4">
+        <div className="sticky bottom-16 md:bottom-0 z-10 rounded-b-lg p-4" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
           <div className="flex gap-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
+              onFocus={(e) => { setTimeout(() => e.target.scrollIntoView({ block: "center", behavior: "smooth" }), 300); }}
               placeholder="메시지를 입력하세요..."
-              className="flex-1 border rounded-lg px-4 py-3 text-base"
+              className="flex-1 px-4 py-3 text-base input-field"
               disabled={isStreaming}
             />
             <button
               onClick={() => sendMessage(input)}
               disabled={isStreaming}
-              className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-3 rounded-lg btn-primary"
             >
               전송
             </button>
           </div>
-          <p className="text-xs text-gray-400 text-center mt-2">{DISCLAIMER}</p>
+          <p className="text-xs text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>{DISCLAIMER}</p>
         </div>
 
         {/* Info box */}
-        <div className="bg-blue-50 rounded-lg p-4 mt-4 text-sm">
+        <div className="rounded-lg p-4 mt-4 text-sm" style={{ background: 'var(--color-primary-soft)' }}>
           <p className="font-bold mb-1">AI 챗봇 사용 안내</p>
-          <ul className="list-disc list-inside text-gray-600 space-y-1">
+          <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--color-text-muted)' }}>
             <li>복약 방법, 시간, 주의사항 등에 대해 질문할 수 있습니다.</li>
             <li>약물 상호작용이나 부작용에 대해 문의할 수 있습니다.</li>
             <li>긴급한 상황이나 심각한 증상은 즉시 의료기관에 연락하세요.</li>
@@ -280,18 +288,18 @@ export default function ChatPage() {
       {/* Feedback Modal */}
       {showFeedbackModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="rounded-lg p-6 w-full max-w-md mx-4" style={{ background: 'var(--color-card-bg)' }}>
             {feedbackStep === "rating" ? (
               <>
                 <h2 className="text-lg font-bold text-center mb-2">상담이 도움이 되셨나요?</h2>
-                <p className="text-sm text-gray-500 text-center mb-6">
+                <p className="text-sm text-center mb-6" style={{ color: 'var(--color-text-muted)' }}>
                   피드백을 남겨주시면 서비스 개선에 큰 도움이 됩니다.
                 </p>
                 <div className="flex justify-center gap-6 mb-6">
                   <button
                     onClick={handlePositiveFeedback}
                     disabled={feedbackSubmitting}
-                    className="flex flex-col items-center gap-2 px-6 py-4 border rounded-lg hover:bg-blue-50 disabled:opacity-50"
+                    className="flex flex-col items-center gap-2 px-6 py-4 rounded-lg disabled:opacity-50 btn-outline"
                   >
                     <span className="text-3xl">👍</span>
                     <span className="text-sm font-medium">도움이 됐어요</span>
@@ -299,7 +307,8 @@ export default function ChatPage() {
                   <button
                     onClick={handleNegativeFeedback}
                     disabled={feedbackSubmitting}
-                    className="flex flex-col items-center gap-2 px-6 py-4 border rounded-lg hover:bg-red-50 disabled:opacity-50"
+                    className="flex flex-col items-center gap-2 px-6 py-4 rounded-lg disabled:opacity-50 transition-colors"
+                    style={{ border: '1px solid var(--color-border)' }}
                   >
                     <span className="text-3xl">👎</span>
                     <span className="text-sm font-medium">아쉬웠어요</span>
@@ -309,14 +318,16 @@ export default function ChatPage() {
                   <button
                     onClick={handleSkipFeedback}
                     disabled={feedbackSubmitting}
-                    className="w-full text-sm text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                    className="w-full text-sm disabled:opacity-50"
+                    style={{ color: 'var(--color-text-muted)' }}
                   >
                     피드백 없이 종료
                   </button>
                   <button
                     onClick={() => { setShowFeedbackModal(false); setFeedbackSubmitting(false); }}
                     disabled={feedbackSubmitting}
-                    className="w-full text-sm text-blue-500 hover:text-blue-700 disabled:opacity-50"
+                    className="w-full text-sm disabled:opacity-50"
+                    style={{ color: 'var(--color-primary)' }}
                   >
                     취소
                   </button>
@@ -325,17 +336,18 @@ export default function ChatPage() {
             ) : (
               <>
                 <h2 className="text-lg font-bold mb-2">어떤 점이 아쉬우셨나요?</h2>
-                <p className="text-sm text-gray-500 mb-4">사유를 선택해주세요.</p>
+                <p className="text-sm mb-4" style={{ color: 'var(--color-text-muted)' }}>사유를 선택해주세요.</p>
                 <div className="space-y-2 mb-4">
                   {negativeReasons.map((r) => (
                     <button
                       key={r.value}
                       onClick={() => setSelectedReason(r.value)}
-                      className={`w-full text-left text-sm px-4 py-3 border rounded-lg ${
+                      className="w-full text-left text-sm px-4 py-3 rounded-lg transition-colors"
+                      style={
                         selectedReason === r.value
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "hover:bg-gray-50"
-                      }`}
+                          ? { border: '1px solid var(--color-primary)', background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }
+                          : { border: '1px solid var(--color-border)' }
+                      }
                     >
                       {r.label}
                     </button>
@@ -346,7 +358,7 @@ export default function ChatPage() {
                     value={reasonText}
                     onChange={(e) => setReasonText(e.target.value)}
                     placeholder="자세한 내용을 입력해주세요 (선택)"
-                    className="w-full border rounded-lg px-3 py-2 text-sm mb-4 resize-none"
+                    className="w-full px-3 py-2 text-sm mb-4 resize-none input-field"
                     rows={3}
                   />
                 )}
@@ -354,14 +366,14 @@ export default function ChatPage() {
                   <button
                     onClick={() => setFeedbackStep("rating")}
                     disabled={feedbackSubmitting}
-                    className="flex-1 border py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50"
+                    className="flex-1 py-2 rounded-lg text-sm disabled:opacity-50 btn-outline"
                   >
                     뒤로
                   </button>
                   <button
                     onClick={handleSubmitNegativeFeedback}
                     disabled={!selectedReason || feedbackSubmitting}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                    className="flex-1 py-2 rounded-lg text-sm btn-primary"
                   >
                     제출
                   </button>
