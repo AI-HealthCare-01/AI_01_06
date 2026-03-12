@@ -16,7 +16,6 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_BASE_URL:""
     restart: "no"
     develop:
       watch:
