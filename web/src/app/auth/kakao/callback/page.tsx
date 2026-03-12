@@ -56,12 +56,13 @@ export default function KakaoCallbackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-sm text-center space-y-4">
-          <p className="text-red-500">{error}</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
+        <div className="p-8 rounded-lg text-center space-y-4" style={{ background: 'var(--color-card-bg)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
+          <p style={{ color: 'var(--color-danger)' }}>{error}</p>
           <button
             onClick={() => router.push("/login")}
-            className="text-blue-600 hover:underline"
+            className="hover:underline"
+            style={{ color: 'var(--color-primary)' }}
           >
             로그인으로 돌아가기
           </button>
@@ -71,8 +72,8 @@ export default function KakaoCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <p className="text-gray-500">카카오 인증 처리 중...</p>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
+      <p style={{ color: 'var(--color-text-muted)' }}>카카오 인증 처리 중...</p>
     </div>
   );
 }

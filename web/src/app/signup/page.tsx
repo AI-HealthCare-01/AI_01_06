@@ -302,23 +302,29 @@ export default function SignupPage() {
 
   if (step === "role") {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
         <Header />
-        <div className="flex items-center justify-center py-20">
-          <div className="bg-white p-8 rounded-lg shadow-sm w-full max-w-md space-y-6 text-center">
+        <div className="flex items-center justify-center py-10 md:py-20 px-4 pb-24 md:pb-10">
+          <div className="p-6 md:p-8 rounded-lg w-full max-w-md space-y-6 text-center" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
             <h1 className="text-2xl font-bold">회원가입</h1>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             <p className="text-gray-800">계정 유형을 선택해주세요</p>
             <div className="space-y-4">
               <button
                 onClick={() => { setRole("patient"); setStep("form"); }}
-                className="w-full border-2 border-blue-600 text-blue-600 py-4 rounded-lg hover:bg-blue-50 font-medium"
+                className="w-full border-2 py-4 rounded-lg font-medium transition-colors"
+                style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary-soft)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = ''}
               >
                 일반 (환자)
               </button>
               <button
                 onClick={() => { setRole("caregiver"); setStep("form"); }}
-                className="w-full border-2 border-green-600 text-green-600 py-4 rounded-lg hover:bg-green-50 font-medium"
+                className="w-full border-2 py-4 rounded-lg font-medium transition-colors"
+                style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-success-soft)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = ''}
               >
                 보호자
               </button>
@@ -328,23 +334,25 @@ export default function SignupPage() {
               <>
                 <div className="relative mt-2">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200" />
+                    <div className="w-full border-t" style={{ borderColor: 'var(--color-border)' }} />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="bg-white px-2 text-gray-400">소셜 계정으로 간편 가입</span>
+                    <span className="px-2" style={{ background: 'var(--color-card-bg)', color: 'var(--color-text-muted)' }}>소셜 계정으로 간편 가입</span>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={handleKakaoSignup}
-                  className="w-full flex items-center justify-center gap-2 bg-[#FEE500] text-[#191919] py-4 rounded-lg hover:bg-[#F6DC00] font-medium"
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-lg font-medium hover:brightness-95 transition"
+                  style={{ background: 'var(--color-kakao)', color: 'var(--color-kakao-text)' }}
                 >
                   카카오로 시작하기
                 </button>
                 <button
                   type="button"
                   onClick={handleGoogleSignup}
-                  className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-4 rounded-lg hover:bg-gray-50 font-medium"
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-lg font-medium transition"
+                  style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
                     <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -363,31 +371,31 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
       <Header />
-      <div className="flex items-center justify-center py-10">
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-sm w-full max-w-lg space-y-4">
+      <div className="flex items-center justify-center py-10 px-4 pb-24 md:pb-10">
+        <form onSubmit={handleSubmit} className="p-6 md:p-8 rounded-lg w-full max-w-lg space-y-4" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
           <h1 className="text-2xl font-bold">회원가입</h1>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm" style={{ color: 'var(--color-text)' }}>
             계정 유형 : {role === "patient" ? "일반" : "보호자"}
             {socialData?.provider === "KAKAO" && (
-              <span className="ml-2 text-yellow-600 font-medium">· 카카오 연동</span>
+              <span className="ml-2 font-medium" style={{ color: 'var(--color-warning)' }}>· 카카오 연동</span>
             )}
             {socialData?.provider === "GOOGLE" && (
-              <span className="ml-2 text-blue-600 font-medium">· Google 연동</span>
+              <span className="ml-2 font-medium" style={{ color: 'var(--color-primary)' }}>· Google 연동</span>
             )}
           </p>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-sm" style={{ color: 'var(--color-danger)' }}>{error}</p>}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
                 이메일
                 {socialData?.provider === "KAKAO" && socialData.email && (
-                  <span className="text-xs text-gray-400 ml-1">(카카오 계정)</span>
+                  <span className="text-xs ml-1" style={{ color: 'var(--color-text-muted)' }}>(카카오 계정)</span>
                 )}
                 {socialData?.provider === "GOOGLE" && (
-                  <span className="text-xs text-gray-400 ml-1">(Google 계정)</span>
+                  <span className="text-xs ml-1" style={{ color: 'var(--color-text-muted)' }}>(Google 계정)</span>
                 )}
               </label>
               <input
@@ -480,7 +488,7 @@ export default function SignupPage() {
                 className={`w-full border rounded px-3 py-2 ${fieldErrors.name ? "border-red-500" : ""}`}
               />
               {socialData?.provider === "GOOGLE" && socialData.name && (
-                <p className="text-xs text-gray-400 mt-1">Google 이름 자동 입력, 변경 가능</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Google 이름 자동 입력, 변경 가능</p>
               )}
               {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
             </div>
@@ -632,9 +640,9 @@ export default function SignupPage() {
             </button>
           </div>
           {!socialData && (
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
               이미 계정이 있으신가요?{" "}
-              <Link href="/login" className="text-blue-600 hover:underline">로그인</Link>
+              <Link href="/login" className="hover:underline" style={{ color: 'var(--color-primary)' }}>로그인</Link>
             </p>
           )}
         </form>
