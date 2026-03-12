@@ -106,6 +106,7 @@ async def test_google_callback_rejects_email_conflict(client: AsyncClient):
     mock_svc.get_user_info.return_value = {
         "sub": "google-sub-8888",
         "email": "conflict@test.com",
+        "email_verified": True,
         "name": "구글",
     }
 
@@ -135,6 +136,7 @@ async def test_google_callback_new_user_returns_registration_token_and_profile(
     mock_svc.get_user_info.return_value = {
         "sub": "google-sub-7777",
         "email": "new@gmail.com",
+        "email_verified": True,
         "name": "홍길동",
     }
 
