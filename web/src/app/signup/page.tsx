@@ -8,14 +8,18 @@ import { api, setRefreshToken, setToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useSocialRegistration, type SocialRegistrationData } from "@/lib/social-registration-context";
 
+const INITIAL_FORM = {
+  email: "", nickname: "", password: "", passwordConfirm: "",
+  name: "", birth_date: "", gender: "", phone: "",
+};
+
+const INITIAL_AGREEMENTS = { terms: false, privacy: false, marketing: false };
+
 export default function SignupPage() {
   const [step, setStep] = useState<"role" | "form">("role");
   const [role, setRole] = useState<"patient" | "caregiver">("patient");
-  const [form, setForm] = useState({
-    email: "", nickname: "", password: "", passwordConfirm: "",
-    name: "", birth_date: "", gender: "", phone: "",
-  });
-  const [agreements, setAgreements] = useState({ terms: false, privacy: false, marketing: false });
+  const [form, setForm] = useState({ ...INITIAL_FORM });
+  const [agreements, setAgreements] = useState({ ...INITIAL_AGREEMENTS });
   const [socialData, setSocialData] = useState<SocialRegistrationData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
