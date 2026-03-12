@@ -70,6 +70,7 @@ async def test_google_callback_logs_in_existing_google_user(client: AsyncClient)
     mock_svc.get_user_info.return_value = {
         "sub": "google-sub-9999",
         "email": "google@test.com",
+        "email_verified": True,
         "name": "구글유저",
     }
 
@@ -106,6 +107,7 @@ async def test_google_callback_rejects_email_conflict(client: AsyncClient):
     mock_svc.get_user_info.return_value = {
         "sub": "google-sub-8888",
         "email": "conflict@test.com",
+        "email_verified": True,
         "name": "구글",
     }
 
@@ -135,6 +137,7 @@ async def test_google_callback_new_user_returns_registration_token_and_profile(
     mock_svc.get_user_info.return_value = {
         "sub": "google-sub-7777",
         "email": "new@gmail.com",
+        "email_verified": True,
         "name": "홍길동",
     }
 
@@ -152,6 +155,38 @@ async def test_google_callback_new_user_returns_registration_token_and_profile(
     assert profile["email"] == "new@gmail.com"
     assert profile["nickname"] == "홍길동"
     assert profile["name"] == "홍길동"
+
+
+# ---------------------------------------------------------------------------
+# S1 — POST /api/auth/google/callback: email_verified 미인증 거부
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_google_callback_rejects_unverified_email(client: AsyncClient):
+    """email_verified=false Google 계정 → 미인증 이메일 가입 거부 (OpenID Connect spec)."""
+    mock_redis = AsyncMock()
+    mock_redis.get = AsyncMock(return_value="1")
+    mock_redis.delete = AsyncMock()
+
+    mock_svc = AsyncMock()
+    mock_svc.exchange_code.return_value = {"access_token": "tok"}
+    mock_svc.get_user_info.return_value = {
+        "sub": "google-sub-unverified",
+        "email": "unverified@gmail.com",
+        "email_verified": False,
+        "name": "미인증",
+    }
+
+    with (
+        patch("app.api.google_auth.get_state_redis", return_value=mock_redis),
+        patch("app.api.google_auth.get_google_service", return_value=mock_svc),
+    ):
+        resp = await client.post("/api/auth/google/callback", json={"code": "code", "state": "state"})
+
+    body = resp.json()
+    assert body["success"] is False
+    assert "인증" in body["error"]  # 이메일 충돌 에러와 구분 ("이메일 인증이 완료되지 않은...")
 
 
 # ---------------------------------------------------------------------------

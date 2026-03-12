@@ -160,6 +160,37 @@ async def test_kakao_callback_new_user_without_email_returns_empty_email(client:
 
 
 # ---------------------------------------------------------------------------
+# S3 — POST /api/auth/kakao/callback: state 일회용 삭제 검증
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_kakao_callback_state_is_single_use(client: AsyncClient):
+    """callback 처리 후 state Redis key가 삭제되는지 확인 — CSRF 일회용 보장."""
+    mock_redis = AsyncMock()
+    mock_redis.get = AsyncMock(return_value="1")
+    mock_redis.delete = AsyncMock()
+    mock_redis.set = AsyncMock()
+
+    mock_svc = AsyncMock()
+    mock_svc.exchange_code.return_value = {"access_token": "tok"}
+    mock_svc.get_user_info.return_value = {
+        "id": 11111,
+        "kakao_account": {"profile": {"nickname": "테스트"}},
+    }
+
+    with (
+        patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis),
+        patch("app.api.kakao_auth.get_kakao_service", return_value=mock_svc),
+    ):
+        resp = await client.post("/api/auth/kakao/callback", json={"code": "code", "state": "one-time-state"})
+
+    assert resp.json()["success"] is True
+    # state key가 정확히 한 번, 정확한 key로 삭제됐는지 검증
+    mock_redis.delete.assert_called_once_with("kakao:state:one-time-state")
+
+
+# ---------------------------------------------------------------------------
 # Phase 5 — POST /api/auth/kakao/register
 # ---------------------------------------------------------------------------
 

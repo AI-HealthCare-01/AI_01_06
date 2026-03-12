@@ -64,7 +64,7 @@ async def google_callback(req: GoogleCallbackRequest):
     google_email = google_user.get("email", "")
     google_name = google_user.get("name", "")  # 표시 이름 → 닉네임 + 이름 자동 채우기
 
-    # 기존 Google 사용자 확인
+    # 기존 Google 사용자 확인 (provider ID 기반 — email_verified 불필요)
     provider = await AuthProvider.filter(provider="GOOGLE", provider_user_id=google_id).select_related("user").first()
     if provider:
         user = provider.user
@@ -76,6 +76,11 @@ async def google_callback(req: GoogleCallbackRequest):
                 "token_type": "bearer",
             }
         )
+
+    # OpenID Connect Core 1.0 §5.1: 신규 가입 시 email_verified=false 차단
+    # 의료 서비스에서 미인증 이메일로 계정 생성 허용 불가 (OWASP ASVS V2.5.6)
+    if not google_user.get("email_verified", False):
+        return error_response("이메일 인증이 완료되지 않은 Google 계정입니다.")
 
     # 이메일 충돌 확인 (다른 provider로 이미 가입된 경우)
     if google_email and await User.filter(email=google_email).exists():
