@@ -1,12 +1,44 @@
 import abc
 import base64
+import json
+import logging
+import os
 import re
 import time
 import uuid
 
 import httpx
+from openai import AsyncOpenAI
 
 from app import config
+
+logger = logging.getLogger(__name__)
+
+_OCR_SYSTEM_PROMPT = "당신은 한국 처방전 OCR 텍스트를 분석하는 전문가입니다. 정확한 정보 추출만 수행합니다."
+
+_OCR_EXTRACT_PROMPT = """다음은 한국 처방전 이미지에서 OCR로 추출한 텍스트 블록들입니다:
+
+{ocr_text}
+
+위 텍스트에서 처방전 정보를 추출하여 아래 JSON 형식으로만 응답하세요.
+추출할 수 없는 항목은 null로 표시하세요.
+약품이 여러 개면 medications 배열에 모두 포함하세요.
+
+{{
+  "hospital_name": "병원/의료기관명 (테이블 헤더나 양식 텍스트가 아닌 실제 기관명)",
+  "doctor_name": "처방 의사 성명 (사람 이름만, 면허번호 등 제외)",
+  "prescription_date": "처방일 (YYYY-MM-DD 형식)",
+  "diagnosis": "질병분류기호 또는 진단명 (예: C92.1, D68.6)",
+  "medications": [
+    {{
+      "name": "약품명 (제품코드 제외, 약품 이름만)",
+      "dosage": "1회 투여량 (예: 300 MG, 1 T)",
+      "frequency": "복용방법 (예: 1일 2회 아침,저녁 식후30분 복용)",
+      "duration": "총투여일수 (예: 60일)",
+      "instructions": "추가 지시사항"
+    }}
+  ]
+}}"""
 
 _MED_TABLE_HEADER = "처방의약품의명칭"
 _NUM_MED_COLS = 5  # 처방의약품의명칭 | 1회투여량 | 1일투여횟수 | 총투여일수 | 용법
@@ -56,9 +88,47 @@ class NaverOcrService(OcrServiceBase):
 
     async def extract(self, image_path: str) -> dict:
         texts = await self._call_clova_api(image_path)
+
+        # LLM 파싱 우선, 실패 시 기존 규칙 파싱 fallback
+        api_key = os.environ.get("OPENAI_API_KEY", "")
+        if api_key:
+            try:
+                result = await self._parse_with_llm(texts, api_key)
+                result["raw_texts"] = texts
+                return result
+            except Exception:
+                logger.warning("LLM OCR 파싱 실패, 규칙 파싱으로 fallback", exc_info=True)
+
         result = self._parse_fields(texts)
         result["raw_texts"] = texts
         return result
+
+    @staticmethod
+    async def _parse_with_llm(texts: list[str], api_key: str) -> dict:
+        """OCR 텍스트를 LLM으로 구조화."""
+        model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+        client = AsyncOpenAI(api_key=api_key)
+
+        ocr_text = "\n".join(f"[{i}] {t}" for i, t in enumerate(texts))
+        prompt = _OCR_EXTRACT_PROMPT.format(ocr_text=ocr_text)
+
+        response = await client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": _OCR_SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.0,
+        )
+
+        parsed = json.loads(response.choices[0].message.content)
+
+        # 정규화: medications가 없으면 빈 리스트
+        if "medications" not in parsed or not isinstance(parsed["medications"], list):
+            parsed["medications"] = []
+
+        return parsed
 
     async def _call_clova_api(self, image_path: str) -> list[str]:
         """Naver Clova OCR API 호출 후 인식된 텍스트 블록 리스트 반환."""
