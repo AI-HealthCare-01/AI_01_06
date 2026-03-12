@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,10 +9,14 @@ from app import config
 from app.core.deps import get_current_user
 from app.core.response import success_response
 from app.models.chat import ChatFeedback, ChatMessage, ChatThread
+from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.chat import FeedbackRequest, MessageSendRequest, ThreadCreateRequest
 from app.services.chat_service import SYSTEM_PROMPT, get_chat_service
+from app.services.retrieval_service import format_retrieved_docs, get_retrieval_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -87,14 +92,68 @@ async def end_thread(thread_id: int, user: User = Depends(get_current_user)):
     return success_response({"id": thread.id, "is_active": False})
 
 
-async def _build_context(thread: ChatThread) -> list[dict]:
+RAG_INSTRUCTION = (
+    "\n\n[근거 기반 답변 원칙]\n"
+    "- [참고 자료]가 제공된 경우 해당 내용을 근거로 답변하세요.\n"
+    "- 참고 자료에 없는 내용은 솔직히 '해당 정보가 없다'고 안내하세요.\n"
+    "- 약품명, 용량, 횟수 등 수치는 자료에 있는 그대로만 사용하세요."
+)
+
+
+async def _build_retrieved_context(thread: ChatThread, medications: list, user_query: str) -> list[dict]:
+    """처방전 약품 기반 RAG 검색 결과를 system message로 반환한다.
+
+    retrieval 실패 시 빈 리스트를 반환하여 기존 채팅 흐름을 유지한다.
+    """
+    try:
+        drug_names = [m.name for m in medications]
+        logger.info("[RAG] drug_names=%s, query=%s", drug_names, user_query[:50])
+        print(f"[RAG-DEBUG] drug_names={drug_names}")
+        if not drug_names:
+            return []
+
+        retrieval_service = get_retrieval_service()
+        print(f"[RAG-DEBUG] service_type={type(retrieval_service).__name__}")
+        docs = await retrieval_service.retrieve(drug_names, user_query)
+        logger.info("[RAG] retrieved %d docs", len(docs))
+        print(f"[RAG-DEBUG] retrieved_docs={len(docs)}")
+        if not docs:
+            print("[RAG-DEBUG] 0 docs retrieved — no matching DrugDocument found")
+            return []
+
+        ref_text = format_retrieved_docs(docs)
+        logger.info("[RAG] context length=%d chars", len(ref_text))
+        print(f"[RAG-DEBUG] context_length={len(ref_text)} chars")
+        if not ref_text:
+            return []
+
+        return [
+            {
+                "role": "system",
+                "content": (
+                    "[참고 자료]\n"
+                    "아래는 처방된 약품의 공식 정보입니다. "
+                    "답변 시 이 정보를 근거로 활용하세요.\n\n" + ref_text
+                ),
+            }
+        ]
+    except Exception:
+        logger.exception("[RAG] retrieval failed")
+        print("[RAG-DEBUG] EXCEPTION in retrieval — see logger.exception above")
+        return []
+
+
+async def _build_context(thread: ChatThread) -> list[dict]:  # noqa: C901
     """LLM에 전달할 메시지 컨텍스트를 구성합니다."""
-    messages: list[dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
+    system_content = SYSTEM_PROMPT
+    if config.RAG_ENABLED:
+        system_content += RAG_INSTRUCTION
+    messages: list[dict] = [{"role": "system", "content": system_content}]
 
     # 처방전 요약
+    medications = []
     if thread.prescription_id:
         prescription = await Prescription.get(id=thread.prescription_id)
-        user = await User.get(id=thread.user_id)
         medications = await Medication.filter(prescription=prescription)
 
         summary_parts = []
@@ -105,10 +164,12 @@ async def _build_context(thread: ChatThread) -> list[dict]:
         if medications:
             med_names = ", ".join(m.name for m in medications)
             summary_parts.append(f"처방 약물: {med_names}")
-        if user.allergies:
-            summary_parts.append(f"알러지: {user.allergies}")
-        if user.conditions:
-            summary_parts.append(f"기저질환: {user.conditions}")
+
+        profile = await PatientProfile.get_or_none(user_id=thread.user_id)
+        if profile and profile.allergy_details:
+            summary_parts.append(f"알러지: {profile.allergy_details}")
+        if profile and profile.disease_details:
+            summary_parts.append(f"기저질환: {profile.disease_details}")
 
         if summary_parts:
             messages.append(
@@ -124,7 +185,36 @@ async def _build_context(thread: ChatThread) -> list[dict]:
         .order_by("-created_at")
         .limit(config.CHAT_CONTEXT_MESSAGE_COUNT)
     )
-    for m in reversed(recent):
+    recent_list = list(reversed(recent))
+
+    # RAG: 처방전이 연결된 경우에만 검색 수행
+    med_count = len(medications)
+    recent_count = len(recent_list)
+    logger.info("[RAG] enabled=%s, medications=%d, recent=%d", config.RAG_ENABLED, med_count, recent_count)
+    print(f"[RAG-DEBUG] enabled={config.RAG_ENABLED}, medications={med_count}, recent={recent_count}")
+
+    if config.RAG_ENABLED and medications and recent_list:
+        # 가장 최근 user 메시지에서 질문 추출
+        user_query = ""
+        for m in reversed(recent_list):
+            if m.role == "user":
+                user_query = m.content
+                break
+
+        print(f"[RAG-DEBUG] user_query={user_query[:80]!r}")
+        if user_query:
+            retrieved = await _build_retrieved_context(thread, medications, user_query)
+            print(f"[RAG-DEBUG] retrieved_context_count={len(retrieved)}")
+            messages.extend(retrieved)
+    else:
+        if not config.RAG_ENABLED:
+            print("[RAG-DEBUG] SKIPPED: RAG_ENABLED is False")
+        elif not medications:
+            print("[RAG-DEBUG] SKIPPED: no medications (prescription_id may be null)")
+        elif not recent_list:
+            print("[RAG-DEBUG] SKIPPED: no recent messages")
+
+    for m in recent_list:
         messages.append({"role": m.role, "content": m.content})
 
     return messages

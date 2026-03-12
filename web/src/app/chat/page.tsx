@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api, streamChat } from "@/lib/api";
@@ -30,6 +30,8 @@ interface Message {
 
 export default function ChatPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const prescriptionId = searchParams.get("prescriptionId");
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "안녕하세요! AI 복약 상담 챗봇입니다. 복약과 관련하여 궁금하신 점을 물어보세요." },
   ]);
@@ -50,7 +52,7 @@ export default function ChatPage() {
   const initThread = () => {
     setInitError(null);
     api
-      .createThread()
+      .createThread(prescriptionId ? Number(prescriptionId) : undefined)
       .then((res) => {
         if (res.success && res.data) {
           setThreadId((res.data as { id: number }).id);

@@ -16,6 +16,7 @@ TORTOISE_ORM = {
                 "app.models.audit",
                 "app.models.guide",
                 "app.models.chat",
+                "app.models.drug_document",
             ],
             "default_connection": "default",
         },
