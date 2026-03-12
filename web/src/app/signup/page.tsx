@@ -364,7 +364,7 @@ export default function SignupPage() {
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => { setStep("role"); setSocialData(null); }}
+              onClick={() => setStep("role")}
               className="flex-1 border py-2 rounded-lg"
             >
               이전
