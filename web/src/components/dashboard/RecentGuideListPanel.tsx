@@ -2,16 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
-
-interface GuideItem {
-  id: number;
-  prescription_info: {
-    hospital_name: string;
-    diagnosis: string;
-    prescription_date: string;
-  };
-}
+import { api, GuideItem } from "@/lib/api";
 
 export default function RecentGuideListPanel() {
   const [guides, setGuides] = useState<GuideItem[]>([]);
@@ -19,7 +10,7 @@ export default function RecentGuideListPanel() {
 
   useEffect(() => {
     api.listGuides().then((res) => {
-      if (res.success && res.data) setGuides((res.data as GuideItem[]).slice(0, 3));
+      if (res.success && res.data) setGuides(res.data.slice(0, 3));
       setLoading(false);
     });
   }, []);
