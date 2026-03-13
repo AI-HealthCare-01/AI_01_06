@@ -81,6 +81,8 @@ export default function TodayMedicationPanel({ schedules, onSchedulesChange }: P
             <button
               onClick={() => handleCheck(item)}
               disabled={item.today_status === "TAKEN"}
+              aria-label={`${item.medication_name} ${item.today_status === "TAKEN" ? "복약완료" : "복약하기"}`}
+              aria-pressed={item.today_status === "TAKEN"}
               className="flex-shrink-0 ml-3 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200"
               style={
                 item.today_status === "TAKEN"

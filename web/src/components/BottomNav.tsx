@@ -93,6 +93,7 @@ export default function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden pb-safe"
       style={{ background: "var(--color-card-bg)", borderTop: "1px solid var(--color-border)" }}
+      aria-label="모바일 메인 네비게이션"
     >
       <div className="flex items-center justify-around h-16">
         {visibleItems.map((item) => {
@@ -102,6 +103,8 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
+              aria-current={active ? "page" : undefined}
               className="flex flex-col items-center justify-center gap-0.5 min-w-[48px] min-h-[48px] px-2"
             >
               <Icon active={active} />

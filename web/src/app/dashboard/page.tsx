@@ -12,10 +12,15 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [schedules, setSchedules] = useState<TodayScheduleItem[]>([]);
   const [loadingSchedules, setLoadingSchedules] = useState(true);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   useEffect(() => {
     api.listTodaySchedules().then((res) => {
-      if (res.success && res.data) setSchedules(res.data);
+      if (res.success && res.data) {
+        setSchedules(res.data);
+      } else {
+        setScheduleError(res.error || "복약 스케줄을 불러오지 못했습니다.");
+      }
       setLoadingSchedules(false);
     });
   }, []);
@@ -36,6 +41,13 @@ export default function DashboardPage() {
           {today}
         </p>
       </div>
+
+      {/* 스케줄 로드 에러 */}
+      {scheduleError && (
+        <p className="text-sm mb-4" style={{ color: "var(--color-danger)" }}>
+          {scheduleError}
+        </p>
+      )}
 
       {/* 조건부 상단 패널 */}
       {loadingSchedules ? (

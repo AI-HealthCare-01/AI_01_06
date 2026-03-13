@@ -94,6 +94,7 @@ export default function Sidebar() {
       <Link
         key={item.href}
         href={item.href}
+        aria-current={active ? "page" : undefined}
         className="flex items-center gap-3 px-4 min-h-[48px] rounded-lg text-sm font-medium transition-colors"
         style={
           active
@@ -114,7 +115,7 @@ export default function Sidebar() {
       className="hidden md:flex flex-col w-60 border-r min-h-screen p-4"
       style={{ background: "var(--color-card-bg)", borderColor: "var(--color-border)" }}
     >
-      <nav className="flex-1 space-y-1">
+      <nav className="flex-1 space-y-1" aria-label="메인 네비게이션">
         {topMenuItems.filter((item) => item.roles.includes(role)).map(renderMenuItem)}
       </nav>
       <hr style={{ borderColor: "var(--color-border)" }} className="my-2" />
