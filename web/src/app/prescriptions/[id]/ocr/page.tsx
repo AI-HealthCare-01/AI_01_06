@@ -31,12 +31,17 @@ export default function OcrReviewPage() {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [processing, setProcessing] = useState(true);
+  const [ocrFailed, setOcrFailed] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const pollOcrStatus = useCallback(async () => {
     const res = await api.getPrescription(prescriptionId);
     if (!res.success || !res.data) return;
     const pData = res.data as { ocr_status: string };
-    if (pData.ocr_status === "ocr_completed" || pData.ocr_status === "guide_completed") {
+    if (pData.ocr_status === "ocr_failed") {
+      setProcessing(false);
+      setOcrFailed(true);
+    } else if (pData.ocr_status === "ocr_completed" || pData.ocr_status === "guide_completed") {
       setProcessing(false);
       const ocrRes = await api.getOcr(prescriptionId);
       if (ocrRes.success && ocrRes.data) setData(ocrRes.data as OcrData);
@@ -60,6 +65,26 @@ export default function OcrReviewPage() {
   };
 
   const handleGenerate = async () => {
+    if (!data) return;
+
+    const missingFields: string[] = [];
+    if (!data.hospital_name) missingFields.push("병원명");
+    if (!data.doctor_name) missingFields.push("담당의");
+    if (!data.prescription_date) missingFields.push("처방일");
+    if (!data.diagnosis) missingFields.push("진단명");
+    data.medications.forEach((med, i) => {
+      const label = `${i + 1}번 약물`;
+      if (!med.name) missingFields.push(`${label} 약품명`);
+      if (!med.dosage) missingFields.push(`${label} 용량`);
+      if (!med.frequency) missingFields.push(`${label} 복용 방법`);
+      if (!med.duration) missingFields.push(`${label} 복용기간`);
+    });
+
+    if (missingFields.length > 0) {
+      setAlertMessage(`${missingFields.join(", ")} 정보를 빠짐없이 입력해야 넘어갈 수 있습니다.`);
+      return;
+    }
+
     setGenerating(true);
     const res = await api.createGuide(prescriptionId);
     if (res.success && res.data) {
@@ -105,12 +130,47 @@ export default function OcrReviewPage() {
     );
   }
 
+  if (ocrFailed) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-20 text-center gap-6">
+          <p className="text-5xl">😥</p>
+          <p className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>이미지 분석에 실패했습니다</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>처방전이 선명하게 찍혔는지 확인 후 다시 시도해 주세요.</p>
+          <button
+            onClick={() => router.push("/prescriptions/upload")}
+            className="px-8 py-3 rounded-lg text-white text-base font-semibold"
+            style={{ background: 'var(--color-primary)' }}
+          >
+            다시 업로드하기
+          </button>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!data) {
     return <AppLayout><p style={{ color: 'var(--color-text-muted)' }}>로딩 중...</p></AppLayout>;
   }
 
   return (
     <AppLayout>
+      {/* 누락 필드 알림 모달 */}
+      {alertMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="rounded-2xl p-8 mx-6 w-full max-w-sm shadow-2xl" style={{ background: 'var(--color-bg)' }}>
+            <p className="text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>입력 누락 안내</p>
+            <p className="text-lg mt-3 mb-8 leading-relaxed" style={{ color: 'var(--color-text)' }}>{alertMessage}</p>
+            <button
+              onClick={() => setAlertMessage(null)}
+              className="w-full py-3 rounded-xl text-lg font-semibold text-white"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
       <h1 className="text-2xl font-bold mb-2">처방전 내용 확인</h1>
       <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>처방전이 성공적으로 인식되었습니다. 내용을 확인하고 필요시 수정해주세요.</p>
 
@@ -128,14 +188,14 @@ export default function OcrReviewPage() {
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-bold">기본 정보</h2>
           {!editing && (
-            <button onClick={() => setEditing(true)} className="text-sm hover:underline" style={{ color: 'var(--color-primary)' }}>수정</button>
+            <button onClick={() => setEditing(true)} className="px-5 py-2 rounded-lg text-base font-semibold text-white transition-opacity hover:opacity-80" style={{ background: 'var(--color-primary)' }}>수정하기</button>
           )}
         </div>
         <div className="rounded-lg p-6 grid grid-cols-2 gap-4" style={{ background: 'var(--color-surface)' }}>
           <div>
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>병원명</p>
             {editing ? (
-              <input value={data.hospital_name || ""} onChange={(e) => setData({ ...data, hospital_name: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-2 py-1 w-full input-field" />
+              <input value={data.hospital_name || ""} onChange={(e) => setData({ ...data, hospital_name: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
             ) : (
               <p className="font-medium">{data.hospital_name || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
@@ -143,7 +203,7 @@ export default function OcrReviewPage() {
           <div>
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>담당의</p>
             {editing ? (
-              <input value={data.doctor_name || ""} onChange={(e) => setData({ ...data, doctor_name: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-2 py-1 w-full input-field" />
+              <input value={data.doctor_name || ""} onChange={(e) => setData({ ...data, doctor_name: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
             ) : (
               <p className="font-medium">{data.doctor_name || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
@@ -151,7 +211,7 @@ export default function OcrReviewPage() {
           <div>
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>처방일</p>
             {editing ? (
-              <input type="date" value={data.prescription_date || ""} onChange={(e) => setData({ ...data, prescription_date: e.target.value })} className="px-2 py-1 w-full input-field" />
+              <input type="date" value={data.prescription_date || ""} onChange={(e) => setData({ ...data, prescription_date: e.target.value })} className="px-3 py-2 w-full text-base input-field" />
             ) : (
               <p className="font-medium">{data.prescription_date || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
@@ -159,7 +219,7 @@ export default function OcrReviewPage() {
           <div>
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>진단명</p>
             {editing ? (
-              <input value={data.diagnosis || ""} onChange={(e) => setData({ ...data, diagnosis: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-2 py-1 w-full input-field" />
+              <input value={data.diagnosis || ""} onChange={(e) => setData({ ...data, diagnosis: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
             ) : (
               <p className="font-medium">{data.diagnosis || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
@@ -183,33 +243,41 @@ export default function OcrReviewPage() {
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>약품명</p>
                   {editing ? (
-                    <input value={med.name} onChange={(e) => updateMed(i, "name", e.target.value)} className="px-2 py-1 w-full text-sm input-field" />
+                    <input value={med.name} onChange={(e) => updateMed(i, "name", e.target.value)} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
                   ) : (
-                    <p className="font-medium">{med.name}</p>
+                    <p className="font-medium">{med.name || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
                   )}
                 </div>
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>용량</p>
                   {editing ? (
-                    <input value={med.dosage} onChange={(e) => updateMed(i, "dosage", e.target.value)} className="px-2 py-1 w-full text-sm input-field" />
+                    <input value={med.dosage} onChange={(e) => updateMed(i, "dosage", e.target.value)} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
                   ) : (
-                    <p>{med.dosage}</p>
+                    <p>{med.dosage || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
                   )}
                 </div>
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>복용 방법</p>
                   {editing ? (
-                    <input value={med.frequency} onChange={(e) => updateMed(i, "frequency", e.target.value)} className="px-2 py-1 w-full text-sm input-field" />
+                    <input value={med.frequency} onChange={(e) => updateMed(i, "frequency", e.target.value)} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
                   ) : (
-                    <p>{med.frequency}</p>
+                    <p>{med.frequency || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
                   )}
                 </div>
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>복용기간</p>
                   {editing ? (
-                    <input value={med.duration || ""} onChange={(e) => updateMed(i, "duration", e.target.value)} className="px-2 py-1 w-full text-sm input-field" />
+                    <input value={med.duration || ""} onChange={(e) => updateMed(i, "duration", e.target.value)} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
                   ) : (
-                    <p>{med.duration || "-"}</p>
+                    <p>{med.duration || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>복용 지시사항</p>
+                  {editing ? (
+                    <input value={med.instructions || ""} onChange={(e) => updateMed(i, "instructions", e.target.value)} placeholder="예: 식후 30분, 취침 전 복용 등" className="px-3 py-2 w-full text-base input-field" />
+                  ) : (
+                    <p>{med.instructions || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
                   )}
                 </div>
               </div>
