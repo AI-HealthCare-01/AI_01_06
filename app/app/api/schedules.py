@@ -63,9 +63,13 @@ async def get_today_schedules(user: User = Depends(get_current_user)):
         medication__prescription__user=user,
     ).prefetch_related("medication")
 
+    schedule_ids = [s.id for s in schedules]
+    today_logs = await AdherenceLog.filter(schedule_id__in=schedule_ids, target_date=today)
+    log_by_schedule: dict[int, AdherenceLog] = {log.schedule_id: log for log in today_logs}
+
     result = []
     for s in schedules:
-        today_log = await AdherenceLog.get_or_none(schedule=s, target_date=today)
+        today_log = log_by_schedule.get(s.id)
         result.append(
             {
                 "id": s.id,
