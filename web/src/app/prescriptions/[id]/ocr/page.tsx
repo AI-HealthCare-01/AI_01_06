@@ -31,7 +31,7 @@ export default function OcrReviewPage() {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [processing, setProcessing] = useState(true);
-  const [confirmMessage, setConfirmMessage] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const pollOcrStatus = useCallback(async () => {
     const res = await api.getPrescription(prescriptionId);
@@ -77,15 +77,10 @@ export default function OcrReviewPage() {
     });
 
     if (missingFields.length > 0) {
-      setConfirmMessage(`${missingFields.join(", ")} 정보가 누락되었습니다.\n해당 칸을 비워둔 채로 진행하시겠습니까?`);
+      setAlertMessage(`${missingFields.join(", ")} 정보를 빠짐없이 입력해야 넘어갈 수 있습니다.`);
       return;
     }
 
-    await proceedGenerate();
-  };
-
-  const proceedGenerate = async () => {
-    setConfirmMessage(null);
     setGenerating(true);
     const res = await api.createGuide(prescriptionId);
     if (res.success && res.data) {
@@ -137,27 +132,19 @@ export default function OcrReviewPage() {
 
   return (
     <AppLayout>
-      {/* 누락 필드 확인 모달 */}
-      {confirmMessage && (
+      {/* 누락 필드 알림 모달 */}
+      {alertMessage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="rounded-2xl p-8 mx-6 w-full max-w-sm shadow-2xl" style={{ background: 'var(--color-bg)' }}>
             <p className="text-xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>입력 누락 안내</p>
-            <p className="text-lg mt-3 mb-8 leading-relaxed whitespace-pre-line" style={{ color: 'var(--color-text)' }}>{confirmMessage}</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmMessage(null)}
-                className="flex-1 py-3 rounded-xl text-lg font-semibold btn-outline"
-              >
-                아니오
-              </button>
-              <button
-                onClick={proceedGenerate}
-                className="flex-1 py-3 rounded-xl text-lg font-semibold text-white"
-                style={{ background: 'var(--color-primary)' }}
-              >
-                예
-              </button>
-            </div>
+            <p className="text-lg mt-3 mb-8 leading-relaxed" style={{ color: 'var(--color-text)' }}>{alertMessage}</p>
+            <button
+              onClick={() => setAlertMessage(null)}
+              className="w-full py-3 rounded-xl text-lg font-semibold text-white"
+              style={{ background: 'var(--color-primary)' }}
+            >
+              확인
+            </button>
           </div>
         </div>
       )}

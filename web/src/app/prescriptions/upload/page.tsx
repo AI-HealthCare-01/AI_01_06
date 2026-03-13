@@ -7,9 +7,28 @@ import { api } from "@/lib/api";
 
 export default function PrescriptionUploadPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0] || null;
+    setFile(selected);
+    if (selected) {
+      setPreview(URL.createObjectURL(selected));
+    } else {
+      setPreview(null);
+    }
+  };
+
+  const handleRemove = () => {
+    setFile(null);
+    setPreview(null);
+    setExpanded(false);
+    if (fileRef.current) fileRef.current.value = "";
+  };
   const router = useRouter();
 
   const handleUpload = async () => {
@@ -41,40 +60,68 @@ export default function PrescriptionUploadPage() {
       </div>
 
       {/* Upload area */}
-      <div className="rounded-lg p-12 text-center mb-4" style={{ background: 'var(--color-surface)', border: '2px dashed var(--color-border)' }}>
-        <div className="space-y-4">
-          <p style={{ color: 'var(--color-text-muted)' }}>처방전 이미지를 업로드해주세요</p>
-          <div className="flex justify-center gap-4">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* 확대 오버레이 */}
+      {expanded && preview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+          onClick={() => setExpanded(false)}
+        >
+          <img src={preview} alt="처방전 확대 보기" className="max-w-full max-h-full rounded-lg object-contain" />
+          <button
+            className="absolute top-4 right-4 px-4 py-2 rounded-lg text-base font-semibold"
+            style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+            onClick={() => setExpanded(false)}
+          >
+            닫기
+          </button>
+        </div>
+      )}
+
+      {preview ? (
+        <div className="mb-4">
+          <div className="rounded-lg overflow-hidden" style={{ border: '2px solid var(--color-border)', maxHeight: '220px' }}>
+            <img src={preview} alt="처방전 미리보기" className="w-full object-contain" style={{ maxHeight: '220px' }} />
+          </div>
+          <div className="flex gap-3 mt-3">
             <button
-              onClick={() => fileRef.current?.click()}
-              className="px-6 py-3 rounded-lg text-white transition-colors" style={{ background: 'var(--color-text-muted)' }}
+              onClick={() => setExpanded(true)}
+              className="flex-1 py-3 rounded-lg text-base font-semibold btn-outline"
+            >
+              확대 보기
+            </button>
+            <button
+              onClick={handleRemove}
+              className="flex-1 py-3 rounded-lg text-base font-semibold text-white"
+              style={{ background: 'var(--color-text-muted)' }}
+            >
+              다시 선택
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="rounded-lg p-12 text-center mb-4 cursor-pointer"
+          style={{ background: 'var(--color-surface)', border: '2px dashed var(--color-border)' }}
+          onClick={() => fileRef.current?.click()}
+        >
+          <div className="space-y-4">
+            <p style={{ color: 'var(--color-text-muted)' }}>처방전 이미지를 업로드해주세요</p>
+            <button
+              className="px-6 py-3 rounded-lg text-white transition-colors"
+              style={{ background: 'var(--color-text-muted)' }}
             >
               사진 선택
             </button>
           </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-          />
-        </div>
-      </div>
-
-      {/* File info */}
-      {file && (
-        <div className="rounded-lg p-4 flex items-center justify-between mb-4" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded flex items-center justify-center" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>📄</div>
-            <div>
-              <p className="font-medium text-sm">{file.name}</p>
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{(file.size / 1024).toFixed(1)} KB</p>
-            </div>
-          </div>
-          <button onClick={() => setFile(null)} className="text-sm px-3 py-1 rounded transition-colors" style={{ color: 'var(--color-text-muted)', background: 'var(--color-surface)' }}>
-            제거
-          </button>
         </div>
       )}
 
