@@ -134,12 +134,9 @@ export default function GuideDetailPage() {
               </div>
               <div className="space-y-1 text-sm">
                 <p><span style={{ color: 'var(--color-text-muted)' }}>복용 시간 :</span> {med.frequency}</p>
+                {med.duration && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 기간 :</span> {med.duration}</p>}
                 <p><span style={{ color: 'var(--color-text-muted)' }}>복용 방법 :</span> {med.instructions}</p>
                 <p className="px-2 py-1 rounded mt-2" style={{ background: 'var(--color-warning-soft)', color: 'var(--color-warning-text)' }}>
-                <p><span className="text-gray-500">복용 시간 :</span> {med.frequency}</p>
-                {med.duration && <p><span className="text-gray-500">복용 기간 :</span> {med.duration}</p>}
-                <p><span className="text-gray-500">복용 방법 :</span> {med.instructions}</p>
-                <p className="bg-yellow-50 text-yellow-800 px-2 py-1 rounded mt-2">
                   <span className="font-medium">주의 사항 :</span> {med.precautions}
                 </p>
               </div>
@@ -194,8 +191,6 @@ export default function GuideDetailPage() {
       {/* Actions */}
       <div className="flex gap-4">
         <Link href="/guides" className="flex-1 py-3 rounded-lg text-center btn-outline">
-          AI 가이드 기록 저장
-        <Link href="/guides" className="flex-1 border py-3 rounded-lg text-center">
           가이드 목록으로
         </Link>
         <Link href={`/chat?prescriptionId=${guide.prescription_id}`} className="flex-1 py-3 rounded-lg text-center btn-primary">
