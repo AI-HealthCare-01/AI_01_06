@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 interface GuideItem {
   id: number;
@@ -21,6 +22,8 @@ interface GuideItem {
 export default function GuidesListPage() {
   const [guides, setGuides] = useState<GuideItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     api.listGuides().then((res) => {
@@ -28,6 +31,16 @@ export default function GuidesListPage() {
       setLoading(false);
     });
   }, []);
+
+  const handleDelete = async (guideId: number) => {
+    if (!confirm("가이드를 삭제하시겠습니까?")) return;
+    setDeletingId(guideId);
+    const res = await api.deleteGuide(guideId);
+    if (res.success) {
+      setGuides((prev) => prev.filter((g) => g.id !== guideId));
+    }
+    setDeletingId(null);
+  };
 
   return (
     <AppLayout>
@@ -78,6 +91,13 @@ export default function GuidesListPage() {
                   <Link href={`/guides/${guide.id}`} className="text-sm px-3 py-1 rounded btn-outline">
                     가이드 보기
                   </Link>
+                  <button
+                    onClick={() => handleDelete(guide.id)}
+                    disabled={deletingId === guide.id}
+                    className="text-sm border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {deletingId === guide.id ? "삭제 중..." : "삭제"}
+                  </button>
                 </div>
               </div>
             </div>

@@ -37,10 +37,10 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
 
 @router.get("")
 async def list_guides(user: User = Depends(get_current_user)):
-    guides = await Guide.filter(user=user, status="completed").order_by("-created_at")
+    guides = await Guide.filter(user=user, status="completed").order_by("-created_at").prefetch_related("prescription")
     result = []
     for guide in guides:
-        prescription = await Prescription.get(id=guide.prescription_id)
+        prescription = guide.prescription
         result.append(
             {
                 "id": guide.id,
@@ -58,6 +58,15 @@ async def list_guides(user: User = Depends(get_current_user)):
             }
         )
     return success_response(result)
+
+
+@router.delete("/{guide_id}")
+async def delete_guide(guide_id: int, user: User = Depends(get_current_user)):
+    guide = await Guide.get_or_none(id=guide_id, user=user)
+    if not guide:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="가이드를 찾을 수 없습니다.")
+    await guide.delete()
+    return success_response({"message": "가이드가 삭제되었습니다."})
 
 
 @router.get("/{guide_id}")
@@ -86,6 +95,7 @@ async def get_guide(guide_id: int, user: User = Depends(get_current_user)):
                     "name": m.name,
                     "dosage": m.dosage,
                     "frequency": m.frequency,
+                    "duration": m.duration,
                 }
                 for m in medications
             ],

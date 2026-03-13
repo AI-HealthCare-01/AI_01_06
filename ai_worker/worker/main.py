@@ -13,6 +13,7 @@ TORTOISE_ORM = {
             "app.models.prescription",
             "app.models.guide",
             "app.models.chat",
+            "app.models.patient_profile",
         ]
     },
 }

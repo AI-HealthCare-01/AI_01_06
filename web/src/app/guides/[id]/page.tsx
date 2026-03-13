@@ -10,6 +10,7 @@ interface MedicationGuide {
   name: string;
   dosage: string;
   frequency: string;
+  duration?: string;
   instructions: string;
   effect: string;
   precautions: string;
@@ -54,7 +55,7 @@ export default function GuideDetailPage() {
     if (!res.success || !res.data) return;
     const data = res.data as GuideData;
     setGuide(data);
-    if (data.status === "completed") {
+    if (data.status === "completed" || data.status === "failed") {
       setGenerating(false);
     }
   }, [guideId]);
@@ -75,6 +76,18 @@ export default function GuideDetailPage() {
           <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
           <p style={{ color: 'var(--color-text-muted)' }}>AI가 맞춤형 복약 가이드를 생성하고 있습니다...</p>
           <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>잠시만 기다려주세요</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (guide?.status === "failed") {
+    return (
+      <AppLayout>
+        <h1 className="text-2xl font-bold mb-2">가이드 생성 실패</h1>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <p className="text-red-700 font-medium">가이드 생성 중 오류가 발생했습니다.</p>
+          <p className="text-red-500 text-sm mt-1">잠시 후 다시 시도해주세요.</p>
         </div>
       </AppLayout>
     );
@@ -120,9 +133,16 @@ export default function GuideDetailPage() {
                 <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
               </div>
               <div className="space-y-1 text-sm">
+<<<<<<< Updated upstream
                 <p><span style={{ color: 'var(--color-text-muted)' }}>복용 시간 :</span> {med.frequency}</p>
                 <p><span style={{ color: 'var(--color-text-muted)' }}>복용 방법 :</span> {med.instructions}</p>
                 <p className="px-2 py-1 rounded mt-2" style={{ background: 'var(--color-warning-soft)', color: 'var(--color-warning-text)' }}>
+=======
+                <p><span className="text-gray-500">복용 시간 :</span> {med.frequency}</p>
+                {med.duration && <p><span className="text-gray-500">복용 기간 :</span> {med.duration}</p>}
+                <p><span className="text-gray-500">복용 방법 :</span> {med.instructions}</p>
+                <p className="bg-yellow-50 text-yellow-800 px-2 py-1 rounded mt-2">
+>>>>>>> Stashed changes
                   <span className="font-medium">주의 사항 :</span> {med.precautions}
                 </p>
               </div>
@@ -176,8 +196,13 @@ export default function GuideDetailPage() {
 
       {/* Actions */}
       <div className="flex gap-4">
+<<<<<<< Updated upstream
         <Link href="/guides" className="flex-1 py-3 rounded-lg text-center btn-outline">
           AI 가이드 기록 저장
+=======
+        <Link href="/guides" className="flex-1 border py-3 rounded-lg text-center">
+          가이드 목록으로
+>>>>>>> Stashed changes
         </Link>
         <Link href={`/chat?prescriptionId=${guide.prescription_id}`} className="flex-1 py-3 rounded-lg text-center btn-primary">
           AI에게 질문하기

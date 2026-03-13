@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from app.models.guide import Guide
+from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from worker.tasks.guide_task import guide_task
@@ -17,6 +18,17 @@ async def user():
         password_hash="fakehash",
         name="홍길동",
         role="patient",
+    )
+
+
+@pytest.fixture
+async def patient_profile(user):
+    return await PatientProfile.create(
+        user=user,
+        height_cm=170.0,
+        weight_kg=65.0,
+        allergy_details="없음",
+        disease_details="없음",
     )
 
 
@@ -67,8 +79,8 @@ async def test_ocr_task_enqueues_guide_task(user, prescription):
     assert enqueued_user_id == user.id
 
 
-async def test_guide_task_updates_prescription_status(user, prescription):
-    """guide_task 완료 시 Prescription.ocr_status가 completed로 변경된다."""
+async def test_guide_task_updates_prescription_status(user, patient_profile, prescription):
+    """guide_task 완료 시 Prescription.ocr_status가 guide_completed로 변경된다."""
     await ocr_task({"redis": AsyncMock()}, prescription.id)
 
     guide = await Guide.filter(prescription=prescription).first()
@@ -78,8 +90,8 @@ async def test_guide_task_updates_prescription_status(user, prescription):
     assert updated.ocr_status == "guide_completed"
 
 
-async def test_guide_task_generates_content(user, prescription):
-    # First complete OCR so medications exist
+async def test_guide_task_generates_content(user, patient_profile, prescription):
+    """guide_task 완료 시 Guide에 medication_guides와 disclaimer가 포함된 content가 저장된다."""
     await ocr_task({"redis": AsyncMock()}, prescription.id)
 
     guide = await Guide.filter(prescription=prescription).first()
@@ -89,3 +101,15 @@ async def test_guide_task_generates_content(user, prescription):
     assert updated.status == "completed"
     assert "medication_guides" in updated.content
     assert "disclaimer" in updated.content
+
+
+async def test_guide_task_uses_patient_profile(user, patient_profile, prescription):
+    """guide_task가 PatientProfile의 키/몸무게/알레르기/기저질환을 user_info에 포함한다."""
+    await ocr_task({"redis": AsyncMock()}, prescription.id)
+
+    guide = await Guide.filter(prescription=prescription).first()
+    await guide_task({}, guide.id, user.id)
+
+    updated = await Guide.get(id=guide.id)
+    assert updated.status == "completed"
+    assert updated.content is not None
