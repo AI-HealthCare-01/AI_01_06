@@ -1,5 +1,18 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
+export interface GuideItem {
+  id: number;
+  prescription_id: number;
+  status: string;
+  prescription_info: {
+    hospital_name: string;
+    doctor_name: string;
+    prescription_date: string;
+    diagnosis: string;
+  };
+  created_at: string;
+}
+
 export interface TodayScheduleItem {
   id: number;
   medication_id: number;
@@ -197,7 +210,7 @@ export const api = {
       body: JSON.stringify({ prescription_id: prescriptionId }),
     }),
 
-  listGuides: () => request("/api/guides"),
+  listGuides: () => request<GuideItem[]>("/api/guides"),
 
   getGuide: (guideId: number) => request(`/api/guides/${guideId}`),
 
