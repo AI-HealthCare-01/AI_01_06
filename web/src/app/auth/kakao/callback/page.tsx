@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, setRefreshToken, setToken } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useSocialRegistration } from "@/lib/social-registration-context";
 
-export default function KakaoCallbackPage() {
+function KakaoCallbackContent() {
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -56,13 +56,13 @@ export default function KakaoCallbackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
-        <div className="p-8 rounded-lg text-center space-y-4" style={{ background: 'var(--color-card-bg)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
-          <p style={{ color: 'var(--color-danger)' }}>{error}</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-bg)" }}>
+        <div className="p-8 rounded-lg text-center space-y-4" style={{ background: "var(--color-card-bg)", boxShadow: "0 1px 3px rgba(45,42,38,0.06)" }}>
+          <p style={{ color: "var(--color-danger)" }}>{error}</p>
           <button
             onClick={() => router.push("/login")}
             className="hover:underline"
-            style={{ color: 'var(--color-primary)' }}
+            style={{ color: "var(--color-primary)" }}
           >
             로그인으로 돌아가기
           </button>
@@ -72,8 +72,22 @@ export default function KakaoCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
-      <p style={{ color: 'var(--color-text-muted)' }}>카카오 인증 처리 중...</p>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-bg)" }}>
+      <p style={{ color: "var(--color-text-muted)" }}>카카오 인증 처리 중...</p>
     </div>
+  );
+}
+
+export default function KakaoCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-bg)" }}>
+          <p style={{ color: "var(--color-text-muted)" }}>카카오 인증 처리 중...</p>
+        </div>
+      }
+    >
+      <KakaoCallbackContent />
+    </Suspense>
   );
 }
