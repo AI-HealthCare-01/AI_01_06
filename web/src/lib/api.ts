@@ -190,6 +190,9 @@ export const api = {
 
   getGuide: (guideId: number) => request(`/api/guides/${guideId}`),
 
+  deleteGuide: (guideId: number) =>
+    request(`/api/guides/${guideId}`, { method: "DELETE" }),
+
   // Medications
   getMedication: (id: number) => request(`/api/medications/${id}`),
 

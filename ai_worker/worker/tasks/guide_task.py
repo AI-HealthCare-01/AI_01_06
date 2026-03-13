@@ -1,4 +1,5 @@
 from app.models.guide import Guide
+from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.services.guide_service import get_guide_service
@@ -22,18 +23,25 @@ async def guide_task(ctx: dict, guide_id: int, user_id: int) -> None:
         for m in medications
     ]
 
+    profile = await PatientProfile.get_or_none(user=user)
     user_info = {
         "name": user.name,
         "birth_date": str(user.birth_date) if user.birth_date else None,
         "gender": user.gender,
+        "height": float(profile.height_cm) if profile and profile.height_cm else None,
+        "weight": float(profile.weight_kg) if profile and profile.weight_kg else None,
+        "allergies": profile.allergy_details if profile else None,
+        "conditions": profile.disease_details if profile else None,
     }
 
     guide_service = get_guide_service()
-    content = await guide_service.generate(med_list, user_info)
-
-    guide.content = content
-    guide.status = "completed"
-    await guide.save()
-
-    prescription.ocr_status = "guide_completed"
-    await prescription.save()
+    try:
+        content = await guide_service.generate(med_list, user_info)
+        guide.content = content
+        guide.status = "completed"
+        prescription.ocr_status = "guide_completed"
+    except Exception:
+        guide.status = "failed"
+    finally:
+        await guide.save()
+        await prescription.save()
