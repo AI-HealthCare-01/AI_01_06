@@ -1,5 +1,16 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
+export interface TodayScheduleItem {
+  id: number;
+  medication_id: number;
+  medication_name: string;
+  dosage: string | null;
+  frequency: string | null;
+  time_of_day: "MORNING" | "NOON" | "EVENING" | "BEDTIME";
+  today_status: "TAKEN" | "MISSED" | "SKIPPED" | null;
+  today_log_id: number | null;
+}
+
 interface ApiResponse<T = unknown> {
   success: boolean;
   data: T | null;
@@ -192,6 +203,19 @@ export const api = {
 
   deleteGuide: (guideId: number) =>
     request(`/api/guides/${guideId}`, { method: "DELETE" }),
+
+  // Schedules
+  listTodaySchedules: () =>
+    request<TodayScheduleItem[]>("/api/schedules/today"),
+
+  logAdherence: (scheduleId: number, status: "TAKEN" | "MISSED" | "SKIPPED") =>
+    request(`/api/schedules/${scheduleId}/log`, {
+      method: "POST",
+      body: JSON.stringify({
+        target_date: new Date().toISOString().split("T")[0],
+        status,
+      }),
+    }),
 
   // Medications
   getMedication: (id: number) => request(`/api/medications/${id}`),
