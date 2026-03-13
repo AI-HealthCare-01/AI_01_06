@@ -40,6 +40,9 @@ async def create_schedules(items: list[ScheduleCreateItem], user: User = Depends
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=f"약물 {item.medication_id}를 찾을 수 없습니다."
             )
+        await med.fetch_related("prescription")
+        if med.prescription.user_id != user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
         schedule = await MedicationSchedule.create(
             medication=med,
@@ -57,16 +60,24 @@ async def get_today_schedules(user: User = Depends(get_current_user)):
     schedules = await MedicationSchedule.filter(
         start_date__lte=today,
         end_date__gte=today,
+        medication__prescription__user=user,
     ).prefetch_related("medication")
-    result = [
-        {
-            "id": s.id,
-            "medication_id": s.medication.id,
-            "medication_name": s.medication.name,
-            "time_of_day": s.time_of_day,
-        }
-        for s in schedules
-    ]
+
+    result = []
+    for s in schedules:
+        today_log = await AdherenceLog.get_or_none(schedule=s, target_date=today)
+        result.append(
+            {
+                "id": s.id,
+                "medication_id": s.medication.id,
+                "medication_name": s.medication.name,
+                "dosage": s.medication.dosage,
+                "frequency": s.medication.frequency,
+                "time_of_day": s.time_of_day,
+                "today_status": today_log.status if today_log else None,
+                "today_log_id": today_log.id if today_log else None,
+            }
+        )
     return success_response(result)
 
 
@@ -82,6 +93,9 @@ async def log_adherence(schedule_id: int, req: AdherenceLogRequest, user: User =
     schedule = await MedicationSchedule.get_or_none(id=schedule_id)
     if not schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="스케줄을 찾을 수 없습니다.")
+    await schedule.fetch_related("medication__prescription")
+    if schedule.medication.prescription.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
     log = await AdherenceLog.create(
         schedule=schedule,
@@ -98,6 +112,10 @@ async def get_logs(schedule_id: int, user: User = Depends(get_current_user)):
     schedule = await MedicationSchedule.get_or_none(id=schedule_id)
     if not schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="스케줄을 찾을 수 없습니다.")
+
+    await schedule.fetch_related("medication__prescription")
+    if schedule.medication.prescription.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
     logs = await AdherenceLog.filter(schedule=schedule).order_by("-target_date")
     result = [{"id": lg.id, "target_date": str(lg.target_date), "status": lg.status, "note": lg.note} for lg in logs]
