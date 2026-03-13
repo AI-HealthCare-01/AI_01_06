@@ -1,0 +1,10 @@
+import AppLayout from "@/components/AppLayout";
+
+export default function CaregiversPage() {
+  return (
+    <AppLayout>
+      <h1 className="text-2xl font-bold mb-4">보호자 관리</h1>
+      <p style={{ color: "var(--color-text-muted)" }}>준비 중인 기능입니다.</p>
+    </AppLayout>
+  );
+}
