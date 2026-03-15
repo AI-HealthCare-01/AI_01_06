@@ -77,6 +77,16 @@ async def accept_invite(request: Request, token: str, user: User = Depends(get_c
     if not consumed:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
 
+    # REVOKED 매핑이 존재하면 재활성화, 없으면 새로 생성
+    existing = await CaregiverPatientMapping.get_or_none(caregiver=caregiver, patient=patient)
+    if existing:
+        if existing.status == "APPROVED":
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
+        existing.status = "APPROVED"
+        existing.accepted_at = datetime.now(UTC)
+        await existing.save()
+        return success_response({"id": existing.id, "status": existing.status})
+
     try:
         mapping = await CaregiverPatientMapping.create(
             caregiver=caregiver,
@@ -85,6 +95,7 @@ async def accept_invite(request: Request, token: str, user: User = Depends(get_c
             accepted_at=datetime.now(UTC),
         )
     except IntegrityError as e:
+        # 동시 요청 race condition 안전망
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.") from e
     return success_response({"id": mapping.id, "status": mapping.status})
 
@@ -110,7 +121,10 @@ async def list_patients(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="보호자만 조회할 수 있습니다.")
 
     mappings = await CaregiverPatientMapping.filter(caregiver=user, status="APPROVED").prefetch_related("patient")
-    result = [{"id": m.patient.id, "nickname": m.patient.nickname, "name": m.patient.name} for m in mappings]
+    result = [
+        {"mapping_id": m.id, "id": m.patient.id, "nickname": m.patient.nickname, "name": m.patient.name}
+        for m in mappings
+    ]
     return success_response(result)
 
 
@@ -120,5 +134,8 @@ async def list_my_caregivers(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="환자만 조회할 수 있습니다.")
 
     mappings = await CaregiverPatientMapping.filter(patient=user, status="APPROVED").prefetch_related("caregiver")
-    result = [{"id": m.caregiver.id, "nickname": m.caregiver.nickname, "name": m.caregiver.name} for m in mappings]
+    result = [
+        {"mapping_id": m.id, "id": m.caregiver.id, "nickname": m.caregiver.nickname, "name": m.caregiver.name}
+        for m in mappings
+    ]
     return success_response(result)

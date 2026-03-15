@@ -253,8 +253,10 @@ async def test_list_patients_and_caregivers(client: AsyncClient):
     assert resp.status_code == 200
     assert len(resp.json()["data"]) == 1
 
-    # 보호자 → 환자 목록에 mapping_id 포함 확인
-    assert "mapping_id" in resp.json()["data"][0]
+    # 보호자 → 환자 목록에 mapping_id 포함 + 타입 확인
+    patients_data = resp.json()["data"]
+    assert "mapping_id" in patients_data[0]
+    assert isinstance(patients_data[0]["mapping_id"], int)
 
     # 환자 → 보호자 목록 조회
     client.headers["Authorization"] = f"Bearer {patient_token}"
@@ -262,38 +264,10 @@ async def test_list_patients_and_caregivers(client: AsyncClient):
     assert resp.status_code == 200
     assert len(resp.json()["data"]) == 1
 
-    # 환자 → 보호자 목록에 mapping_id 포함 확인
-    assert "mapping_id" in resp.json()["data"][0]
-
-
-# ──────────────────────────────────────────────
-# P1/P2 버그 수정 검증
-# ──────────────────────────────────────────────
-
-
-@pytest.mark.asyncio
-async def test_list_patients_returns_mapping_id(client: AsyncClient):
-    """보호자의 환자 목록 응답에 mapping_id가 포함된다."""
-    await client.post("/api/auth/signup", json=_PATIENT)
-    await client.post("/api/auth/signup", json=_GUARDIAN)
-
-    patient_token = await _login(client, _PATIENT["email"], _PATIENT["password"])
-    guardian_token = await _login(client, _GUARDIAN["email"], _GUARDIAN["password"])
-
-    # 연결 생성
-    client.headers["Authorization"] = f"Bearer {patient_token}"
-    create_resp = await client.post("/api/caregivers/invite")
-    invite_token = create_resp.json()["data"]["token"]
-    client.headers["Authorization"] = f"Bearer {guardian_token}"
-    await client.post(f"/api/caregivers/invite/{invite_token}/accept")
-
-    # 목록 조회 → mapping_id 존재 확인
-    resp = await client.get("/api/caregivers/patients")
-    assert resp.status_code == 200
-    data = resp.json()["data"]
-    assert len(data) == 1
-    assert "mapping_id" in data[0]
-    assert isinstance(data[0]["mapping_id"], int)
+    # 환자 → 보호자 목록에 mapping_id 포함 + 타입 확인
+    caregivers_data = resp.json()["data"]
+    assert "mapping_id" in caregivers_data[0]
+    assert isinstance(caregivers_data[0]["mapping_id"], int)
 
 
 @pytest.mark.asyncio
