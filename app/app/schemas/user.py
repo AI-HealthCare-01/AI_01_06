@@ -33,3 +33,8 @@ class UserUpdateRequest(BaseModel):
     allergy_details: str | None = Field(default=None, max_length=1000)
     has_disease: bool | None = None
     disease_details: str | None = Field(default=None, max_length=1000)
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str | None = None
+    confirm_email: str | None = None
