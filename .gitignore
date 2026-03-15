@@ -54,6 +54,8 @@ uploads/
 docs/*
 .agents/*
 .claude/*
+.serena/*
+.mcp.json
 
 # RAG generated data
 app/data/faiss/
