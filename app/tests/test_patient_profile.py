@@ -1,6 +1,8 @@
 import pytest
 from httpx import AsyncClient
 
+from app.core.security import create_access_token
+from app.models.auth_provider import AuthProvider
 from app.models.patient_profile import PatientProfile
 from app.models.user import User
 
@@ -142,3 +144,76 @@ async def test_allergy_details_max_length(client: AsyncClient):
         json={"has_allergy": True, "allergy_details": "x" * 1001},
     )
     assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_delete_account_with_password(client: AsyncClient):
+    """로컬 계정 탈퇴: 올바른 비밀번호 → soft-delete → 로그인 불가."""
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "role": "PATIENT"})
+    login_resp = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
+    token = login_resp.json()["data"]["access_token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    resp = await client.delete("/api/users/me", params={"password": _BASE_SIGNUP["password"]})
+    assert resp.json()["success"] is True
+
+    login_resp2 = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
+    assert login_resp2.json().get("success") is not True
+
+
+@pytest.mark.asyncio
+async def test_delete_account_wrong_password(client: AsyncClient):
+    """로컬 계정 탈퇴: 잘못된 비밀번호 → 거부."""
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "role": "PATIENT"})
+    login_resp = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
+    token = login_resp.json()["data"]["access_token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    resp = await client.delete("/api/users/me", params={"password": "WrongPass1!"})
+    assert resp.json()["success"] is False
+
+
+@pytest.mark.asyncio
+async def test_delete_account_unauthenticated(client: AsyncClient):
+    """미인증 상태에서 탈퇴 요청 → 401."""
+    resp = await client.delete("/api/users/me", params={"password": "any"})
+    assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_delete_social_account_with_email(client: AsyncClient):
+    """소셜 계정 탈퇴: 올바른 이메일 → soft-delete."""
+    user = await User.create(
+        email="social@test.com", password_hash=None, nickname="소셜닉", name="소셜유저", role="PATIENT"
+    )
+    await AuthProvider.create(user=user, provider="KAKAO", provider_user_id="kakao_123")
+
+    token = create_access_token(user.id, user.role)
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    resp = await client.delete("/api/users/me", params={"confirm_email": "social@test.com"})
+    assert resp.json()["success"] is True
+
+    deleted_user = await User.get(id=user.id)
+    assert deleted_user.deleted_at is not None
+
+
+@pytest.mark.asyncio
+async def test_delete_social_account_wrong_email(client: AsyncClient):
+    """소셜 계정 탈퇴: 잘못된 이메일 → 거부."""
+    user = await User.create(
+        email="social2@test.com", password_hash=None, nickname="소셜닉2", name="소셜유저2", role="PATIENT"
+    )
+    await AuthProvider.create(user=user, provider="GOOGLE", provider_user_id="google_456")
+
+    token = create_access_token(user.id, user.role)
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    resp = await client.delete("/api/users/me", params={"confirm_email": "wrong@test.com"})
+    assert resp.json()["success"] is False
