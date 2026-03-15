@@ -249,10 +249,10 @@ export const api = {
     request<{ id: number; status: string }>(`/api/caregivers/invite/${token}/accept`, { method: "POST" }),
 
   listPatients: () =>
-    request<{ id: number; nickname: string; name: string }[]>("/api/caregivers/patients"),
+    request<{ mapping_id: number; id: number; nickname: string; name: string }[]>("/api/caregivers/patients"),
 
   listMyCaregivers: () =>
-    request<{ id: number; nickname: string; name: string }[]>("/api/caregivers/my-caregivers"),
+    request<{ mapping_id: number; id: number; nickname: string; name: string }[]>("/api/caregivers/my-caregivers"),
 
   revokeMapping: (mappingId: number) =>
     request(`/api/caregivers/${mappingId}`, { method: "DELETE" }),
