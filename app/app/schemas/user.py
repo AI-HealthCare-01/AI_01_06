@@ -24,8 +24,8 @@ class UserResponse(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    nickname: str | None = None
-    name: str | None = None
+    nickname: str | None = Field(default=None, max_length=100)
+    name: str | None = Field(default=None, max_length=100)
     font_size_mode: str | None = None
     height_cm: float | None = Field(default=None, ge=50.0, le=300.0)
     weight_kg: float | None = Field(default=None, ge=10.0, le=500.0)

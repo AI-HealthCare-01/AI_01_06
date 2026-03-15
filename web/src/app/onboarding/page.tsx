@@ -97,6 +97,8 @@ export default function OnboardingPage() {
                   type="number"
                   step="0.1"
                   required
+                  min={50}
+                  max={300}
                   value={form.height_cm}
                   onChange={(e) =>
                     setForm({ ...form, height_cm: e.target.value })
@@ -112,6 +114,8 @@ export default function OnboardingPage() {
                   type="number"
                   step="0.1"
                   required
+                  min={10}
+                  max={500}
                   value={form.weight_kg}
                   onChange={(e) =>
                     setForm({ ...form, weight_kg: e.target.value })
