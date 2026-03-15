@@ -32,3 +32,5 @@ KAKAO_REDIRECT_URI: str = os.environ.get("KAKAO_REDIRECT_URI", "http://localhost
 GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI: str = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/google/callback")
+
+FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "http://localhost:3000")
