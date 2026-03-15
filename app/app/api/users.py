@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Query, Request
 
@@ -48,7 +48,8 @@ async def get_me(user: User = Depends(get_current_user)):
 
 
 @router.patch("/me")
-async def update_me(req: UserUpdateRequest, user: User = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def update_me(request: Request, req: UserUpdateRequest, user: User = Depends(get_current_user)):
     update_data = req.model_dump(exclude_unset=True)
 
     user_fields = {k: v for k, v in update_data.items() if k not in _PATIENT_PROFILE_FIELDS}
@@ -72,3 +73,23 @@ async def update_me(req: UserUpdateRequest, user: User = Depends(get_current_use
             await profile.save()
 
     return success_response({"message": "정보가 수정되었습니다."})
+
+
+@router.delete("/me")
+@limiter.limit("3/hour")
+async def delete_me(
+    request: Request,
+    user: User = Depends(get_current_user),
+    password: str | None = Query(default=None, description="로컬 계정 비밀번호 확인"),
+    confirm_email: str | None = Query(default=None, description="소셜 계정 이메일 확인"),
+):
+    if user.password_hash:
+        if not password or not verify_password(password, user.password_hash):
+            return error_response("비밀번호가 올바르지 않습니다.")
+    else:
+        if not confirm_email or confirm_email != user.email:
+            return error_response("이메일이 일치하지 않습니다.")
+
+    user.deleted_at = datetime.now(UTC)
+    await user.save()
+    return success_response({"message": "계정이 삭제되었습니다."})
