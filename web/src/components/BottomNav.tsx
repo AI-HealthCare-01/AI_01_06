@@ -108,7 +108,7 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              aria-label={item.label}
+              aria-label={item.label(role)}
               aria-current={active ? "page" : undefined}
               className="flex flex-col items-center justify-center gap-0.5 min-w-[48px] min-h-[48px] px-2"
             >
