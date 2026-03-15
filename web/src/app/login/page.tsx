@@ -1,20 +1,38 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
+/** returnUrl이 안전한 내부 경로인지 검증 ("/"로 시작 + "//"로 시작하지 않음) */
+function getSafeReturnUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return null;
+}
+
 function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // 이미 로그인된 사용자는 적절한 페이지로 리다이렉트
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+    if (returnUrl) {
+      router.replace(returnUrl);
+    } else {
+      router.replace(user.role === "GUARDIAN" ? "/caregivers" : "/dashboard");
+    }
+  }, [user, authLoading, router, searchParams]);
 
   const handleKakaoLogin = async () => {
     const res = await api.getKakaoUrl();
@@ -43,8 +61,8 @@ function LoginContent() {
       setError(result);
       setLoading(false);
     } else {
-      const returnUrl = searchParams.get("returnUrl");
-      if (returnUrl && returnUrl.startsWith("/")) {
+      const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+      if (returnUrl) {
         router.push(returnUrl);
       } else {
         router.push(result.role === "GUARDIAN" ? "/caregivers" : "/dashboard");
