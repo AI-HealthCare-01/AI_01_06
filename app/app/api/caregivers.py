@@ -1,11 +1,10 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from tortoise.exceptions import IntegrityError
 
 from app import config
 from app.core.deps import get_current_user
-from app.core.rate_limit import limiter
 from app.core.response import success_response
 from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.user import User
@@ -18,16 +17,14 @@ _OPPOSITE_ROLE: dict[str, str] = {"PATIENT": "GUARDIAN", "GUARDIAN": "PATIENT"}
 
 
 @router.post("/invite")
-@limiter.limit("10/minute")
-async def create_invite(request: Request, user: User = Depends(get_current_user)):
+async def create_invite(user: User = Depends(get_current_user)):
     token = await create_invite_token(user.id, user.role)
     invite_url = f"{config.FRONTEND_URL}/invite/{token}"
     return success_response({"token": token, "invite_url": invite_url})
 
 
 @router.get("/invite/{token}")
-@limiter.limit("30/minute")
-async def validate_invite(request: Request, token: str, user: User = Depends(get_current_user)):
+async def validate_invite(token: str, user: User = Depends(get_current_user)):
     data = await get_invite_data(token)
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
@@ -44,8 +41,7 @@ async def validate_invite(request: Request, token: str, user: User = Depends(get
 
 
 @router.post("/invite/{token}/accept")
-@limiter.limit("20/minute")
-async def accept_invite(request: Request, token: str, user: User = Depends(get_current_user)):
+async def accept_invite(token: str, user: User = Depends(get_current_user)):
     data = await get_invite_data(token)
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
@@ -72,20 +68,15 @@ async def accept_invite(request: Request, token: str, user: User = Depends(get_c
     else:
         patient, caregiver = user, inviter
 
-    # 토큰 먼저 소비 (TOCTOU 방지: 동시 요청에서 한 요청만 처리되도록 원자적으로 소비)
+    # 중복 APPROVED 연결 확인
+    existing = await CaregiverPatientMapping.filter(caregiver=caregiver, patient=patient, status="APPROVED").first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
+
+    # 토큰 소비 (일회용) — False면 다른 요청이 먼저 소비한 것
     consumed = await consume_invite_token(token)
     if not consumed:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
-
-    # REVOKED 매핑이 존재하면 재활성화, 없으면 새로 생성
-    existing = await CaregiverPatientMapping.get_or_none(caregiver=caregiver, patient=patient)
-    if existing:
-        if existing.status != "REVOKED":
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
-        existing.status = "APPROVED"
-        existing.accepted_at = datetime.now(UTC)
-        await existing.save()
-        return success_response({"id": existing.id, "status": existing.status})
 
     try:
         mapping = await CaregiverPatientMapping.create(
@@ -94,9 +85,8 @@ async def accept_invite(request: Request, token: str, user: User = Depends(get_c
             status="APPROVED",
             accepted_at=datetime.now(UTC),
         )
-    except IntegrityError as e:
-        # 동시 요청 race condition 안전망
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.") from e
+    except IntegrityError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
     return success_response({"id": mapping.id, "status": mapping.status})
 
 
@@ -121,10 +111,7 @@ async def list_patients(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="보호자만 조회할 수 있습니다.")
 
     mappings = await CaregiverPatientMapping.filter(caregiver=user, status="APPROVED").prefetch_related("patient")
-    result = [
-        {"mapping_id": m.id, "id": m.patient.id, "nickname": m.patient.nickname, "name": m.patient.name}
-        for m in mappings
-    ]
+    result = [{"id": m.patient.id, "nickname": m.patient.nickname, "name": m.patient.name} for m in mappings]
     return success_response(result)
 
 
@@ -134,8 +121,5 @@ async def list_my_caregivers(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="환자만 조회할 수 있습니다.")
 
     mappings = await CaregiverPatientMapping.filter(patient=user, status="APPROVED").prefetch_related("caregiver")
-    result = [
-        {"mapping_id": m.id, "id": m.caregiver.id, "nickname": m.caregiver.nickname, "name": m.caregiver.name}
-        for m in mappings
-    ]
+    result = [{"id": m.caregiver.id, "nickname": m.caregiver.nickname, "name": m.caregiver.name} for m in mappings]
     return success_response(result)

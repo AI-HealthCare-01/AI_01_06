@@ -23,13 +23,36 @@ _GUARDIAN = {
 }
 
 
+class FakeRedis:
+    """테스트용 in-memory Redis mock."""
+
+    def __init__(self):
+        self._store: dict[str, str] = {}
+
+    async def setex(self, key: str, ttl: int, value: str) -> None:
+        self._store[key] = value
+
+    async def get(self, key: str) -> str | None:
+        return self._store.get(key)
+
+    async def delete(self, key: str) -> int:
+        if key in self._store:
+            del self._store[key]
+            return 1
+        return 0
+
+
+_fake_redis = FakeRedis()
+
+
 @pytest.fixture(autouse=True)
-def mock_state_redis(fake_redis_cleanup):
+def mock_state_redis():
     async def _get_fake():
-        return fake_redis_cleanup
+        return _fake_redis
 
     with patch("app.services.invite_service.get_state_redis", side_effect=_get_fake):
         yield
+    _fake_redis._store.clear()
 
 
 async def _login(client: AsyncClient, email: str, password: str) -> str:
@@ -253,71 +276,8 @@ async def test_list_patients_and_caregivers(client: AsyncClient):
     assert resp.status_code == 200
     assert len(resp.json()["data"]) == 1
 
-    # 보호자 → 환자 목록에 mapping_id 포함 + 타입 확인
-    patients_data = resp.json()["data"]
-    assert "mapping_id" in patients_data[0]
-    assert isinstance(patients_data[0]["mapping_id"], int)
-
     # 환자 → 보호자 목록 조회
     client.headers["Authorization"] = f"Bearer {patient_token}"
     resp = await client.get("/api/caregivers/my-caregivers")
     assert resp.status_code == 200
     assert len(resp.json()["data"]) == 1
-
-    # 환자 → 보호자 목록에 mapping_id 포함 + 타입 확인
-    caregivers_data = resp.json()["data"]
-    assert "mapping_id" in caregivers_data[0]
-    assert isinstance(caregivers_data[0]["mapping_id"], int)
-
-
-@pytest.mark.asyncio
-async def test_revoke_by_correct_mapping_id(client: AsyncClient):
-    """list에서 받은 mapping_id로 연결 해제가 정상 동작한다."""
-    await client.post("/api/auth/signup", json=_PATIENT)
-    await client.post("/api/auth/signup", json=_GUARDIAN)
-
-    patient_token = await _login(client, _PATIENT["email"], _PATIENT["password"])
-    guardian_token = await _login(client, _GUARDIAN["email"], _GUARDIAN["password"])
-
-    # 연결 생성
-    client.headers["Authorization"] = f"Bearer {patient_token}"
-    create_resp = await client.post("/api/caregivers/invite")
-    invite_token = create_resp.json()["data"]["token"]
-    client.headers["Authorization"] = f"Bearer {guardian_token}"
-    await client.post(f"/api/caregivers/invite/{invite_token}/accept")
-
-    # list에서 mapping_id 획득 후 revoke
-    resp = await client.get("/api/caregivers/patients")
-    mapping_id = resp.json()["data"][0]["mapping_id"]
-
-    resp = await client.delete(f"/api/caregivers/{mapping_id}")
-    assert resp.status_code == 200
-    assert resp.json()["data"]["message"] == "연결이 해제되었습니다."
-
-
-@pytest.mark.asyncio
-async def test_revoke_then_reconnect_succeeds(client: AsyncClient):
-    """REVOKE 후 같은 쌍이 새 토큰으로 재연결할 수 있다."""
-    await client.post("/api/auth/signup", json=_PATIENT)
-    await client.post("/api/auth/signup", json=_GUARDIAN)
-
-    patient_token = await _login(client, _PATIENT["email"], _PATIENT["password"])
-    guardian_token = await _login(client, _GUARDIAN["email"], _GUARDIAN["password"])
-
-    # 1차 연결 + 해제
-    client.headers["Authorization"] = f"Bearer {patient_token}"
-    create_resp = await client.post("/api/caregivers/invite")
-    invite_token1 = create_resp.json()["data"]["token"]
-    client.headers["Authorization"] = f"Bearer {guardian_token}"
-    accept_resp = await client.post(f"/api/caregivers/invite/{invite_token1}/accept")
-    mapping_id = accept_resp.json()["data"]["id"]
-    await client.delete(f"/api/caregivers/{mapping_id}")
-
-    # 2차 연결 시도 → 성공해야 함
-    client.headers["Authorization"] = f"Bearer {patient_token}"
-    create_resp2 = await client.post("/api/caregivers/invite")
-    invite_token2 = create_resp2.json()["data"]["token"]
-    client.headers["Authorization"] = f"Bearer {guardian_token}"
-    resp = await client.post(f"/api/caregivers/invite/{invite_token2}/accept")
-    assert resp.status_code == 200
-    assert resp.json()["data"]["status"] == "APPROVED"
