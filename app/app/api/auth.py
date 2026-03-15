@@ -68,7 +68,7 @@ async def signup(request: Request, req: SignupRequest):
 
 
 @router.post("/login")
-@limiter.limit("10/minute")
+@limiter.limit("5/minute")
 async def login(request: Request, req: LoginRequest):
     ip = request.client.host if request.client else "unknown"
     user = await User.filter(email=req.email, deleted_at__isnull=True).first()
@@ -108,7 +108,7 @@ async def login(request: Request, req: LoginRequest):
 
 
 @router.post("/refresh")
-@limiter.limit("20/minute")
+@limiter.limit("5/minute")
 async def refresh(request: Request, req: RefreshRequest):
     payload = decode_token(req.refresh_token)
     if payload is None or payload.get("type") != "refresh":
