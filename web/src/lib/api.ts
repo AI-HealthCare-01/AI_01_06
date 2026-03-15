@@ -181,6 +181,8 @@ export const api = {
   getMe: () => request("/api/users/me"),
   updateMe: (data: Record<string, unknown>) =>
     request("/api/users/me", { method: "PATCH", body: JSON.stringify(data) }),
+  deleteMe: (data: { password?: string; confirm_email?: string }) =>
+    request("/api/users/me", { method: "DELETE", body: JSON.stringify(data) }),
 
   // Prescriptions
   uploadPrescription: (file: File) => {
