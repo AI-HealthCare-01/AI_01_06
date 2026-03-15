@@ -266,7 +266,7 @@ function SignupContent() {
       setToken(res.data.access_token);
       setRefreshToken(res.data.refresh_token);
       await refreshUser();
-      router.push(roleValue === "PATIENT" ? "/onboarding" : "/dashboard");
+      router.push(roleValue === "PATIENT" ? "/onboarding" : "/caregivers");
       return;
     }
 

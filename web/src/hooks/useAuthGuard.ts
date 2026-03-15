@@ -33,5 +33,8 @@ export function useAuthGuard() {
     }
   }, [user, loading, router, pathname]);
 
-  return { user, loading, authorized: !loading && !!user };
+  const isPatientOnly = PATIENT_ONLY_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const roleBlocked = !!user && user.role === "GUARDIAN" && isPatientOnly;
+
+  return { user, loading, authorized: !loading && !!user && !roleBlocked };
 }

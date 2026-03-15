@@ -44,7 +44,7 @@ function LoginContent() {
       setLoading(false);
     } else {
       const returnUrl = searchParams.get("returnUrl");
-      if (returnUrl) {
+      if (returnUrl && returnUrl.startsWith("/")) {
         router.push(returnUrl);
       } else {
         router.push(result.role === "GUARDIAN" ? "/caregivers" : "/dashboard");
