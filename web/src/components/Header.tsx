@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -60,10 +61,23 @@ export default function Header() {
     document.documentElement.setAttribute("data-font-size", saved);
   }, []);
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const size = (e as CustomEvent).detail.size as FontSize;
+      setFontSize(size);
+    };
+    window.addEventListener("fontSizeChanged", handler);
+    return () => window.removeEventListener("fontSizeChanged", handler);
+  }, []);
+
   const toggleFontSize = (size: FontSize) => {
     setFontSize(size);
     localStorage.setItem("fontSize", size);
     document.documentElement.setAttribute("data-font-size", size);
+    window.dispatchEvent(new CustomEvent("fontSizeChanged", { detail: { size } }));
+    if (user) {
+      api.updateMe({ font_size_mode: size }).catch(() => {});
+    }
   };
 
   return (
