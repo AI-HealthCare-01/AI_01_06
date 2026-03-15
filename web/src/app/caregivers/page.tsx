@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 const POLL_INTERVAL_MS = 5_000;
 
 interface Person {
+  mapping_id: number;
   id: number;
   nickname: string;
   name: string;
@@ -263,7 +264,7 @@ export default function CaregiversPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleRevoke(person.id, person.name)}
+                  onClick={() => handleRevoke(person.mapping_id, person.name)}
                   className="text-sm px-3 py-1.5 rounded-lg font-medium"
                   style={{ background: "var(--color-surface)", border: "1px solid var(--color-danger)", color: "var(--color-danger)" }}
                 >
