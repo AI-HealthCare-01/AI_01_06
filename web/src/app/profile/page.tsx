@@ -22,11 +22,14 @@ interface ProfileData {
   email: string;
   name: string;
   role: string;
+  has_password: boolean;
   patient_profile: PatientProfile | null;
 }
 
+type FontSize = "normal" | "large";
+
 export default function ProfilePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const router = useRouter();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("info");
@@ -41,6 +44,8 @@ export default function ProfilePage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fontSize, setFontSize] = useState<FontSize>("large");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (authLoading) return;
@@ -50,6 +55,18 @@ export default function ProfilePage() {
     }
     fetchProfile();
   }, [user, authLoading, router]);
+
+  useEffect(() => {
+    const saved = (localStorage.getItem("fontSize") as FontSize) ?? "large";
+    setFontSize(saved);
+
+    const handler = (e: Event) => {
+      const size = (e as CustomEvent).detail.size as FontSize;
+      setFontSize(size);
+    };
+    window.addEventListener("fontSizeChanged", handler);
+    return () => window.removeEventListener("fontSizeChanged", handler);
+  }, []);
 
   const fetchProfile = async () => {
     const res = await api.getMe();
@@ -112,6 +129,48 @@ export default function ProfilePage() {
     },
     [activeTab],
   );
+
+  const handleFontSize = async (size: FontSize) => {
+    setFontSize(size);
+    document.documentElement.setAttribute("data-font-size", size);
+    localStorage.setItem("fontSize", size);
+    window.dispatchEvent(new CustomEvent("fontSizeChanged", { detail: { size } }));
+    await api.updateMe({ font_size_mode: size });
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
+
+  const handleDeleteAccount = async () => {
+    setMessage("");
+    if (profileData?.has_password) {
+      const password = window.prompt("회원 탈퇴를 위해 비밀번호를 입력해주세요.");
+      if (!password) return;
+
+      const res = await api.deleteMe({ password });
+      if (res.success) {
+        logout();
+        router.push("/");
+      } else {
+        setMessage(res.error || "탈퇴에 실패했습니다.");
+      }
+    } else {
+      const email = window.prompt(
+        "소셜 계정 탈퇴를 위해 가입 시 사용한 이메일을 입력해주세요."
+      );
+      if (!email) return;
+
+      const res = await api.deleteMe({ confirm_email: email });
+      if (res.success) {
+        logout();
+        router.push("/");
+      } else {
+        setMessage(res.error || "탈퇴에 실패했습니다.");
+      }
+    }
+  };
 
   if (authLoading || !user) return null;
 
@@ -396,10 +455,59 @@ export default function ProfilePage() {
           aria-labelledby="tab-accessibility"
           className="app-card p-6 mt-4"
         >
-          <p style={{ color: "var(--color-text-muted)" }}>
-            준비 중인 기능입니다.
+          <h3 className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+            글자 크기
+          </h3>
+          <div className="flex gap-3 mt-3">
+            <button
+              onClick={() => handleFontSize("normal")}
+              className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+              style={
+                fontSize === "normal"
+                  ? { backgroundColor: "var(--color-primary)", color: "#fff" }
+                  : { backgroundColor: "var(--color-surface)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }
+              }
+            >
+              일반
+            </button>
+            <button
+              onClick={() => handleFontSize("large")}
+              className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+              style={
+                fontSize === "large"
+                  ? { backgroundColor: "var(--color-primary)", color: "#fff" }
+                  : { backgroundColor: "var(--color-surface)", color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }
+              }
+            >
+              큰글씨
+            </button>
+          </div>
+          <p className="text-xs mt-2" style={{ color: "var(--color-text-muted)" }}>
+            선택한 글자 크기가 로그인 시 기본 설정으로 적용됩니다.
           </p>
         </div>
+      )}
+
+      {/* 최하단: 로그아웃 + 회원탈퇴 */}
+      <div className="mt-8 pt-6 flex gap-4" style={{ borderTop: "1px solid var(--color-border)" }}>
+        <button
+          onClick={handleLogout}
+          className="flex-1 py-2 text-sm font-medium rounded-lg btn-outline"
+        >
+          로그아웃
+        </button>
+        <button
+          onClick={handleDeleteAccount}
+          className="flex-1 py-2 text-sm font-medium rounded-lg"
+          style={{ color: "var(--color-danger)", border: "1px solid var(--color-danger)" }}
+        >
+          회원탈퇴
+        </button>
+      </div>
+      {message && (
+        <p className="text-sm mt-2" style={{ color: "var(--color-danger)" }}>
+          {message}
+        </p>
       )}
     </AppLayout>
   );
