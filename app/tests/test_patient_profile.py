@@ -67,3 +67,78 @@ async def test_update_patient_profile(client: AsyncClient):
     profile = me_resp.json()["data"]["patient_profile"]
     assert profile["height_cm"] == 170.5
     assert profile["weight_kg"] == 65.0
+
+
+@pytest.mark.asyncio
+async def test_get_me_returns_allergy_disease_flags(client: AsyncClient):
+    """get_me 응답에 has_allergy, has_disease 필드가 포함되는지 확인."""
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "role": "PATIENT"})
+    login_resp = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
+    token = login_resp.json()["data"]["access_token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    resp = await client.get("/api/users/me")
+    profile = resp.json()["data"]["patient_profile"]
+    assert profile["has_allergy"] is False
+    assert profile["has_disease"] is False
+
+
+@pytest.mark.asyncio
+async def test_update_allergy_flag(client: AsyncClient):
+    """has_allergy=True와 allergy_details를 함께 저장/조회."""
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "role": "PATIENT"})
+    login_resp = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
+    token = login_resp.json()["data"]["access_token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    resp = await client.patch(
+        "/api/users/me",
+        json={"has_allergy": True, "allergy_details": "페니실린"},
+    )
+    assert resp.json()["success"] is True
+
+    me_resp = await client.get("/api/users/me")
+    profile = me_resp.json()["data"]["patient_profile"]
+    assert profile["has_allergy"] is True
+    assert profile["allergy_details"] == "페니실린"
+
+
+@pytest.mark.asyncio
+async def test_allergy_false_clears_details(client: AsyncClient):
+    """has_allergy=False 전송 시 allergy_details가 null로 클리어."""
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "role": "PATIENT"})
+    login_resp = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
+    token = login_resp.json()["data"]["access_token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    await client.patch("/api/users/me", json={"has_allergy": True, "allergy_details": "페니실린"})
+    resp = await client.patch("/api/users/me", json={"has_allergy": False})
+    assert resp.json()["success"] is True
+
+    me_resp = await client.get("/api/users/me")
+    profile = me_resp.json()["data"]["patient_profile"]
+    assert profile["has_allergy"] is False
+    assert profile["allergy_details"] is None
+
+
+@pytest.mark.asyncio
+async def test_allergy_details_max_length(client: AsyncClient):
+    """allergy_details 1000자 초과 시 422 에러."""
+    await client.post("/api/auth/signup", json={**_BASE_SIGNUP, "role": "PATIENT"})
+    login_resp = await client.post(
+        "/api/auth/login", json={"email": _BASE_SIGNUP["email"], "password": _BASE_SIGNUP["password"]}
+    )
+    token = login_resp.json()["data"]["access_token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    resp = await client.patch(
+        "/api/users/me",
+        json={"has_allergy": True, "allergy_details": "x" * 1001},
+    )
+    assert resp.status_code == 422
