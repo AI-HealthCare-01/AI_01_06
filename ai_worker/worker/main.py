@@ -1,9 +1,15 @@
+from datetime import timedelta, timezone
+
 from arq.connections import RedisSettings
+from arq.cron import cron
 from tortoise import Tortoise
 
 from worker import config
 from worker.tasks.guide_task import guide_task
 from worker.tasks.ocr_task import ocr_task
+from worker.tasks.purge_task import purge_deleted_users
+
+KST = timezone(timedelta(hours=9))
 
 TORTOISE_ORM = {
     "db_url": config.DATABASE_URL,
@@ -30,5 +36,9 @@ async def shutdown(ctx: dict) -> None:
 class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(config.REDIS_URL)
     functions = [ocr_task, guide_task]
+    cron_jobs = [
+        cron(purge_deleted_users, hour=4, minute=0),
+    ]
+    timezone = KST
     on_startup = startup
     on_shutdown = shutdown
