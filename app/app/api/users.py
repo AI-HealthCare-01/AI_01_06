@@ -57,6 +57,11 @@ async def update_me(req: UserUpdateRequest, user: User = Depends(get_current_use
     if profile_fields and user.role == "PATIENT":
         profile = await PatientProfile.get_or_none(user=user)
         if profile:
+            if profile_fields.get("has_allergy") is False:
+                profile_fields["allergy_details"] = None
+            if profile_fields.get("has_disease") is False:
+                profile_fields["disease_details"] = None
+
             for field, value in profile_fields.items():
                 setattr(profile, field, value)
             await profile.save()
