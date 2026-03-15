@@ -4,7 +4,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from tortoise import Tortoise
 
-from app.main import app
+from app.main import app, limiter
 from app.models.guide import Guide
 from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
@@ -137,3 +137,51 @@ async def auth_client(client: AsyncClient):
     token = login_resp.json()["data"]["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"
     return client
+
+
+class FakeRedis:
+    """테스트용 in-memory Redis mock."""
+
+    def __init__(self):
+        self._store: dict[str, str] = {}
+
+    async def setex(self, key: str, ttl: int, value: str) -> None:
+        self._store[key] = value
+
+    async def get(self, key: str) -> str | None:
+        return self._store.get(key)
+
+    async def delete(self, key: str) -> int:
+        if key in self._store:
+            del self._store[key]
+            return 1
+        return 0
+
+
+_fake_redis = FakeRedis()
+
+
+@pytest.fixture(autouse=True)
+def fake_redis_cleanup():
+    """매 테스트마다 fake_redis store를 초기화."""
+    yield _fake_redis
+    _fake_redis._store.clear()
+
+
+@pytest.fixture(autouse=True)
+def mock_deps_redis(fake_redis_cleanup):
+    """deps.py의 get_state_redis를 공유 FakeRedis로 교체 (JWT blacklist 검증용)."""
+
+    async def _get_fake():
+        return fake_redis_cleanup
+
+    with patch("app.core.deps.get_state_redis", side_effect=_get_fake):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def disable_rate_limiter():
+    """테스트 환경에서 rate limiter 비활성화."""
+    limiter.enabled = False
+    yield
+    limiter.enabled = True

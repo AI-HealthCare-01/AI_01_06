@@ -1,10 +1,11 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from tortoise.exceptions import IntegrityError
 
 from app import config
 from app.core.deps import get_current_user
+from app.core.rate_limit import limiter
 from app.core.response import success_response
 from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.user import User
@@ -17,14 +18,16 @@ _OPPOSITE_ROLE: dict[str, str] = {"PATIENT": "GUARDIAN", "GUARDIAN": "PATIENT"}
 
 
 @router.post("/invite")
-async def create_invite(user: User = Depends(get_current_user)):
+@limiter.limit("10/minute")
+async def create_invite(request: Request, user: User = Depends(get_current_user)):
     token = await create_invite_token(user.id, user.role)
     invite_url = f"{config.FRONTEND_URL}/invite/{token}"
     return success_response({"token": token, "invite_url": invite_url})
 
 
 @router.get("/invite/{token}")
-async def validate_invite(token: str, user: User = Depends(get_current_user)):
+@limiter.limit("30/minute")
+async def validate_invite(request: Request, token: str, user: User = Depends(get_current_user)):
     data = await get_invite_data(token)
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
@@ -41,7 +44,8 @@ async def validate_invite(token: str, user: User = Depends(get_current_user)):
 
 
 @router.post("/invite/{token}/accept")
-async def accept_invite(token: str, user: User = Depends(get_current_user)):
+@limiter.limit("20/minute")
+async def accept_invite(request: Request, token: str, user: User = Depends(get_current_user)):
     data = await get_invite_data(token)
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")

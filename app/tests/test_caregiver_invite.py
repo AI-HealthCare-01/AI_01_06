@@ -23,36 +23,13 @@ _GUARDIAN = {
 }
 
 
-class FakeRedis:
-    """테스트용 in-memory Redis mock."""
-
-    def __init__(self):
-        self._store: dict[str, str] = {}
-
-    async def setex(self, key: str, ttl: int, value: str) -> None:
-        self._store[key] = value
-
-    async def get(self, key: str) -> str | None:
-        return self._store.get(key)
-
-    async def delete(self, key: str) -> int:
-        if key in self._store:
-            del self._store[key]
-            return 1
-        return 0
-
-
-_fake_redis = FakeRedis()
-
-
 @pytest.fixture(autouse=True)
-def mock_state_redis():
+def mock_state_redis(fake_redis_cleanup):
     async def _get_fake():
-        return _fake_redis
+        return fake_redis_cleanup
 
     with patch("app.services.invite_service.get_state_redis", side_effect=_get_fake):
         yield
-    _fake_redis._store.clear()
 
 
 async def _login(client: AsyncClient, email: str, password: str) -> str:
