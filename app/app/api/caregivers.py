@@ -68,12 +68,7 @@ async def accept_invite(token: str, user: User = Depends(get_current_user)):
     else:
         patient, caregiver = user, inviter
 
-    # 중복 APPROVED 연결 확인
-    existing = await CaregiverPatientMapping.filter(caregiver=caregiver, patient=patient, status="APPROVED").first()
-    if existing:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
-
-    # 토큰 소비 (일회용) — False면 다른 요청이 먼저 소비한 것
+    # 토큰 먼저 소비 (TOCTOU 방지: 동시 요청에서 한 요청만 처리되도록 원자적으로 소비)
     consumed = await consume_invite_token(token)
     if not consumed:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
@@ -85,8 +80,8 @@ async def accept_invite(token: str, user: User = Depends(get_current_user)):
             status="APPROVED",
             accepted_at=datetime.now(UTC),
         )
-    except IntegrityError:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
+    except IntegrityError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.") from e
     return success_response({"id": mapping.id, "status": mapping.status})
 
 
