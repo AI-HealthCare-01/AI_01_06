@@ -39,3 +39,9 @@ GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI: str = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/google/callback")
 
 FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+ALLOWED_ORIGINS: list[str] = [
+    o.strip()
+    for o in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost").split(",")
+    if o.strip()
+]
