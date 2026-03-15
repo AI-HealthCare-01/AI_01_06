@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Request
 
 from app.core.deps import get_current_user
 from app.core.rate_limit import limiter
@@ -8,7 +8,7 @@ from app.core.response import error_response, success_response
 from app.core.security import verify_password
 from app.models.patient_profile import PatientProfile
 from app.models.user import User
-from app.schemas.user import UserUpdateRequest
+from app.schemas.user import DeleteAccountRequest, UserUpdateRequest
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -79,15 +79,14 @@ async def update_me(request: Request, req: UserUpdateRequest, user: User = Depen
 @limiter.limit("3/hour")
 async def delete_me(
     request: Request,
+    req: DeleteAccountRequest,
     user: User = Depends(get_current_user),
-    password: str | None = Query(default=None, description="로컬 계정 비밀번호 확인"),
-    confirm_email: str | None = Query(default=None, description="소셜 계정 이메일 확인"),
 ):
     if user.password_hash:
-        if not password or not verify_password(password, user.password_hash):
+        if not req.password or not verify_password(req.password, user.password_hash):
             return error_response("비밀번호가 올바르지 않습니다.")
     else:
-        if not confirm_email or confirm_email != user.email:
+        if not req.confirm_email or req.confirm_email != user.email:
             return error_response("이메일이 일치하지 않습니다.")
 
     user.deleted_at = datetime.now(UTC)
