@@ -8,7 +8,7 @@ from app.schemas.user import UserUpdateRequest
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
-_PATIENT_PROFILE_FIELDS = {"height_cm", "weight_kg", "allergy_details", "disease_details"}
+_PATIENT_PROFILE_FIELDS = {"height_cm", "weight_kg", "has_allergy", "allergy_details", "has_disease", "disease_details"}
 
 
 @router.get("/me")
@@ -31,7 +31,9 @@ async def get_me(user: User = Depends(get_current_user)):
             "patient_profile": {
                 "height_cm": float(profile.height_cm) if profile and profile.height_cm is not None else None,
                 "weight_kg": float(profile.weight_kg) if profile and profile.weight_kg is not None else None,
+                "has_allergy": profile.has_allergy if profile else False,
                 "allergy_details": profile.allergy_details if profile else None,
+                "has_disease": profile.has_disease if profile else False,
                 "disease_details": profile.disease_details if profile else None,
             }
             if profile
