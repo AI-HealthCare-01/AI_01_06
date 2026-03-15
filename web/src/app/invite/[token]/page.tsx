@@ -35,9 +35,9 @@ export default function InviteAcceptPage() {
     }
   }, [authLoading, user, router, token]);
 
-  // 토큰 검증 및 초대자 정보 로드
+  // 토큰 검증 및 초대자 정보 로드 (authLoading 중에는 호출하지 않음)
   useEffect(() => {
-    if (!user || !token) return;
+    if (authLoading || !user || !token) return;
     api.validateInvite(token).then((res) => {
       if (res.success && res.data) {
         setInviter(res.data);
@@ -45,7 +45,7 @@ export default function InviteAcceptPage() {
         setLoadError(res.error || "초대 링크가 유효하지 않습니다.");
       }
     });
-  }, [user, token]);
+  }, [authLoading, user, token]);
 
   const handleAccept = async () => {
     setAccepting(true);

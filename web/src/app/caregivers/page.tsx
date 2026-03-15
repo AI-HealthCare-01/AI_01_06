@@ -57,7 +57,9 @@ export default function CaregiversPage() {
 
   const fetchPeople = useCallback(() => {
     setLoadError("");
-    return (role === "GUARDIAN" ? api.listPatients() : api.listMyCaregivers()).then((res) => {
+    const req = role === "GUARDIAN" ? api.listPatients() : role === "PATIENT" ? api.listMyCaregivers() : null;
+    if (!req) return Promise.resolve();
+    return req.then((res) => {
       if (res.success && res.data) setPeople(res.data);
       else setLoadError(res.error || "목록을 불러오지 못했습니다.");
     });
@@ -65,7 +67,7 @@ export default function CaregiversPage() {
 
   useEffect(() => {
     if (!role) return;
-    fetchPeople();
+    void fetchPeople();
   }, [role, fetchPeople]);
 
   const handleCreateInvite = async () => {
