@@ -1,5 +1,4 @@
 from datetime import UTC, datetime, timedelta
-from unittest.mock import patch
 
 import jwt
 import pytest
@@ -16,20 +15,6 @@ _SIGNUP = {
     "terms_of_service": True,
     "privacy_policy": True,
 }
-
-
-@pytest.fixture(autouse=True)
-def mock_blacklist_redis(fake_redis_cleanup):
-    """deps.py와 auth.py의 get_state_redis를 공유 FakeRedis로 교체."""
-
-    async def _get_fake():
-        return fake_redis_cleanup
-
-    with (
-        patch("app.core.deps.get_state_redis", side_effect=_get_fake),
-        patch("app.api.auth.get_state_redis", side_effect=_get_fake),
-    ):
-        yield
 
 
 @pytest.mark.asyncio
