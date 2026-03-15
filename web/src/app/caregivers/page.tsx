@@ -1,20 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+
+const POLL_INTERVAL_MS = 5_000;
 
 interface Person {
   id: number;
   nickname: string;
   name: string;
 }
-
-const ROLE_LABEL: Record<string, string> = {
-  PATIENT: "환자",
-  GUARDIAN: "보호자",
-};
 
 async function handleShare(inviteUrl: string) {
   const shareData = {
@@ -23,52 +20,120 @@ async function handleShare(inviteUrl: string) {
     url: inviteUrl,
   };
 
-  // Web Share API — Firefox 미지원, Chrome/Safari/Edge 지원
   if (typeof navigator.share === "function" && navigator.canShare?.(shareData)) {
     try {
       await navigator.share(shareData);
       return;
     } catch (err) {
-      // 사용자가 공유 취소 시 AbortError → 무시
       if (err instanceof DOMException && err.name === "AbortError") return;
     }
   }
 
-  // Fallback: Clipboard API (HTTPS 필수, localhost 제외)
   try {
     await navigator.clipboard.writeText(inviteUrl);
     alert("초대 링크가 클립보드에 복사되었습니다.");
   } catch {
-    // 최후 fallback: prompt (HTTP 환경 등)
     prompt("아래 링크를 복사하세요:", inviteUrl);
   }
+}
+
+function IconRefresh({ spinning }: { spinning: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ transition: "transform 0.4s", transform: spinning ? "rotate(360deg)" : "rotate(0deg)" }}
+    >
+      <polyline points="23 4 23 10 17 10" />
+      <polyline points="1 20 1 14 7 14" />
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    </svg>
+  );
 }
 
 export default function CaregiversPage() {
   const { user } = useAuth();
   const role = user?.role ?? "";
+  const isGuardian = role === "GUARDIAN";
+
+  const pageTitle = isGuardian ? "돌봄 대상 관리" : "나의 보호자";
+  const listLabel = isGuardian ? "돌봄 대상 목록" : "보호자 목록";
+  const emptyLabel = isGuardian ? "연결된 돌봄 대상이 없습니다." : "연결된 보호자가 없습니다.";
+  const inviteDescription = isGuardian
+    ? "돌봄 대상에게 초대 링크를 전송하여 연결을 요청하세요."
+    : "보호자에게 초대 링크를 전송하여 연결을 요청하세요.";
 
   const [people, setPeople] = useState<Person[]>([]);
   const [loadError, setLoadError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   const [inviteUrl, setInviteUrl] = useState("");
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState("");
   const [revokeError, setRevokeError] = useState("");
 
-  const fetchPeople = useCallback(() => {
-    setLoadError("");
-    const req = role === "GUARDIAN" ? api.listPatients() : role === "PATIENT" ? api.listMyCaregivers() : null;
-    if (!req) return Promise.resolve();
-    return req.then((res) => {
-      if (res.success && res.data) setPeople(res.data);
-      else setLoadError(res.error || "목록을 불러오지 못했습니다.");
-    });
-  }, [role]);
+  // 목록 fetch (silent: true이면 로딩 인디케이터 없이 폴링용으로 사용)
+  const fetchPeople = useCallback(
+    (silent = false) => {
+      if (!silent) setRefreshing(true);
+      setLoadError("");
+      const req = isGuardian ? api.listPatients() : role === "PATIENT" ? api.listMyCaregivers() : null;
+      if (!req) {
+        setRefreshing(false);
+        return Promise.resolve();
+      }
+      return req.then((res) => {
+        if (res.success && res.data) setPeople(res.data);
+        else if (!silent) setLoadError(res.error || "목록을 불러오지 못했습니다.");
+      }).finally(() => {
+        if (!silent) setRefreshing(false);
+      });
+    },
+    [role, isGuardian]
+  );
 
+  // 초기 로드
   useEffect(() => {
     if (!role) return;
     void fetchPeople();
   }, [role, fetchPeople]);
+
+  // 폴링 — 탭이 보일 때만 5초마다 자동 갱신
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startPolling = useCallback(() => {
+    if (pollRef.current) return;
+    pollRef.current = setInterval(() => {
+      if (document.visibilityState === "visible") void fetchPeople(true);
+    }, POLL_INTERVAL_MS);
+  }, [fetchPeople]);
+
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!role) return;
+    startPolling();
+    const onVisibility = () => (document.visibilityState === "visible" ? startPolling() : stopPolling());
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [role, startPolling, stopPolling]);
+
+  const handleManualRefresh = () => {
+    void fetchPeople();
+  };
 
   const handleCreateInvite = async () => {
     setInviting(true);
@@ -93,16 +158,9 @@ export default function CaregiversPage() {
     }
   };
 
-  const isGuardian = role === "GUARDIAN";
-  const listLabel = isGuardian ? "관리 중인 환자" : "내 보호자";
-  const inviteDescription = isGuardian
-    ? "환자에게 초대 링크를 전송하여 연결을 요청하세요."
-    : "보호자에게 초대 링크를 전송하여 연결을 요청하세요.";
-  const roleLabel = ROLE_LABEL[role] ?? role;
-
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold mb-6">보호자 관리</h1>
+      <h1 className="text-2xl font-bold mb-6">{pageTitle}</h1>
 
       {/* 초대 링크 생성 섹션 */}
       <section
@@ -120,29 +178,18 @@ export default function CaregiversPage() {
           <div className="space-y-3">
             <div
               className="p-3 rounded-lg text-sm break-all"
-              style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-border)",
-                color: "var(--color-text)",
-              }}
+              style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-text)" }}
             >
               {inviteUrl}
             </div>
             <div className="flex gap-2">
-              <button
-                onClick={() => handleShare(inviteUrl)}
-                className="flex-1 py-2 btn-primary text-sm"
-              >
+              <button onClick={() => handleShare(inviteUrl)} className="flex-1 py-2 btn-primary text-sm">
                 공유하기
               </button>
               <button
-                onClick={() => { setInviteUrl(""); }}
+                onClick={() => setInviteUrl("")}
                 className="py-2 px-4 rounded-lg text-sm font-medium"
-                style={{
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-border)",
-                  color: "var(--color-text-muted)",
-                }}
+                style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-text-muted)" }}
               >
                 닫기
               </button>
@@ -158,11 +205,7 @@ export default function CaregiversPage() {
                 {inviteError}
               </p>
             )}
-            <button
-              onClick={handleCreateInvite}
-              disabled={inviting}
-              className="btn-primary py-2 px-6 text-sm"
-            >
+            <button onClick={handleCreateInvite} disabled={inviting} className="btn-primary py-2 px-6 text-sm">
               {inviting ? "생성 중..." : "초대 링크 만들기"}
             </button>
           </div>
@@ -171,9 +214,22 @@ export default function CaregiversPage() {
 
       {/* 연결 목록 섹션 */}
       <section>
-        <h2 className="text-base font-semibold mb-3" style={{ color: "var(--color-text)" }}>
-          {listLabel}
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold" style={{ color: "var(--color-text)" }}>
+            {listLabel}
+          </h2>
+          <button
+            onClick={handleManualRefresh}
+            disabled={refreshing}
+            aria-label="목록 새로고침"
+            className="p-1.5 rounded-lg"
+            style={{ color: "var(--color-text-muted)" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-surface)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
+          >
+            <IconRefresh spinning={refreshing} />
+          </button>
+        </div>
 
         {loadError && (
           <p className="text-sm mb-3" style={{ color: "var(--color-danger)" }}>
@@ -188,7 +244,7 @@ export default function CaregiversPage() {
 
         {people.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-            연결된 {isGuardian ? "환자" : "보호자"}가 없습니다.
+            {emptyLabel}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -203,17 +259,13 @@ export default function CaregiversPage() {
                     {person.name}
                   </p>
                   <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                    @{person.nickname} · {isGuardian ? "환자" : "보호자"}
+                    @{person.nickname} · {isGuardian ? "돌봄 대상" : "보호자"}
                   </p>
                 </div>
                 <button
                   onClick={() => handleRevoke(person.id, person.name)}
                   className="text-sm px-3 py-1.5 rounded-lg font-medium"
-                  style={{
-                    background: "var(--color-surface)",
-                    border: "1px solid var(--color-danger)",
-                    color: "var(--color-danger)",
-                  }}
+                  style={{ background: "var(--color-surface)", border: "1px solid var(--color-danger)", color: "var(--color-danger)" }}
                 >
                   연결 해제
                 </button>
@@ -222,10 +274,6 @@ export default function CaregiversPage() {
           </ul>
         )}
       </section>
-
-      <p className="mt-6 text-xs" style={{ color: "var(--color-text-muted)" }}>
-        현재 {roleLabel} 계정으로 로그인되어 있습니다.
-      </p>
     </AppLayout>
   );
 }
