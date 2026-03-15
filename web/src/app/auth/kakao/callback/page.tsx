@@ -38,8 +38,8 @@ function KakaoCallbackContent() {
       if (res.data.status === "login") {
         setToken(res.data.access_token!);
         setRefreshToken(res.data.refresh_token!);
-        await refreshUser();
-        router.replace("/dashboard");
+        const user = await refreshUser();
+        router.replace(user?.role === "GUARDIAN" ? "/caregivers" : "/dashboard");
       } else if (res.data.status === "new_user") {
         // in-memory Context 저장 (sessionStorage XSS 방지)
         setSocialRegistration({
