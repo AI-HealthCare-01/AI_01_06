@@ -104,6 +104,7 @@ services:
     ports:
       - "80:80"
     volumes:
+      - ./infra/nginx/log_format.conf:/etc/nginx/conf.d/00-log_format.conf:ro
       - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     restart: always
     depends_on:
