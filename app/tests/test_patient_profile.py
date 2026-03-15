@@ -156,7 +156,7 @@ async def test_delete_account_with_password(client: AsyncClient):
     token = login_resp.json()["data"]["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"
 
-    resp = await client.delete("/api/users/me", params={"password": _BASE_SIGNUP["password"]})
+    resp = await client.request("DELETE", "/api/users/me", json={"password": _BASE_SIGNUP["password"]})
     assert resp.json()["success"] is True
 
     login_resp2 = await client.post(
@@ -175,14 +175,14 @@ async def test_delete_account_wrong_password(client: AsyncClient):
     token = login_resp.json()["data"]["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"
 
-    resp = await client.delete("/api/users/me", params={"password": "WrongPass1!"})
+    resp = await client.request("DELETE", "/api/users/me", json={"password": "WrongPass1!"})
     assert resp.json()["success"] is False
 
 
 @pytest.mark.asyncio
 async def test_delete_account_unauthenticated(client: AsyncClient):
     """미인증 상태에서 탈퇴 요청 → 401."""
-    resp = await client.delete("/api/users/me", params={"password": "any"})
+    resp = await client.request("DELETE", "/api/users/me", json={"password": "any"})
     assert resp.status_code == 401
 
 
@@ -197,7 +197,7 @@ async def test_delete_social_account_with_email(client: AsyncClient):
     token = create_access_token(user.id, user.role)
     client.headers["Authorization"] = f"Bearer {token}"
 
-    resp = await client.delete("/api/users/me", params={"confirm_email": "social@test.com"})
+    resp = await client.request("DELETE", "/api/users/me", json={"confirm_email": "social@test.com"})
     assert resp.json()["success"] is True
 
     deleted_user = await User.get(id=user.id)
@@ -215,5 +215,5 @@ async def test_delete_social_account_wrong_email(client: AsyncClient):
     token = create_access_token(user.id, user.role)
     client.headers["Authorization"] = f"Bearer {token}"
 
-    resp = await client.delete("/api/users/me", params={"confirm_email": "wrong@test.com"})
+    resp = await client.request("DELETE", "/api/users/me", json={"confirm_email": "wrong@test.com"})
     assert resp.json()["success"] is False

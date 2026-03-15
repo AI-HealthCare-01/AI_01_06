@@ -13,9 +13,14 @@ async def setup_db():
                 "app.models.user",
                 "app.models.prescription",
                 "app.models.guide",
+                "app.models.chat",
                 "app.models.patient_profile",
                 "app.models.auth_provider",
                 "app.models.terms_consent",
+                "app.models.audit",
+                "app.models.notification",
+                "app.models.caregiver_patient",
+                "app.models.schedule",
             ]
         },
     )
