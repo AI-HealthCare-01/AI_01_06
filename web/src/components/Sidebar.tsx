@@ -70,16 +70,21 @@ function IconProfile() {
 }
 
 const topMenuItems = [
-  { href: "/caregivers", label: "보호자 관리", roles: ["guardian", "patient"], icon: IconGuardian },
-  { href: "/dashboard", label: "대시보드", roles: ["patient"], icon: IconHome },
-  { href: "/prescriptions/upload", label: "처방전 업로드", roles: ["patient"], icon: IconPrescription },
-  { href: "/guides", label: "가이드 내역", roles: ["patient"], icon: IconGuide },
-  { href: "/chat", label: "AI 상담", roles: ["patient", "guardian"], icon: IconChat },
+  {
+    href: "/caregivers",
+    label: (role: string) => (role === "guardian" ? "돌봄 대상 관리" : "나의 보호자"),
+    roles: ["guardian", "patient"],
+    icon: IconGuardian,
+  },
+  { href: "/dashboard", label: () => "대시보드", roles: ["patient"], icon: IconHome },
+  { href: "/prescriptions/upload", label: () => "처방전 업로드", roles: ["patient"], icon: IconPrescription },
+  { href: "/guides", label: () => "가이드 내역", roles: ["patient"], icon: IconGuide },
+  { href: "/chat", label: () => "AI 상담", roles: ["patient", "guardian"], icon: IconChat },
 ];
 
 const bottomMenuItems = [
-  { href: "/profile", label: "내 정보", roles: ["patient", "guardian"], icon: IconProfile },
-  { href: "/settings", label: "설정", roles: ["patient", "guardian"], icon: IconSettings },
+  { href: "/profile", label: () => "내 정보", roles: ["patient", "guardian"], icon: IconProfile },
+  { href: "/settings", label: () => "설정", roles: ["patient", "guardian"], icon: IconSettings },
 ];
 
 export default function Sidebar() {
@@ -87,7 +92,7 @@ export default function Sidebar() {
   const { user } = useAuth();
   const role = user?.role?.toLowerCase() || "patient";
 
-  function renderMenuItem(item: { href: string; label: string; roles: string[]; icon: () => React.JSX.Element }) {
+  function renderMenuItem(item: { href: string; label: (role: string) => string; roles: string[]; icon: () => React.JSX.Element }) {
     const active = pathname.startsWith(item.href);
     const Icon = item.icon;
     return (
@@ -105,7 +110,7 @@ export default function Sidebar() {
         onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = ""; }}
       >
         <Icon />
-        {item.label}
+        {item.label(role)}
       </Link>
     );
   }
