@@ -236,6 +236,27 @@ export const api = {
   listMedications: (prescriptionId: number) =>
     request(`/api/prescriptions/${prescriptionId}/medications`),
 
+  // Caregivers
+  createInvite: () =>
+    request<{ token: string; invite_url: string }>("/api/caregivers/invite", { method: "POST" }),
+
+  validateInvite: (token: string) =>
+    request<{ inviter_name: string; inviter_nickname: string; inviter_role: string }>(
+      `/api/caregivers/invite/${token}`
+    ),
+
+  acceptInvite: (token: string) =>
+    request<{ id: number; status: string }>(`/api/caregivers/invite/${token}/accept`, { method: "POST" }),
+
+  listPatients: () =>
+    request<{ id: number; nickname: string; name: string }[]>("/api/caregivers/patients"),
+
+  listMyCaregivers: () =>
+    request<{ id: number; nickname: string; name: string }[]>("/api/caregivers/my-caregivers"),
+
+  revokeMapping: (mappingId: number) =>
+    request(`/api/caregivers/${mappingId}`, { method: "DELETE" }),
+
   // Chat
   createThread: (prescriptionId?: number) =>
     request("/api/chat/threads", {
