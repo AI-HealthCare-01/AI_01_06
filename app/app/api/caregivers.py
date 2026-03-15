@@ -80,7 +80,7 @@ async def accept_invite(request: Request, token: str, user: User = Depends(get_c
     # REVOKED 매핑이 존재하면 재활성화, 없으면 새로 생성
     existing = await CaregiverPatientMapping.get_or_none(caregiver=caregiver, patient=patient)
     if existing:
-        if existing.status == "APPROVED":
+        if existing.status != "REVOKED":
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
         existing.status = "APPROVED"
         existing.accepted_at = datetime.now(UTC)
