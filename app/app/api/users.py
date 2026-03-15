@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Depends
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.core.deps import get_current_user
-from app.core.response import success_response
+from app.core.rate_limit import limiter
+from app.core.response import error_response, success_response
+from app.core.security import verify_password
 from app.models.patient_profile import PatientProfile
 from app.models.user import User
 from app.schemas.user import UserUpdateRequest
@@ -24,6 +28,7 @@ async def get_me(user: User = Depends(get_current_user)):
             "nickname": user.nickname,
             "name": user.name,
             "role": user.role,
+            "has_password": user.password_hash is not None,
             "birth_date": str(user.birth_date) if user.birth_date else None,
             "gender": user.gender,
             "phone": user.phone,
