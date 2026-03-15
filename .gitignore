@@ -54,3 +54,5 @@ uploads/
 docs/*
 .agents/*
 .claude/*
+.serena/*
+.mcp.json
