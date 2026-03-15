@@ -4,7 +4,8 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from tortoise import Tortoise
 
-from app.main import app, limiter
+from app.core.rate_limit import limiter
+from app.main import app
 from app.models.guide import Guide
 from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
@@ -172,12 +173,15 @@ def fake_redis_cleanup():
 
 @pytest.fixture(autouse=True)
 def mock_deps_redis(fake_redis_cleanup):
-    """deps.py의 get_state_redis를 공유 FakeRedis로 교체 (JWT blacklist 검증용)."""
+    """deps.py와 auth.py의 get_state_redis를 공유 FakeRedis로 교체 (JWT blacklist 검증용)."""
 
     async def _get_fake():
         return fake_redis_cleanup
 
-    with patch("app.core.deps.get_state_redis", side_effect=_get_fake):
+    with (
+        patch("app.core.deps.get_state_redis", side_effect=_get_fake),
+        patch("app.api.auth.get_state_redis", side_effect=_get_fake),
+    ):
         yield
 
 
