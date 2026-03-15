@@ -73,7 +73,7 @@ function IconProfile({ active }: { active: boolean }) {
 }
 
 const menuItems = [
-  { href: "/caregivers", label: "보호자", icon: IconGuardian, roles: ["guardian"] },
+  { href: "/caregivers", label: "보호자 관리", icon: IconGuardian, roles: ["guardian", "patient"] },
   { href: "/dashboard", label: "홈", icon: IconHome, roles: ["patient"] },
   { href: "/prescriptions/upload", label: "처방전", icon: IconPrescription, roles: ["patient"] },
   { href: "/guides", label: "가이드", icon: IconGuide, roles: ["patient"] },
