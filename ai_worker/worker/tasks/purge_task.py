@@ -32,17 +32,18 @@ async def purge_deleted_users(ctx: dict) -> int:
     count = 0
     for user in expired_users:
         async with in_transaction():
+            # ChatThread → ChatMessage/ChatFeedback (prescription 유무 무관)
+            threads = await ChatThread.filter(user_id=user.id)
+            thread_ids = [t.id for t in threads]
+            if thread_ids:
+                await ChatFeedback.filter(thread_id__in=thread_ids).delete()
+                await ChatMessage.filter(thread_id__in=thread_ids).delete()
+                await ChatThread.filter(id__in=thread_ids).delete()
+
+            # Prescription → Medication → Schedule/AdherenceLog, Guide
             prescriptions = await Prescription.filter(user_id=user.id)
             prescription_ids = [p.id for p in prescriptions]
-
             if prescription_ids:
-                threads = await ChatThread.filter(user_id=user.id)
-                thread_ids = [t.id for t in threads]
-                if thread_ids:
-                    await ChatFeedback.filter(thread_id__in=thread_ids).delete()
-                    await ChatMessage.filter(thread_id__in=thread_ids).delete()
-                await ChatThread.filter(user_id=user.id).delete()
-
                 medications = await Medication.filter(prescription_id__in=prescription_ids)
                 medication_ids = [m.id for m in medications]
                 if medication_ids:
@@ -52,8 +53,6 @@ async def purge_deleted_users(ctx: dict) -> int:
                 await Guide.filter(user_id=user.id).delete()
                 await Medication.filter(prescription_id__in=prescription_ids).delete()
                 await Prescription.filter(user_id=user.id).delete()
-            else:
-                await ChatThread.filter(user_id=user.id).delete()
 
             await AdherenceLog.filter(actor_user_id=user.id).delete()
             await AuditLog.filter(actor_id=user.id).delete()
