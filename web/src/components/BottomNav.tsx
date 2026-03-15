@@ -73,13 +73,18 @@ function IconProfile({ active }: { active: boolean }) {
 }
 
 const menuItems = [
-  { href: "/caregivers", label: "보호자 관리", icon: IconGuardian, roles: ["guardian", "patient"] },
-  { href: "/dashboard", label: "홈", icon: IconHome, roles: ["patient"] },
-  { href: "/prescriptions/upload", label: "처방전", icon: IconPrescription, roles: ["patient"] },
-  { href: "/guides", label: "가이드", icon: IconGuide, roles: ["patient"] },
-  { href: "/chat", label: "AI 상담", icon: IconChat, roles: ["patient", "guardian"] },
-  { href: "/profile", label: "내 정보", icon: IconProfile, roles: ["guardian"] },
-  { href: "/settings", label: "설정", icon: IconSettings, roles: ["patient", "guardian"] },
+  {
+    href: "/caregivers",
+    label: (role: string) => (role === "guardian" ? "돌봄 대상" : "나의 보호자"),
+    icon: IconGuardian,
+    roles: ["guardian", "patient"],
+  },
+  { href: "/dashboard", label: () => "홈", icon: IconHome, roles: ["patient"] },
+  { href: "/prescriptions/upload", label: () => "처방전", icon: IconPrescription, roles: ["patient"] },
+  { href: "/guides", label: () => "가이드", icon: IconGuide, roles: ["patient"] },
+  { href: "/chat", label: () => "AI 상담", icon: IconChat, roles: ["patient", "guardian"] },
+  { href: "/profile", label: () => "내 정보", icon: IconProfile, roles: ["guardian"] },
+  { href: "/settings", label: () => "설정", icon: IconSettings, roles: ["patient", "guardian"] },
 ];
 
 export default function BottomNav() {
@@ -112,7 +117,7 @@ export default function BottomNav() {
                 className="text-[10px] font-medium leading-tight"
                 style={{ color: active ? "var(--color-primary)" : "var(--color-text-muted)" }}
               >
-                {item.label}
+                {item.label(role)}
               </span>
             </Link>
           );
