@@ -1,76 +1,92 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, field_validator
+from tortoise.exceptions import IntegrityError
 
+from app import config
 from app.core.deps import get_current_user
-from app.core.response import error_response, success_response
+from app.core.response import success_response
 from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.user import User
+from app.services.invite_service import consume_invite_token, create_invite_token, get_invite_data
 
 router = APIRouter(prefix="/api/caregivers", tags=["caregivers"])
 
-
-class CaregiverRequestBody(BaseModel):
-    patient_nickname: str
-
-
-class MappingStatusUpdate(BaseModel):
-    status: str
-
-    @field_validator("status")
-    @classmethod
-    def validate_status(cls, v: str) -> str:
-        if v not in ("APPROVED", "REJECTED"):
-            raise ValueError("status는 APPROVED 또는 REJECTED여야 합니다.")
-        return v
+# 초대자와 수락자는 반드시 서로 반대 role이어야 함
+_OPPOSITE_ROLE: dict[str, str] = {"PATIENT": "GUARDIAN", "GUARDIAN": "PATIENT"}
 
 
-@router.post("/request")
-async def request_link(req: CaregiverRequestBody, user: User = Depends(get_current_user)):
-    if user.role != "GUARDIAN":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="보호자만 연결 요청을 할 수 있습니다.")
-
-    patient = await User.filter(nickname=req.patient_nickname, role="PATIENT", deleted_at__isnull=True).first()
-    if not patient:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="해당 닉네임의 환자를 찾을 수 없습니다.")
-
-    if patient.id == user.id:
-        return error_response("자기 자신에게 요청할 수 없습니다.")
-
-    existing = await CaregiverPatientMapping.filter(caregiver=user, patient=patient).first()
-    if existing and existing.status in ("PENDING", "APPROVED"):
-        return error_response("이미 연결 요청이 존재합니다.")
-
-    mapping = await CaregiverPatientMapping.create(caregiver=user, patient=patient)
-    return success_response({"id": mapping.id, "status": mapping.status})
+@router.post("/invite")
+async def create_invite(user: User = Depends(get_current_user)):
+    token = await create_invite_token(user.id, user.role)
+    invite_url = f"{config.FRONTEND_URL}/invite/{token}"
+    return success_response({"token": token, "invite_url": invite_url})
 
 
-@router.get("/requests")
-async def list_requests(user: User = Depends(get_current_user)):
-    if user.role != "PATIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="환자만 요청 목록을 조회할 수 있습니다.")
+@router.get("/invite/{token}")
+async def validate_invite(token: str, user: User = Depends(get_current_user)):
+    data = await get_invite_data(token)
+    if not data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
+    inviter = await User.get_or_none(id=data["user_id"], deleted_at__isnull=True)
+    if not inviter:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대자를 찾을 수 없습니다.")
+    return success_response(
+        {
+            "inviter_name": inviter.name,
+            "inviter_nickname": inviter.nickname,
+            "inviter_role": data["role"],
+        }
+    )
 
-    mappings = await CaregiverPatientMapping.filter(patient=user, status="PENDING").prefetch_related("caregiver")
-    result = [
-        {"id": m.id, "caregiver_nickname": m.caregiver.nickname, "requested_at": str(m.requested_at)} for m in mappings
-    ]
-    return success_response(result)
 
+@router.post("/invite/{token}/accept")
+async def accept_invite(token: str, user: User = Depends(get_current_user)):
+    data = await get_invite_data(token)
+    if not data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
 
-@router.patch("/requests/{mapping_id}")
-async def respond_to_request(mapping_id: int, req: MappingStatusUpdate, user: User = Depends(get_current_user)):
-    if user.role != "PATIENT":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="환자만 요청에 응답할 수 있습니다.")
+    inviter = await User.get_or_none(id=data["user_id"], deleted_at__isnull=True)
+    if not inviter:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대자를 찾을 수 없습니다.")
 
-    mapping = await CaregiverPatientMapping.get_or_none(id=mapping_id, patient=user, status="PENDING")
-    if not mapping:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="요청을 찾을 수 없습니다.")
+    # 자기 자신 수락 방지
+    if inviter.id == user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="자기 자신의 초대를 수락할 수 없습니다.")
 
-    mapping.status = req.status
-    if req.status == "APPROVED":
-        mapping.accepted_at = datetime.now(UTC)
-    await mapping.save()
+    # role 교차 검증: 초대자와 수락자는 반드시 서로 다른 role이어야 함
+    expected_role = _OPPOSITE_ROLE.get(data["role"])
+    if user.role != expected_role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"이 초대는 {expected_role} 역할의 사용자만 수락할 수 있습니다.",
+        )
+
+    # 역할에 따라 caregiver/patient 결정
+    if data["role"] == "PATIENT":
+        patient, caregiver = inviter, user
+    else:
+        patient, caregiver = user, inviter
+
+    # 중복 APPROVED 연결 확인
+    existing = await CaregiverPatientMapping.filter(caregiver=caregiver, patient=patient, status="APPROVED").first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
+
+    # 토큰 소비 (일회용) — False면 다른 요청이 먼저 소비한 것
+    consumed = await consume_invite_token(token)
+    if not consumed:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="초대가 만료되었거나 존재하지 않습니다.")
+
+    try:
+        mapping = await CaregiverPatientMapping.create(
+            caregiver=caregiver,
+            patient=patient,
+            status="APPROVED",
+            accepted_at=datetime.now(UTC),
+        )
+    except IntegrityError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.")
     return success_response({"id": mapping.id, "status": mapping.status})
 
 
