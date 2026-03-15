@@ -181,8 +181,6 @@ export const api = {
   getMe: () => request("/api/users/me"),
   updateMe: (data: Record<string, unknown>) =>
     request("/api/users/me", { method: "PATCH", body: JSON.stringify(data) }),
-  deleteMe: (data: { password?: string; confirm_email?: string }) =>
-    request("/api/users/me", { method: "DELETE", body: JSON.stringify(data) }),
 
   // Prescriptions
   uploadPrescription: (file: File) => {
@@ -251,10 +249,10 @@ export const api = {
     request<{ id: number; status: string }>(`/api/caregivers/invite/${token}/accept`, { method: "POST" }),
 
   listPatients: () =>
-    request<{ mapping_id: number; id: number; nickname: string; name: string }[]>("/api/caregivers/patients"),
+    request<{ id: number; nickname: string; name: string }[]>("/api/caregivers/patients"),
 
   listMyCaregivers: () =>
-    request<{ mapping_id: number; id: number; nickname: string; name: string }[]>("/api/caregivers/my-caregivers"),
+    request<{ id: number; nickname: string; name: string }[]>("/api/caregivers/my-caregivers"),
 
   revokeMapping: (mappingId: number) =>
     request(`/api/caregivers/${mappingId}`, { method: "DELETE" }),
