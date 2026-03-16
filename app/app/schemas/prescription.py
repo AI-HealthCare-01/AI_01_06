@@ -14,7 +14,7 @@ class OcrResultResponse(BaseModel):
     hospital_name: str | None = None
     doctor_name: str | None = None
     prescription_date: str | None = None
-    diagnosis: list[str] = []
+    diagnosis: str | None = None
     medications: list[MedicationSchema] = []
 
 
@@ -22,7 +22,7 @@ class OcrUpdateRequest(BaseModel):
     hospital_name: str | None = None
     doctor_name: str | None = None
     prescription_date: str | None = None
-    diagnosis: list[str] = []
+    diagnosis: str | None = None
     medications: list[MedicationSchema] = []
 
 
@@ -32,6 +32,6 @@ class PrescriptionResponse(BaseModel):
     hospital_name: str | None = None
     doctor_name: str | None = None
     prescription_date: str | None = None
-    diagnosis: list[str] = []
+    diagnosis: str | None = None
     ocr_status: str
     created_at: str

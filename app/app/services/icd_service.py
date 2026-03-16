@@ -27,22 +27,19 @@ def lookup(code: str) -> str | None:
     return icd.get(normalized)
 
 
-def resolve_diagnosis(raw: str | None) -> list[str]:
-    """OCR 진단명을 한글 질병명 리스트로 변환.
+def resolve_diagnosis(raw: str | None) -> str | None:
+    """OCR 진단명을 한글 질병명으로 변환.
 
-    한글 포함 시 쉼표 기준으로만 분리하고, 복수 코드 처리, 중복 제거를 지원합니다.
+    한글 포함 시 원본 반환, 복수 코드 처리, 중복 제거.
     """
     if not raw:
-        return []
-    
-    # 한글이 포함된 경우 (예: "급성 비인두염, 기관지염") 공백으로 분리하면 단어가 깨지므로 쉼표로만 분리
+        return raw
     if re.search(r"[가-힣]", raw):
-        return [c.strip() for c in raw.split(",") if c.strip()]
+        return raw
 
-    # 영문/숫자 코드만 있는 경우 쉼표나 공백으로 자름
     codes = [c.strip() for c in re.split(r"[,\s]+", raw) if c.strip()]
     if not codes:
-        return []
+        return raw
 
     seen: set[str] = set()
     names: list[str] = []
@@ -52,7 +49,7 @@ def resolve_diagnosis(raw: str | None) -> list[str]:
             seen.add(name)
             names.append(name)
 
-    return names
+    return ", ".join(names)
 
 
 def normalize_dosage(dosage: str | None) -> str | None:

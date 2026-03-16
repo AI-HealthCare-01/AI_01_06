@@ -18,7 +18,7 @@ interface OcrData {
   hospital_name: string;
   doctor_name: string;
   prescription_date: string;
-  diagnosis: string[];
+  diagnosis: string;
   medications: Medication[];
 }
 
@@ -78,7 +78,7 @@ export default function OcrReviewPage() {
     if (!data.hospital_name) missingFields.push("병원명");
     if (!data.doctor_name) missingFields.push("담당의");
     if (!data.prescription_date) missingFields.push("처방일");
-    if (!data.diagnosis || data.diagnosis.length === 0) missingFields.push("진단명");
+    if (!data.diagnosis) missingFields.push("진단명");
     data.medications.forEach((med, i) => {
       const label = `${i + 1}번 약물`;
       if (!med.name) missingFields.push(`${label} 약품명`);
@@ -234,19 +234,9 @@ export default function OcrReviewPage() {
           <div>
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>진단명</p>
             {editing ? (
-              <input value={(data.diagnosis || []).join(", ")} onChange={(e) => setData({ ...data, diagnosis: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} placeholder="여러 질병은 쉼표(,)로 구분해주세요" className="px-3 py-2 w-full text-base input-field mt-1" />
+              <input value={data.diagnosis || ""} onChange={(e) => setData({ ...data, diagnosis: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
             ) : (
-              data.diagnosis && data.diagnosis.length > 0 ? (
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {data.diagnosis.map((d, i) => (
-                    <span key={i} className="px-2.5 py-1 text-sm rounded-full font-semibold border" style={{ background: 'var(--color-surface)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}>
-                      {d}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="font-medium mt-1"><span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span></p>
-              )
+              <p className="font-medium">{data.diagnosis || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
             )}
           </div>
         </div>
