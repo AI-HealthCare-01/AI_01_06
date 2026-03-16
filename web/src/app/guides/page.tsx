@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
-import { useRouter } from "next/navigation";
 
 interface GuideItem {
   id: number;
@@ -23,7 +22,6 @@ export default function GuidesListPage() {
   const [guides, setGuides] = useState<GuideItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     api.listGuides().then((res) => {
@@ -61,8 +59,8 @@ export default function GuidesListPage() {
           <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>총 가이드 수</p>
         </div>
         <div className="app-card rounded-lg p-4 text-center">
-          <p className="text-2xl font-bold">-</p>
-          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>복용 중</p>
+          <p className="text-2xl font-bold">{guides.filter(g => new Date(g.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length}</p>
+          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>이번 달</p>
         </div>
         <div className="app-card rounded-lg p-4 text-center">
           <p className="text-2xl font-bold">{guides.length}</p>

@@ -87,7 +87,15 @@ export default function GuideDetailPage() {
         <h1 className="text-2xl font-bold mb-2">가이드 생성 실패</h1>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-700 font-medium">가이드 생성 중 오류가 발생했습니다.</p>
-          <p className="text-red-500 text-sm mt-1">잠시 후 다시 시도해주세요.</p>
+          <p className="text-red-500 text-sm mt-1">처방전 내용을 확인하고 다시 시도해주세요.</p>
+        </div>
+        <div className="flex gap-4 mt-4">
+          <Link href="/guides" className="flex-1 py-3 rounded-lg text-center btn-outline">
+            가이드 목록으로
+          </Link>
+          <Link href={`/prescriptions/${guide.prescription_id}/ocr`} className="flex-1 py-3 rounded-lg text-center btn-primary">
+            처방전 다시 확인하기
+          </Link>
         </div>
       </AppLayout>
     );
@@ -189,9 +197,12 @@ export default function GuideDetailPage() {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-4">
+      <div className="flex gap-3">
         <Link href="/guides" className="flex-1 py-3 rounded-lg text-center btn-outline">
           가이드 목록으로
+        </Link>
+        <Link href={`/prescriptions/${guide.prescription_id}/ocr`} className="flex-1 py-3 rounded-lg text-center btn-outline">
+          처방전 확인하기
         </Link>
         <Link href={`/chat?prescriptionId=${guide.prescription_id}`} className="flex-1 py-3 rounded-lg text-center btn-primary">
           AI에게 질문하기

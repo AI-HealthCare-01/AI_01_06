@@ -71,7 +71,9 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
         content = await guide_service.generate(med_list, user_info)
         guide.content = content
         guide.status = "completed"
+        prescription.ocr_status = "guide_completed"
         await guide.save()
+        await prescription.save()
 
     return "fake-job-id"
 

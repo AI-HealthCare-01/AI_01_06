@@ -17,6 +17,40 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
 
+    if prescription.ocr_status == "guide_completed":
+        existing = (
+            await Guide.filter(prescription=prescription, user=user, status="completed").order_by("-created_at").first()
+        )
+        if existing:
+            return success_response(
+                {
+                    "id": existing.id,
+                    "prescription_id": prescription.id,
+                    "status": existing.status,
+                    "created_at": str(existing.created_at),
+                }
+            )
+
+    generating = await Guide.filter(prescription=prescription, user=user, status="generating").first()
+    if generating:
+        return success_response(
+            {
+                "id": generating.id,
+                "prescription_id": prescription.id,
+                "status": generating.status,
+                "created_at": str(generating.created_at),
+            }
+        )
+
+    if prescription.ocr_status not in ("ocr_completed", "confirmed", "guide_completed"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OCR이 완료되지 않은 처방전입니다.")
+
+    medications = await Medication.filter(prescription=prescription)
+    if not medications:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="처방된 약물 정보가 없습니다.")
+
+    await Guide.filter(prescription=prescription, user=user).delete()
+
     guide = await Guide.create(
         user=user,
         prescription=prescription,
@@ -75,7 +109,9 @@ async def get_guide(guide_id: int, user: User = Depends(get_current_user)):
     if not guide:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="가이드를 찾을 수 없습니다.")
 
-    prescription = await Prescription.get(id=guide.prescription_id)
+    prescription = await Prescription.get_or_none(id=guide.prescription_id)
+    if not prescription:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
     medications = await Medication.filter(prescription=prescription)
 
     return success_response(
