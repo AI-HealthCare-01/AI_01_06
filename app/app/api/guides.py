@@ -109,8 +109,12 @@ async def list_guides(actors: tuple[User, User | None] = Depends(get_acting_pati
 @router.delete("/{guide_id}")
 async def delete_guide(guide_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
     current_user, patient = actors
-    target_user = patient or current_user
-    guide = await Guide.get_or_none(id=guide_id, user=target_user)
+    if patient:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="보호자는 가이드를 삭제할 수 없습니다.",
+        )
+    guide = await Guide.get_or_none(id=guide_id, user=current_user)
     if not guide:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="가이드를 찾을 수 없습니다.")
     await guide.delete()

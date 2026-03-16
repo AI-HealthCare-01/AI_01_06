@@ -253,3 +253,26 @@ async def test_guardian_create_guide_unlinked_patient_rejected(client: AsyncClie
         headers={"X-Acting-For": "9999"},
     )
     assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_guardian_cannot_delete_patient_guide(client: AsyncClient):
+    """보호자는 돌봄 대상의 가이드를 삭제할 수 없다."""
+    patient_token, guardian_token, patient_id = await _create_linked_pair(client)
+
+    # 환자가 처방전 업로드 → 가이드 생성
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    files = {"file": ("test.jpg", b"fake-image-data", "image/jpeg")}
+    resp = await client.post("/api/prescriptions", files=files)
+    prescription_id = resp.json()["data"]["id"]
+
+    resp = await client.post("/api/guides", json={"prescription_id": prescription_id})
+    guide_id = resp.json()["data"]["id"]
+
+    # 보호자가 대리 모드로 삭제 시도 → 403
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.delete(
+        f"/api/guides/{guide_id}",
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    assert resp.status_code == 403
