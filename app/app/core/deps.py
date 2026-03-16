@@ -44,13 +44,15 @@ async def get_acting_patient(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="보호자만 대리 접근이 가능합니다.")
 
     mapping = await CaregiverPatientMapping.get_or_none(
-        caregiver=user, patient_id=x_acting_for, status="APPROVED",
+        caregiver=user,
+        patient_id=x_acting_for,
+        status="APPROVED",
     )
     if not mapping:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="연결되지 않은 돌봄 대상입니다.")
 
     patient = await User.get_or_none(id=x_acting_for, deleted_at__isnull=True)
     if not patient:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="연결되지 않은 돌봄 대상입니다.")
 
     return user, patient
