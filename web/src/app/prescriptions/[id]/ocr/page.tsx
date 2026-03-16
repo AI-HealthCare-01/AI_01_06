@@ -29,6 +29,7 @@ export default function OcrReviewPage() {
   const [data, setData] = useState<OcrData | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [processing, setProcessing] = useState(true);
   const [ocrFailed, setOcrFailed] = useState(false);
@@ -41,7 +42,7 @@ export default function OcrReviewPage() {
     if (pData.ocr_status === "ocr_failed") {
       setProcessing(false);
       setOcrFailed(true);
-    } else if (pData.ocr_status === "ocr_completed" || pData.ocr_status === "guide_completed") {
+    } else if (pData.ocr_status === "ocr_completed" || pData.ocr_status === "guide_completed" || pData.ocr_status === "confirmed") {
       setProcessing(false);
       const ocrRes = await api.getOcr(prescriptionId);
       if (ocrRes.success && ocrRes.data) setData(ocrRes.data as OcrData);
@@ -59,9 +60,15 @@ export default function OcrReviewPage() {
   const handleSave = async () => {
     if (!data) return;
     setSaving(true);
-    await api.updateOcr(prescriptionId, data);
-    setEditing(false);
+    const saveRes = await api.updateOcr(prescriptionId, data);
     setSaving(false);
+    if (saveRes.success) {
+      setEditing(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } else {
+      setAlertMessage("저장에 실패했습니다. 다시 시도해주세요.");
+    }
   };
 
   const handleGenerate = async () => {
@@ -90,6 +97,9 @@ export default function OcrReviewPage() {
     if (res.success && res.data) {
       const guideData = res.data as { id: number };
       router.push(`/guides/${guideData.id}`);
+    } else {
+      setGenerating(false);
+      setAlertMessage(res.error || "가이드 생성에 실패했습니다. 처방전 내용을 확인해주세요.");
     }
   };
 
@@ -169,6 +179,11 @@ export default function OcrReviewPage() {
               확인
             </button>
           </div>
+        </div>
+      )}
+      {saveSuccess && (
+        <div className="mb-4 px-4 py-3 rounded-lg text-sm font-medium alert-success">
+          저장이 완료되었습니다.
         </div>
       )}
       <h1 className="text-2xl font-bold mb-2">처방전 내용 확인</h1>
@@ -298,10 +313,8 @@ export default function OcrReviewPage() {
         ) : null}
         <button
           onClick={handleGenerate}
-          disabled={generating}
-          className="flex-1 py-3 btn-primary"
           disabled={generating || editing}
-          className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="flex-1 py-3 rounded-lg btn-primary disabled:opacity-50"
         >
           {generating ? "생성 중..." : "가이드 생성 →"}
         </button>

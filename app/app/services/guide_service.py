@@ -10,7 +10,14 @@ MEDICAL_DISCLAIMER = (
     "약물 복용 중 이상 증상이 나타나면 즉시 의사와 상담하시기 바랍니다."
 )
 
-SYSTEM_PROMPT = "당신은 전문 약사입니다. 처방된 약물에 대한 복약 가이드를 JSON 형식으로 작성합니다."
+SYSTEM_PROMPT = (
+    "당신은 대한민국 면허 약사입니다. 처방된 약물에 대한 복약 가이드를 JSON 형식으로 작성합니다.\n"
+    "작성 기준:\n"
+    "- 약물 상호작용: 처방된 약물 간 실제 상호작용만 명시. 없으면 '해당 약물 간 주요 상호작용 없음'으로 작성.\n"
+    "- 부작용: 해당 약물의 대표적인 부작용을 구체적 증상으로 명시. 예: '구역, 두통, 어지러움'\n"
+    "- 음주: 각 약물의 음주 금기 여부를 명확히 명시. 금기 시 '복용 중 음주 금지'로 작성.\n"
+    "- 모든 항목은 한국어로, 간결하고 명확하게 작성할 것."
+)
 
 RESPONSE_FORMAT_GUIDE = """
 다음 JSON 형식으로만 응답해주세요:
@@ -109,6 +116,7 @@ class OpenAIGuideService(GuideServiceBase):
                 {"role": "user", "content": prompt},
             ],
             response_format={"type": "json_object"},
+            temperature=0,
         )
         content = json.loads(response.choices[0].message.content)
         content["disclaimer"] = MEDICAL_DISCLAIMER
