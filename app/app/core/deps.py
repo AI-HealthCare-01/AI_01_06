@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -5,6 +7,8 @@ from app.core.redis import get_state_redis
 from app.core.security import decode_token
 from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 security_scheme = HTTPBearer()
 
@@ -30,7 +34,7 @@ async def get_current_user(
 
 async def get_acting_patient(
     user: User = Depends(get_current_user),
-    x_acting_for: int | None = Header(None, alias="X-Acting-For"),
+    x_acting_for: int | None = Header(None, alias="X-Acting-For", ge=1),
 ) -> tuple[User, User | None]:
     """(current_user, target_patient) 튜플 반환.
 
@@ -41,6 +45,7 @@ async def get_acting_patient(
         return user, None
 
     if user.role != "GUARDIAN":
+        logger.warning("proxy_access.role_mismatch user_id=%d attempted_patient_id=%d", user.id, x_acting_for)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="보호자만 대리 접근이 가능합니다.")
 
     mapping = await CaregiverPatientMapping.get_or_none(
@@ -49,10 +54,12 @@ async def get_acting_patient(
         status="APPROVED",
     )
     if not mapping:
+        logger.warning("proxy_access.mapping_denied guardian_id=%d patient_id=%d", user.id, x_acting_for)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="연결되지 않은 돌봄 대상입니다.")
 
     patient = await User.get_or_none(id=x_acting_for, deleted_at__isnull=True)
     if not patient:
+        logger.warning("proxy_access.patient_not_found guardian_id=%d patient_id=%d", user.id, x_acting_for)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="연결되지 않은 돌봄 대상입니다.")
 
     return user, patient
