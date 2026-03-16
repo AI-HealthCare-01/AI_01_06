@@ -54,3 +54,7 @@ uploads/
 docs/*
 .agents/*
 .claude/*
+
+# RAG generated data
+app/data/faiss/
+app/data/raw_drug_chunks.json

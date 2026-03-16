@@ -24,6 +24,11 @@ CHAT_STREAMING_TIMEOUT_SECONDS: int = int(os.environ.get("CHAT_STREAMING_TIMEOUT
 RAG_ENABLED: bool = os.environ.get("RAG_ENABLED", "false").lower() == "true"
 RAG_MAX_CONTEXT_CHARS: int = int(os.environ.get("RAG_MAX_CONTEXT_CHARS", "2000"))
 RAG_DEFAULT_SECTIONS: list[str] = ["dosage", "precautions"]
+RAG_FAISS_TOP_K: int = int(os.environ.get("RAG_FAISS_TOP_K", "50"))
+RAG_SIMILARITY_THRESHOLD: float = float(os.environ.get("RAG_SIMILARITY_THRESHOLD", "0.2"))
+EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
+
+EAYAK_API_KEY: str = os.environ.get("EAYAK_API_KEY", "")
 
 KAKAO_CLIENT_ID: str = os.environ.get("KAKAO_CLIENT_ID", "")
 KAKAO_CLIENT_SECRET: str = os.environ.get("KAKAO_CLIENT_SECRET", "")
