@@ -188,9 +188,7 @@ def _section_kr(section: str) -> str:
     }.get(section, section)
 
 
-async def run_test(
-    svc: FAISSRetrievalService, case: dict
-) -> dict:
+async def run_test(svc: FAISSRetrievalService, case: dict) -> dict:
     """단일 테스트 케이스 실행 → 결과 dict 반환."""
     results = await svc.retrieve(case["drug_names"], case["query"])
 
@@ -278,9 +276,9 @@ def print_scorecard(
     top3_pass = sum(1 for r in results if r["top3_hit"])
     total = len(results)
 
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f" {tier_name} 스코어카드")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"  Section Accuracy @1: {top1_pass}/{total}  (목표 {target_top1}/{total})")
     print(f"  Section Accuracy @3: {top3_pass}/{total}  (목표 {target_top3}/{total})")
 
@@ -321,9 +319,9 @@ async def _run_tier(
     target_top3: int,
 ) -> tuple[list[dict], int, int]:
     """단일 tier를 실행하고 결과를 반환한다."""
-    print(f"\n{'#'*50}")
+    print(f"\n{'#' * 50}")
     print(f" {label}")
-    print(f"{'#'*50}")
+    print(f"{'#' * 50}")
     results = []
     for case in cases:
         r = await run_test(svc, case)
@@ -347,17 +345,16 @@ def _print_summary(
 
     all_scores = [t["score"] for r in all_results for t in r["top3"]]
 
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(" 종합 스코어카드")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     for name, (top1, top3) in tier_scores.items():
         print(f"  {name} @1: {top1}/5  |  {name} @3: {top3}/5")
     print(f"  전체  @1: {all_top1}/{total}  |  전체  @3: {all_top3}/{total}")
 
     if all_scores:
         print("\n  Score 분포:")
-        print(f"    min={min(all_scores):.4f}  max={max(all_scores):.4f}"
-              f"  avg={sum(all_scores)/len(all_scores):.4f}")
+        print(f"    min={min(all_scores):.4f}  max={max(all_scores):.4f}  avg={sum(all_scores) / len(all_scores):.4f}")
 
     t1_top1 = tier_scores.get("Tier 1", (0, 0))[0]
     t2_top3 = tier_scores.get("Tier 2", (0, 0))[1]
@@ -390,17 +387,17 @@ async def main() -> None:
 
     print(f"FAISS 인덱스 로드 완료: {svc.index.ntotal} vectors")
     print(f"임베딩 모델: {os.environ.get('EMBEDDING_MODEL', 'text-embedding-3-small')}")
-    print(f"threshold={float(os.environ.get('RAG_SIMILARITY_THRESHOLD', '0.2'))}, "
-          f"top_k={int(os.environ.get('RAG_FAISS_TOP_K', '50'))}")
+    print(
+        f"threshold={float(os.environ.get('RAG_SIMILARITY_THRESHOLD', '0.2'))}, "
+        f"top_k={int(os.environ.get('RAG_FAISS_TOP_K', '50'))}"
+    )
 
     tier_scores: dict[str, tuple[int, int]] = {}
 
-    t1_results, t1_top1, t1_top3 = await _run_tier(
-        svc, "Tier 1: 직접 매칭 (5개)", TIER_1, 5, 5)
+    t1_results, t1_top1, t1_top3 = await _run_tier(svc, "Tier 1: 직접 매칭 (5개)", TIER_1, 5, 5)
     tier_scores["Tier 1"] = (t1_top1, t1_top3)
 
-    t2_results, t2_top1, t2_top3 = await _run_tier(
-        svc, "Tier 2: 의도 추론 (5개)", TIER_2, 3, 4)
+    t2_results, t2_top1, t2_top3 = await _run_tier(svc, "Tier 2: 의도 추론 (5개)", TIER_2, 3, 4)
     tier_scores["Tier 2"] = (t2_top1, t2_top3)
 
     tiers_to_run = _parse_tier_args()
@@ -409,13 +406,11 @@ async def main() -> None:
     t4_results: list[dict] = []
 
     if 3 in tiers_to_run:
-        t3_results, t3_top1, t3_top3 = await _run_tier(
-            svc, "Tier 3: 브랜드명 → 성분명 정규화 (5개)", TIER_3, 4, 4)
+        t3_results, t3_top1, t3_top3 = await _run_tier(svc, "Tier 3: 브랜드명 → 성분명 정규화 (5개)", TIER_3, 4, 4)
         tier_scores["Tier 3"] = (t3_top1, t3_top3)
 
     if 4 in tiers_to_run:
-        t4_results, t4_top1, t4_top3 = await _run_tier(
-            svc, "Tier 4: 복수 약물 + 엣지 케이스 (5개)", TIER_4, 3, 4)
+        t4_results, t4_top1, t4_top3 = await _run_tier(svc, "Tier 4: 복수 약물 + 엣지 케이스 (5개)", TIER_4, 3, 4)
         tier_scores["Tier 4"] = (t4_top1, t4_top3)
 
     all_results = t1_results + t2_results + t3_results + t4_results

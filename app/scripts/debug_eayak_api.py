@@ -95,7 +95,7 @@ def _print_item_detail(i: int, item: dict) -> None:
             form_hints.append("경구제")
     form_str = f" ({', '.join(form_hints)})" if form_hints else ""
 
-    print(f"\n  [{i+1}] {item_name}{topical_mark}{form_str}")
+    print(f"\n  [{i + 1}] {item_name}{topical_mark}{form_str}")
     print(f"      seq={item_seq}, 제조={entp}")
 
     for field, label in _SECTION_FIELDS.items():
@@ -120,15 +120,15 @@ async def main() -> None:
     async with httpx.AsyncClient() as client:
         for drug in DEBUG_TARGETS:
             generic = drug["generic"]
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             print(f" {generic}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
 
             for term in drug["search_terms"]:
                 result = await debug_search(client, term)
                 items = result["items"]
 
-                print(f"\n  검색어: \"{term}\"")
+                print(f'\n  검색어: "{term}"')
                 print(f"  HTTP {result['status']}, totalCount={result.get('total', '?')}, items={len(items)}")
 
                 if result.get("error"):

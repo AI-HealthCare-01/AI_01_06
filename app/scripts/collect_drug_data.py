@@ -137,9 +137,7 @@ async def fetch_drug_info(client: httpx.AsyncClient, drug_name: str) -> list[dic
         return []
 
 
-def extract_chunks(
-    items: list[dict], drug_name: str
-) -> tuple[list[dict], dict[str, str]]:
+def extract_chunks(items: list[dict], drug_name: str) -> tuple[list[dict], dict[str, str]]:
     """API 응답을 section별 chunk 리스트로 변환. 브랜드 매핑도 수집."""
     chunks: list[dict] = []
     brand_map: dict[str, str] = {}
