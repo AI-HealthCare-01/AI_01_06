@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { usePatient } from "@/lib/patient-context";
 
 /* ── Nav Icons (24×24, stroke-based) ── */
 function IconHome({ active }: { active: boolean }) {
@@ -80,9 +81,15 @@ const menuItems = [
 export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { isProxyMode } = usePatient();
   const role = user?.role?.toLowerCase() || "patient";
 
-  const visibleItems = menuItems.filter((item) => item.roles.includes(role));
+  const visibleItems = menuItems.filter((item) => {
+    if (isProxyMode) {
+      return item.roles.includes("patient") && item.href !== "/caregivers";
+    }
+    return item.roles.includes(role);
+  });
 
   return (
     <nav
