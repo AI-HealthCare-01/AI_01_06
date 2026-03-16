@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 from httpx import AsyncClient
 
+from app.models.guide import Guide
 from app.models.prescription import Prescription
 
 _PATIENT = {
@@ -185,4 +186,70 @@ async def test_revoked_mapping_blocks_access(client: AsyncClient):
     await client.delete(f"/api/caregivers/{mapping_id}")
 
     resp = await client.get("/api/schedules/today", headers={"X-Acting-For": str(patient_id)})
+    assert resp.status_code == 403
+
+
+# --- 가이드 대리 접근 테스트 ---
+
+
+@pytest.mark.asyncio
+async def test_guardian_creates_guide_for_patient(client: AsyncClient):
+    """보호자가 환자 대리로 가이드 생성 — user=환자, acted_by=보호자, enqueue에 환자 ID 전달."""
+    patient_token, guardian_token, patient_id = await _create_linked_pair(client)
+
+    # 환자가 처방전 업로드 (가이드 생성 전제)
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    files = {"file": ("test.jpg", b"fake-image-data", "image/jpeg")}
+    resp = await client.post("/api/prescriptions", files=files)
+    prescription_id = resp.json()["data"]["id"]
+
+    # 보호자가 가이드 생성
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.post(
+        "/api/guides",
+        json={"prescription_id": prescription_id},
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    assert resp.status_code == 200
+    guide_data = resp.json()["data"]
+
+    # 보호자 ID 조회
+    me_resp = await client.get("/api/users/me")
+    guardian_id = me_resp.json()["data"]["id"]
+
+    # DB 검증: Guide.user_id == 환자, Guide.acted_by_id == 보호자
+    guide = await Guide.get(id=guide_data["id"])
+    assert guide.user_id == patient_id
+    assert guide.acted_by_id == guardian_id
+
+
+@pytest.mark.asyncio
+async def test_guardian_views_patient_guides(client: AsyncClient):
+    """보호자가 연결된 환자의 가이드 목록 조회."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.get("/api/guides", headers={"X-Acting-For": str(patient_id)})
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_guardian_create_guide_unlinked_patient_rejected(client: AsyncClient):
+    """미연결 환자에 대리 가이드 생성 → 403."""
+    patient_token, guardian_token, _ = await _create_linked_pair(client)
+
+    # 환자가 처방전 업로드
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    files = {"file": ("test.jpg", b"fake-image-data", "image/jpeg")}
+    resp = await client.post("/api/prescriptions", files=files)
+    prescription_id = resp.json()["data"]["id"]
+
+    # 보호자가 미연결 환자 ID로 가이드 생성 시도
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.post(
+        "/api/guides",
+        json={"prescription_id": prescription_id},
+        headers={"X-Acting-For": "9999"},
+    )
     assert resp.status_code == 403
