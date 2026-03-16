@@ -117,12 +117,12 @@ def _normalize_drug_names_v2(raw_names: list[str]) -> list[str]:
 
 # 사용자 질문에서 섹션을 추론하기 위한 키워드 매핑
 _SECTION_KEYWORDS: dict[str, list[str]] = {
-    "side_effects": ["부작용", "졸리", "졸음", "어지러", "메스꺼", "구역", "설사", "두통", "발진"],
-    "dosage": ["식전", "식후", "복용", "먹는 방법", "용량", "용법", "몇 알", "몇 번"],
-    "interactions": ["같이 먹", "함께 복용", "상호작용", "병용", "술", "음주", "자몽"],
-    "precautions": ["주의", "임산부", "임신", "수유", "금기", "조심", "어린이", "노인", "고령"],
-    "efficacy": ["효과", "효능", "어디에 쓰", "무슨 약", "뭐에 좋"],
-    "storage": ["보관", "냉장", "유통기한", "상온"],
+    "side_effects": ["부작용", "졸리", "졸려", "졸음", "어지러", "메스꺼", "구역", "설사", "두통", "발진", "속쓰림", "울렁"],
+    "dosage": ["식전", "식후", "복용법", "먹는 방법", "용량", "용법", "몇 알", "몇 번", "몇 회", "하루에"],
+    "interactions": ["같이 먹", "함께 복용", "함께 먹", "상호작용", "병용", "술", "음주", "자몽", "안 되는 약"],
+    "precautions": ["주의", "임산부", "임신", "수유", "금기", "조심", "어린이", "노인", "고령", "오래 먹", "장기 복용", "중단"],
+    "efficacy": ["효과", "효능", "어디에 쓰", "무슨 약", "뭐에 좋", "왜 먹"],
+    "storage": ["보관", "냉장", "유통기한", "상온", "어디에 두", "어디에 놓"],
 }
 
 
@@ -283,20 +283,26 @@ class FAISSRetrievalService(RetrievalServiceBase):
         return vec
 
     async def retrieve(self, drug_names: list[str], query: str) -> list[dict]:
-        """의미 기반 벡터 검색 + 처방 약품명 필터."""
+        """의미 기반 벡터 검색 + section hint 보정 + 처방 약품명 필터."""
         # 1) 약품명 정규화 (하드코딩 + e약은요 매핑)
         normalized = _normalize_drug_names_v2(drug_names)
         normalized_set = set(normalized)
         logger.info("[FAISS-RAG] normalized=%s", normalized)
 
-        # 2) 쿼리 임베딩
+        # 2) 질문에서 section intent 추출
+        hinted_sections = detect_sections(query)
+        # detect_sections이 기본값(dosage, precautions)을 반환한 경우 힌트 없음 취급
+        has_hint = hinted_sections != list(config.RAG_DEFAULT_SECTIONS)
+        logger.info("[FAISS-RAG] section_hint=%s (explicit=%s)", hinted_sections, has_hint)
+
+        # 3) 쿼리 임베딩
         query_vec = await self._embed_query(query)
 
-        # 3) top-k 검색
+        # 4) top-k 검색
         k = min(config.RAG_FAISS_TOP_K, self.index.ntotal)
         scores, indices = self.index.search(query_vec, k)
 
-        # 4) 처방 약품 필터 + 유사도 임계값
+        # 5) 처방 약품 필터 + 유사도 임계값
         results: list[dict] = []
         for score, idx in zip(scores[0], indices[0]):
             if idx < 0:
@@ -311,16 +317,22 @@ class FAISSRetrievalService(RetrievalServiceBase):
             if score < config.RAG_SIMILARITY_THRESHOLD:
                 continue
 
+            # section hint 보정: 키워드 매칭된 section에 가산점
+            adjusted = float(score)
+            if has_hint and meta["section"] in hinted_sections:
+                adjusted += 0.1
+
             results.append(
                 {
                     "drug_name": meta["drug_name"],
                     "section": meta["section"],
                     "content": meta["content"],
-                    "score": float(score),
+                    "score": adjusted,
+                    "_raw_score": float(score),
                 }
             )
 
-        # 5) 점수 내림차순 정렬
+        # 6) 보정 점수 내림차순 정렬
         results.sort(key=lambda x: x["score"], reverse=True)
         logger.info("[FAISS-RAG] %d results (from %d candidates)", len(results), k)
         return results

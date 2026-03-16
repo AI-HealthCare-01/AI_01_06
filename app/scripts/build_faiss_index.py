@@ -82,6 +82,17 @@ def load_chunks() -> list[dict]:
                 seed_added += 1
 
     print(f"시드 데이터 보충: {seed_added} chunks 추가")
+
+    # 3) 동일 drug_name+section 중복 제거 (가장 긴 content 1개만 유지)
+    best: dict[tuple[str, str], dict] = {}
+    for c in chunks:
+        key = (c["drug_name"], c["section"])
+        if key not in best or len(c["content"]) > len(best[key]["content"]):
+            best[key] = c
+    before = len(chunks)
+    chunks = list(best.values())
+    print(f"중복 제거: {before} → {len(chunks)} chunks ({before - len(chunks)}건 제거)")
+
     return chunks
 
 

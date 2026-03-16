@@ -23,33 +23,37 @@ API_URL = "http://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugL
 API_KEY = os.environ.get("EAYAK_API_KEY", "")
 
 # 기존 seed_drugs.py 25종 기반 수집 대상
-TARGET_DRUGS: list[str] = [
-    "아목시실린",
-    "아세트아미노펜",
-    "이부프로펜",
-    "오메프라졸",
-    "메트포르민",
-    "아스피린",
-    "로사르탄",
-    "암로디핀",
-    "아토르바스타틴",
-    "세티리진",
-    "로라타딘",
-    "레보플록사신",
-    "클라리스로마이신",
-    "프레드니솔론",
-    "와파린",
-    "디곡신",
-    "글리메피리드",
-    "졸피뎀",
-    "트라마돌",
-    "심바스타틴",
-    "세팔렉신",
-    "푸로세미드",
-    "판토프라졸",
-    "독시사이클린",
-    "가바펜틴",
+# generic: 내부 성분명, search_terms: e약은요 itemName 검색어 (성분명 + 대표 브랜드명)
+TARGET_DRUGS: list[dict[str, str | list[str]]] = [
+    {"generic": "아목시실린", "search_terms": ["아목시실린"]},
+    {"generic": "아세트아미노펜", "search_terms": ["아세트아미노펜", "타이레놀"]},
+    {"generic": "이부프로펜", "search_terms": ["이부프로펜", "부루펜"]},
+    {"generic": "오메프라졸", "search_terms": ["오메프라졸", "로섹"]},
+    {"generic": "메트포르민", "search_terms": ["메트포르민", "글루코파지"]},
+    {"generic": "아스피린", "search_terms": ["아스피린"]},
+    {"generic": "로사르탄", "search_terms": ["로사르탄", "코자"]},
+    {"generic": "암로디핀", "search_terms": ["암로디핀", "노바스크"]},
+    {"generic": "아토르바스타틴", "search_terms": ["아토르바스타틴", "리피토"]},
+    {"generic": "세티리진", "search_terms": ["세티리진"]},
+    {"generic": "로라타딘", "search_terms": ["로라타딘", "클라리틴"]},
+    {"generic": "레보플록사신", "search_terms": ["레보플록사신", "크라비트"]},
+    {"generic": "클라리스로마이신", "search_terms": ["클라리스로마이신", "클래리시드"]},
+    {"generic": "프레드니솔론", "search_terms": ["프레드니솔론", "소론도"]},
+    {"generic": "와파린", "search_terms": ["와파린", "쿠마딘"]},
+    {"generic": "디곡신", "search_terms": ["디곡신"]},
+    {"generic": "글리메피리드", "search_terms": ["글리메피리드", "아마릴"]},
+    {"generic": "졸피뎀", "search_terms": ["졸피뎀", "스틸녹스"]},
+    {"generic": "트라마돌", "search_terms": ["트라마돌"]},
+    {"generic": "심바스타틴", "search_terms": ["심바스타틴", "조코"]},
+    {"generic": "세팔렉신", "search_terms": ["세팔렉신", "세파렉신"]},
+    {"generic": "푸로세미드", "search_terms": ["푸로세미드", "라닉스"]},
+    {"generic": "판토프라졸", "search_terms": ["판토프라졸", "판토록"]},
+    {"generic": "독시사이클린", "search_terms": ["독시사이클린"]},
+    {"generic": "가바펜틴", "search_terms": ["가바펜틴", "뉴론틴"]},
 ]
+
+# 외용제 제형 키워드 — 제품명에 포함되면 수집에서 제외
+_TOPICAL_KEYWORDS: list[str] = ["크림", "연고", "겔", "로션", "액", "외용", "점안", "점이", "점비"]
 
 # e약은요 API 필드 → 내부 section 매핑
 FIELD_TO_SECTION: dict[str, str] = {
@@ -145,6 +149,10 @@ def extract_chunks(
         item_seq = item.get("itemSeq", "")
         brand_name = item.get("itemName", "")
 
+        # 외용제 제품 제외
+        if any(kw in brand_name for kw in _TOPICAL_KEYWORDS):
+            continue
+
         # 브랜드 → 성분 매핑 수집
         if brand_name and brand_name != drug_name:
             brand_map[brand_name] = drug_name
@@ -201,15 +209,28 @@ async def main() -> None:
     print()
 
     async with httpx.AsyncClient() as client:
-        for drug_name in TARGET_DRUGS:
-            items = await fetch_drug_info(client, drug_name)
-            if not items:
-                print(f"  {drug_name}: API 결과 없음 (seed 데이터만 사용)")
+        for drug in TARGET_DRUGS:
+            generic = drug["generic"]
+            search_terms = drug["search_terms"]
+
+            # search_terms를 순차 시도하여 결과 합산
+            all_items: list[dict] = []
+            seen_seqs: set[str] = set()
+            for term in search_terms:
+                items = await fetch_drug_info(client, term)
+                for item in items:
+                    seq = item.get("itemSeq", "")
+                    if seq not in seen_seqs:
+                        seen_seqs.add(seq)
+                        all_items.append(item)
+
+            if not all_items:
+                print(f"  {generic}: API 결과 없음 (seed 데이터만 사용)")
                 continue
-            chunks, brand_map = extract_chunks(items, drug_name)
+            chunks, brand_map = extract_chunks(all_items, generic)
             all_chunks.extend(chunks)
             all_brand_map.update(brand_map)
-            print(f"  {drug_name}: {len(chunks)} chunks from {len(items)} items")
+            print(f"  {generic}: {len(chunks)} chunks from {len(all_items)} items (검색어: {search_terms})")
 
     # 수집 결과 저장
     raw_path = output_dir / "raw_drug_chunks.json"
