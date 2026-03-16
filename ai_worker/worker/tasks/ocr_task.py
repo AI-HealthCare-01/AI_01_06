@@ -1,4 +1,3 @@
-from app.models.guide import Guide
 from app.models.prescription import Medication, Prescription
 from app.services.icd_service import normalize_dosage, resolve_diagnosis, validate_doctor_name
 from app.services.ocr_service import get_ocr_service
