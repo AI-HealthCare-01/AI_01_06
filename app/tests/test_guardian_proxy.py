@@ -4,14 +4,22 @@ import pytest
 from httpx import AsyncClient
 
 _PATIENT = {
-    "email": "patient@test.com", "password": "Pass1234!",
-    "nickname": "환자닉", "name": "홍길동", "role": "PATIENT",
-    "terms_of_service": True, "privacy_policy": True,
+    "email": "patient@test.com",
+    "password": "Pass1234!",
+    "nickname": "환자닉",
+    "name": "홍길동",
+    "role": "PATIENT",
+    "terms_of_service": True,
+    "privacy_policy": True,
 }
 _GUARDIAN = {
-    "email": "guardian@test.com", "password": "Pass1234!",
-    "nickname": "보호자닉", "name": "보호자", "role": "GUARDIAN",
-    "terms_of_service": True, "privacy_policy": True,
+    "email": "guardian@test.com",
+    "password": "Pass1234!",
+    "nickname": "보호자닉",
+    "name": "보호자",
+    "role": "GUARDIAN",
+    "terms_of_service": True,
+    "privacy_policy": True,
 }
 
 
@@ -77,6 +85,16 @@ async def test_patient_self_access_unchanged(client: AsyncClient):
     resp = await client.get("/api/schedules/today")
     assert resp.status_code == 200
     assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_patient_cannot_use_acting_for_header(client: AsyncClient):
+    """PATIENT가 X-Acting-For 헤더를 보내면 403."""
+    patient_token, _, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    resp = await client.get("/api/schedules/today", headers={"X-Acting-For": str(patient_id)})
+    assert resp.status_code == 403
 
 
 @pytest.mark.asyncio
