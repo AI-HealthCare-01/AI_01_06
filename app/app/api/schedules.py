@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user
+from app.core.deps import get_acting_patient, get_current_user
 from app.core.response import success_response
 from app.models.prescription import Medication
 from app.models.schedule import AdherenceLog, MedicationSchedule
@@ -55,12 +55,14 @@ async def create_schedules(items: list[ScheduleCreateItem], user: User = Depends
 
 
 @router.get("/today")
-async def get_today_schedules(user: User = Depends(get_current_user)):
+async def get_today_schedules(actors: tuple = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
     today = date.today()
     schedules = await MedicationSchedule.filter(
         start_date__lte=today,
         end_date__gte=today,
-        medication__prescription__user=user,
+        medication__prescription__user=target_user,
     ).prefetch_related("medication")
 
     schedule_ids = [s.id for s in schedules]
