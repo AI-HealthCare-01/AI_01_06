@@ -54,7 +54,7 @@ async def list_prescriptions(user: User = Depends(get_current_user)):
                 "hospital_name": p.hospital_name,
                 "doctor_name": p.doctor_name,
                 "prescription_date": str(p.prescription_date) if p.prescription_date else None,
-                "diagnosis": p.diagnosis,
+                "diagnosis": [d.strip() for d in p.diagnosis.split(",") if d.strip()] if p.diagnosis else [],
                 "ocr_status": p.ocr_status,
                 "medication_count": med_count,
                 "created_at": str(p.created_at),
@@ -75,7 +75,7 @@ async def get_prescription(prescription_id: int, user: User = Depends(get_curren
             "hospital_name": prescription.hospital_name,
             "doctor_name": prescription.doctor_name,
             "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
-            "diagnosis": prescription.diagnosis,
+            "diagnosis": [d.strip() for d in prescription.diagnosis.split(",") if d.strip()] if prescription.diagnosis else [],
             "ocr_status": prescription.ocr_status,
             "created_at": str(prescription.created_at),
         }
@@ -114,7 +114,7 @@ async def get_ocr_result(prescription_id: int, user: User = Depends(get_current_
             "hospital_name": prescription.hospital_name,
             "doctor_name": prescription.doctor_name,
             "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
-            "diagnosis": prescription.diagnosis,
+            "diagnosis": [d.strip() for d in prescription.diagnosis.split(",") if d.strip()] if prescription.diagnosis else [],
             "medications": med_list,
         }
     )
@@ -133,7 +133,7 @@ async def update_ocr_result(
     prescription.hospital_name = req.hospital_name
     prescription.doctor_name = req.doctor_name
     prescription.prescription_date = req.prescription_date
-    prescription.diagnosis = req.diagnosis
+    prescription.diagnosis = ", ".join(req.diagnosis) if req.diagnosis else None
     prescription.ocr_status = "confirmed"
     await prescription.save()
 

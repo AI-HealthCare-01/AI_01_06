@@ -86,7 +86,7 @@ async def list_guides(user: User = Depends(get_current_user)):
                     "prescription_date": str(prescription.prescription_date)
                     if prescription.prescription_date
                     else None,
-                    "diagnosis": prescription.diagnosis,
+                    "diagnosis": [d.strip() for d in prescription.diagnosis.split(",") if d.strip()] if prescription.diagnosis else [],
                 },
                 "created_at": str(guide.created_at),
             }
@@ -123,7 +123,7 @@ async def get_guide(guide_id: int, user: User = Depends(get_current_user)):
                 "hospital_name": prescription.hospital_name,
                 "doctor_name": prescription.doctor_name,
                 "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
-                "diagnosis": prescription.diagnosis,
+                "diagnosis": [d.strip() for d in prescription.diagnosis.split(",") if d.strip()] if prescription.diagnosis else [],
             },
             "medications": [
                 {
