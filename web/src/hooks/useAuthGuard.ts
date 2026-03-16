@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { usePatient } from "@/lib/patient-context";
 
 const PATIENT_ONLY_PREFIXES = [
   "/dashboard",
@@ -14,6 +15,7 @@ const PATIENT_ONLY_PREFIXES = [
 
 export function useAuthGuard() {
   const { user, loading } = useAuth();
+  const { isProxyMode } = usePatient();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -27,14 +29,14 @@ export function useAuthGuard() {
 
     if (user.role === "GUARDIAN") {
       const isPatientOnly = PATIENT_ONLY_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-      if (isPatientOnly) {
+      if (isPatientOnly && !isProxyMode) {
         router.replace("/caregivers");
       }
     }
-  }, [user, loading, router, pathname]);
+  }, [user, loading, router, pathname, isProxyMode]);
 
   const isPatientOnly = PATIENT_ONLY_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-  const roleBlocked = !!user && user.role === "GUARDIAN" && isPatientOnly;
+  const roleBlocked = !!user && user.role === "GUARDIAN" && isPatientOnly && !isProxyMode;
 
   return { user, loading, authorized: !loading && !!user && !roleBlocked };
 }
