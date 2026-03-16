@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { usePatient } from "@/lib/patient-context";
 
 const POLL_INTERVAL_MS = 5_000;
 
@@ -60,6 +62,8 @@ function IconRefresh({ spinning }: { spinning: boolean }) {
 
 export default function CaregiversPage() {
   const { user } = useAuth();
+  const { selectPatient, clearPatient } = usePatient();
+  const router = useRouter();
   const role = user?.role ?? "";
   const isGuardian = role === "GUARDIAN";
 
@@ -97,6 +101,11 @@ export default function CaregiversPage() {
     },
     [role, isGuardian]
   );
+
+  // caregivers 페이지 진입 시 대리 모드 해제 (GUARDIAN만)
+  useEffect(() => {
+    if (isGuardian) clearPatient();
+  }, [isGuardian, clearPatient]);
 
   // 초기 로드
   useEffect(() => {
@@ -146,6 +155,11 @@ export default function CaregiversPage() {
       setInviteError(res.error || "초대 링크 생성에 실패했습니다.");
     }
     setInviting(false);
+  };
+
+  const handleViewDetails = (person: Person) => {
+    selectPatient({ id: person.id, name: person.name, nickname: person.nickname });
+    router.push("/dashboard");
   };
 
   const handleRevoke = async (mappingId: number, personName: string) => {
@@ -263,13 +277,24 @@ export default function CaregiversPage() {
                     @{person.nickname} · {isGuardian ? "돌봄 대상" : "보호자"}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleRevoke(person.mapping_id, person.name)}
-                  className="text-sm px-3 py-1.5 rounded-lg font-medium"
-                  style={{ background: "var(--color-surface)", border: "1px solid var(--color-danger)", color: "var(--color-danger)" }}
-                >
-                  연결 해제
-                </button>
+                <div className="flex gap-2">
+                  {isGuardian && (
+                    <button
+                      onClick={() => handleViewDetails(person)}
+                      className="text-sm px-3 py-1.5 rounded-lg font-medium"
+                      style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}
+                    >
+                      상세보기
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleRevoke(person.mapping_id, person.name)}
+                    className="text-sm px-3 py-1.5 rounded-lg font-medium"
+                    style={{ background: "var(--color-surface)", border: "1px solid var(--color-danger)", color: "var(--color-danger)" }}
+                  >
+                    연결 해제
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
