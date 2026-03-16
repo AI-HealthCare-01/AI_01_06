@@ -177,7 +177,7 @@ def main() -> None:
     meta_path = FAISS_DIR / "drug_metadata.json"
     meta_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2))
 
-    print(f"\nFAISS 인덱스 생성 완료:")
+    print("\nFAISS 인덱스 생성 완료:")
     print(f"  벡터 수: {index.ntotal}")
     print(f"  차원:   {EMBEDDING_DIM}")
     print(f"  모델:   {EMBEDDING_MODEL}")

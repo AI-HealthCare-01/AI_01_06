@@ -9,7 +9,6 @@
 """
 
 import asyncio
-import json
 import os
 import sys
 
@@ -67,6 +66,47 @@ async def debug_search(client: httpx.AsyncClient, term: str) -> dict:
         return {"status": -1, "error": str(e), "items": []}
 
 
+_SECTION_FIELDS: dict[str, str] = {
+    "efcyQesitm": "효능",
+    "useMethodQesitm": "용법",
+    "atpnWarnQesitm": "주의(경고)",
+    "atpnQesitm": "주의(일반)",
+    "intrcQesitm": "상호작용",
+    "seQesitm": "부작용",
+    "depositMethodQesitm": "보관",
+}
+
+
+def _print_item_detail(i: int, item: dict) -> None:
+    """단일 API 응답 item의 상세 정보를 출력한다."""
+    item_name = item.get("itemName", "?")
+    item_seq = item.get("itemSeq", "?")
+    entp = item.get("entpName", "?")
+
+    is_topical = any(kw in item_name for kw in TOPICAL_KEYWORDS)
+    topical_mark = " [외용제-필터됨]" if is_topical else ""
+
+    form_hints = []
+    dosage = item.get("useMethodQesitm", "")
+    if dosage:
+        if "바르" in dosage:
+            form_hints.append("바르는약")
+        if "복용" in dosage or "먹" in dosage:
+            form_hints.append("경구제")
+    form_str = f" ({', '.join(form_hints)})" if form_hints else ""
+
+    print(f"\n  [{i+1}] {item_name}{topical_mark}{form_str}")
+    print(f"      seq={item_seq}, 제조={entp}")
+
+    for field, label in _SECTION_FIELDS.items():
+        val = item.get(field, "")
+        if val and isinstance(val, str):
+            clean_len = len(val.replace("<p>", "").replace("</p>", "").strip())
+            print(f"      {label:8s}: {clean_len:4d}자")
+        else:
+            print(f"      {label:8s}: (없음)")
+
+
 async def main() -> None:
     if not API_KEY:
         print("EAYAK_API_KEY 환경변수를 설정하세요.")
@@ -96,48 +136,11 @@ async def main() -> None:
                     continue
 
                 if not items:
-                    print(f"  -> 결과 없음")
+                    print("  -> 결과 없음")
                     continue
 
                 for i, item in enumerate(items):
-                    item_name = item.get("itemName", "?")
-                    item_seq = item.get("itemSeq", "?")
-                    entp = item.get("entpName", "?")
-
-                    # 외용제 필터 체크
-                    is_topical = any(kw in item_name for kw in TOPICAL_KEYWORDS)
-                    topical_mark = " [외용제-필터됨]" if is_topical else ""
-
-                    # 제형 판별 키워드
-                    form_hints = []
-                    dosage = item.get("useMethodQesitm", "")
-                    if dosage:
-                        if "바르" in dosage:
-                            form_hints.append("바르는약")
-                        if "복용" in dosage or "먹" in dosage:
-                            form_hints.append("경구제")
-                    form_str = f" ({', '.join(form_hints)})" if form_hints else ""
-
-                    print(f"\n  [{i+1}] {item_name}{topical_mark}{form_str}")
-                    print(f"      seq={item_seq}, 제조={entp}")
-
-                    # 각 section 필드 유무 + 길이
-                    fields = {
-                        "efcyQesitm": "효능",
-                        "useMethodQesitm": "용법",
-                        "atpnWarnQesitm": "주의(경고)",
-                        "atpnQesitm": "주의(일반)",
-                        "intrcQesitm": "상호작용",
-                        "seQesitm": "부작용",
-                        "depositMethodQesitm": "보관",
-                    }
-                    for field, label in fields.items():
-                        val = item.get(field, "")
-                        if val and isinstance(val, str):
-                            clean_len = len(val.replace("<p>", "").replace("</p>", "").strip())
-                            print(f"      {label:8s}: {clean_len:4d}자")
-                        else:
-                            print(f"      {label:8s}: (없음)")
+                    _print_item_detail(i, item)
 
             print()
 

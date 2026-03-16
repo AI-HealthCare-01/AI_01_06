@@ -263,9 +263,9 @@ def print_result(r: dict) -> None:
         expected = r["expect_drug"]
         if expected not in found:
             drug_info = f" | 약물매칭 실패: 기대={expected}, 결과={found}"
-    print(f"│")
+    print("│")
     print(f"│ 판정: {verdict}{drug_info}")
-    print(f"└───────────────────────────────────────────────")
+    print("└───────────────────────────────────────────────")
 
 
 def print_scorecard(
@@ -292,7 +292,7 @@ def print_scorecard(
     # 실패 케이스 요약
     fails = [r for r in results if not r["top3_hit"]]
     if fails:
-        print(f"\n  실패 케이스:")
+        print("\n  실패 케이스:")
         for f in fails:
             scores = [t["score"] for t in f["top3"]] if f["top3"] else []
             print(f"    - {f['id']}: 기대={f['expect_section']}, scores={scores}")
@@ -300,114 +300,67 @@ def print_scorecard(
     return top1_pass, top3_pass
 
 
-async def main() -> None:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        print("OPENAI_API_KEY 환경변수를 설정하세요.")
-        sys.exit(1)
-
-    # FAISS 서비스 초기화
-    try:
-        svc = FAISSRetrievalService()
-    except FileNotFoundError as e:
-        print(f"FAISS 인덱스 없음: {e}")
-        sys.exit(1)
-
-    print(f"FAISS 인덱스 로드 완료: {svc.index.ntotal} vectors")
-    print(f"임베딩 모델: {os.environ.get('EMBEDDING_MODEL', 'text-embedding-3-small')}")
-    print(f"threshold={float(os.environ.get('RAG_SIMILARITY_THRESHOLD', '0.2'))}, "
-          f"top_k={int(os.environ.get('RAG_FAISS_TOP_K', '50'))}")
-
-    # ── Tier 1 실행 ──
-    print(f"\n{'#'*50}")
-    print(f" Tier 1: 직접 매칭 (5개)")
-    print(f"{'#'*50}")
-
-    t1_results = []
-    for case in TIER_1:
-        r = await run_test(svc, case)
-        t1_results.append(r)
-        print_result(r)
-
-    t1_top1, t1_top3 = print_scorecard("Tier 1 (직접 매칭)", t1_results, 5, 5)
-
-    # ── Tier 2 실행 ──
-    print(f"\n{'#'*50}")
-    print(f" Tier 2: 의도 추론 (5개)")
-    print(f"{'#'*50}")
-
-    t2_results = []
-    for case in TIER_2:
-        r = await run_test(svc, case)
-        t2_results.append(r)
-        print_result(r)
-
-    t2_top1, t2_top3 = print_scorecard("Tier 2 (의도 추론)", t2_results, 3, 4)
-
-    # ── Tier 3-4 (옵션) ──
-    tiers_to_run = set()
+def _parse_tier_args() -> set[int]:
+    """--tier 인자에서 실행할 tier 번호를 파싱한다."""
+    tiers: set[int] = set()
     if "--tier" in sys.argv:
         idx = sys.argv.index("--tier")
         for arg in sys.argv[idx + 1 :]:
             if arg.isdigit():
-                tiers_to_run.add(int(arg))
+                tiers.add(int(arg))
             else:
                 break
-    run_all = not tiers_to_run  # --tier 없으면 1-2만 실행
-    run_extended = bool(tiers_to_run & {3, 4})
+    return tiers
 
-    t3_top1 = t3_top3 = t4_top1 = t4_top3 = 0
-    t3_results: list[dict] = []
-    t4_results: list[dict] = []
 
-    if 3 in tiers_to_run:
-        print(f"\n{'#'*50}")
-        print(f" Tier 3: 브랜드명 → 성분명 정규화 (5개)")
-        print(f"{'#'*50}")
-        for case in TIER_3:
-            r = await run_test(svc, case)
-            t3_results.append(r)
-            print_result(r)
-        t3_top1, t3_top3 = print_scorecard("Tier 3 (브랜드 정규화)", t3_results, 4, 4)
+async def _run_tier(
+    svc: FAISSRetrievalService,
+    label: str,
+    cases: list[dict],
+    target_top1: int,
+    target_top3: int,
+) -> tuple[list[dict], int, int]:
+    """단일 tier를 실행하고 결과를 반환한다."""
+    print(f"\n{'#'*50}")
+    print(f" {label}")
+    print(f"{'#'*50}")
+    results = []
+    for case in cases:
+        r = await run_test(svc, case)
+        results.append(r)
+        print_result(r)
+    top1, top3 = print_scorecard(label, results, target_top1, target_top3)
+    return results, top1, top3
 
-    if 4 in tiers_to_run:
-        print(f"\n{'#'*50}")
-        print(f" Tier 4: 복수 약물 + 엣지 케이스 (5개)")
-        print(f"{'#'*50}")
-        for case in TIER_4:
-            r = await run_test(svc, case)
-            t4_results.append(r)
-            print_result(r)
-        t4_top1, t4_top3 = print_scorecard("Tier 4 (복합/엣지)", t4_results, 3, 4)
 
-    # ── 종합 스코어카드 ──
-    all_results = t1_results + t2_results + t3_results + t4_results
+def _print_summary(
+    tier_scores: dict[str, tuple[int, int]],
+    all_results: list[dict],
+    t3_results: list[dict],
+    t4_results: list[dict],
+    run_extended: bool,
+) -> None:
+    """종합 스코어카드를 출력한다."""
     total = len(all_results)
     all_top1 = sum(1 for r in all_results if r["top1_hit"])
     all_top3 = sum(1 for r in all_results if r["top3_hit"])
 
-    # score 분포
-    all_scores = []
-    for r in all_results:
-        for t in r["top3"]:
-            all_scores.append(t["score"])
+    all_scores = [t["score"] for r in all_results for t in r["top3"]]
 
     print(f"\n{'='*50}")
-    print(f" 종합 스코어카드")
+    print(" 종합 스코어카드")
     print(f"{'='*50}")
-    print(f"  Tier 1 @1: {t1_top1}/5  |  Tier 1 @3: {t1_top3}/5")
-    print(f"  Tier 2 @1: {t2_top1}/5  |  Tier 2 @3: {t2_top3}/5")
-    if t3_results:
-        print(f"  Tier 3 @1: {t3_top1}/5  |  Tier 3 @3: {t3_top3}/5")
-    if t4_results:
-        print(f"  Tier 4 @1: {t4_top1}/5  |  Tier 4 @3: {t4_top3}/5")
+    for name, (top1, top3) in tier_scores.items():
+        print(f"  {name} @1: {top1}/5  |  {name} @3: {top3}/5")
     print(f"  전체  @1: {all_top1}/{total}  |  전체  @3: {all_top3}/{total}")
 
     if all_scores:
-        print(f"\n  Score 분포:")
+        print("\n  Score 분포:")
         print(f"    min={min(all_scores):.4f}  max={max(all_scores):.4f}"
               f"  avg={sum(all_scores)/len(all_scores):.4f}")
 
+    t1_top1 = tier_scores.get("Tier 1", (0, 0))[0]
+    t2_top3 = tier_scores.get("Tier 2", (0, 0))[1]
     overall = "PASS" if (t1_top1 >= 5 and t2_top3 >= 4) else "FAIL"
     print(f"\n  Tier 1-2 판정: {overall}")
 
@@ -421,6 +374,52 @@ async def main() -> None:
             print(f"  Tier 4 약물 매칭 성공: {drug_hits}/5")
 
     print()
+
+
+async def main() -> None:
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        print("OPENAI_API_KEY 환경변수를 설정하세요.")
+        sys.exit(1)
+
+    try:
+        svc = FAISSRetrievalService()
+    except FileNotFoundError as e:
+        print(f"FAISS 인덱스 없음: {e}")
+        sys.exit(1)
+
+    print(f"FAISS 인덱스 로드 완료: {svc.index.ntotal} vectors")
+    print(f"임베딩 모델: {os.environ.get('EMBEDDING_MODEL', 'text-embedding-3-small')}")
+    print(f"threshold={float(os.environ.get('RAG_SIMILARITY_THRESHOLD', '0.2'))}, "
+          f"top_k={int(os.environ.get('RAG_FAISS_TOP_K', '50'))}")
+
+    tier_scores: dict[str, tuple[int, int]] = {}
+
+    t1_results, t1_top1, t1_top3 = await _run_tier(
+        svc, "Tier 1: 직접 매칭 (5개)", TIER_1, 5, 5)
+    tier_scores["Tier 1"] = (t1_top1, t1_top3)
+
+    t2_results, t2_top1, t2_top3 = await _run_tier(
+        svc, "Tier 2: 의도 추론 (5개)", TIER_2, 3, 4)
+    tier_scores["Tier 2"] = (t2_top1, t2_top3)
+
+    tiers_to_run = _parse_tier_args()
+    run_extended = bool(tiers_to_run & {3, 4})
+    t3_results: list[dict] = []
+    t4_results: list[dict] = []
+
+    if 3 in tiers_to_run:
+        t3_results, t3_top1, t3_top3 = await _run_tier(
+            svc, "Tier 3: 브랜드명 → 성분명 정규화 (5개)", TIER_3, 4, 4)
+        tier_scores["Tier 3"] = (t3_top1, t3_top3)
+
+    if 4 in tiers_to_run:
+        t4_results, t4_top1, t4_top3 = await _run_tier(
+            svc, "Tier 4: 복수 약물 + 엣지 케이스 (5개)", TIER_4, 3, 4)
+        tier_scores["Tier 4"] = (t4_top1, t4_top3)
+
+    all_results = t1_results + t2_results + t3_results + t4_results
+    _print_summary(tier_scores, all_results, t3_results, t4_results, run_extended)
 
 
 if __name__ == "__main__":

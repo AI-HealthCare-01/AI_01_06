@@ -304,7 +304,7 @@ class FAISSRetrievalService(RetrievalServiceBase):
 
         # 5) 처방 약품 필터 + 유사도 임계값
         results: list[dict] = []
-        for score, idx in zip(scores[0], indices[0]):
+        for score, idx in zip(scores[0], indices[0], strict=False):
             if idx < 0:
                 continue
             meta = self.metadata[idx]
