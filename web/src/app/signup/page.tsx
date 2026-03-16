@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
@@ -47,7 +47,7 @@ const MIN_DATE = (() => {
   return d.toISOString().split("T")[0];
 })();
 
-export default function SignupPage() {
+function SignupContent() {
   const [step, setStep] = useState<"role" | "form">("role");
   const [role, setRole] = useState<"patient" | "caregiver">("patient");
   const [form, setForm] = useState({ ...INITIAL_FORM });
@@ -648,5 +648,17 @@ export default function SignupPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-bg)" }}>
+        <p style={{ color: "var(--color-text-muted)" }}>로딩 중...</p>
+      </div>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 }

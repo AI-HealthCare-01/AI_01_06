@@ -314,7 +314,7 @@ export default function OcrReviewPage() {
         <button
           onClick={handleGenerate}
           disabled={generating || editing}
-          className="flex-1 py-3 rounded-lg btn-primary disabled:opacity-50"
+          className="flex-1 py-3 btn-primary"
         >
           {generating ? "생성 중..." : "가이드 생성 →"}
         </button>

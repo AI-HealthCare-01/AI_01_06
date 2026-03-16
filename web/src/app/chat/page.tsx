@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
@@ -28,7 +28,7 @@ interface Message {
   status?: string;
 }
 
-export default function ChatPage() {
+function ChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prescriptionId = searchParams.get("prescriptionId");
@@ -384,5 +384,19 @@ export default function ChatPage() {
         </div>
       )}
     </AppLayout>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <AppLayout>
+        <div className="max-w-3xl mx-auto p-4 text-center" style={{ color: "var(--color-text-muted)" }}>
+          로딩 중...
+        </div>
+      </AppLayout>
+    }>
+      <ChatContent />
+    </Suspense>
   );
 }
