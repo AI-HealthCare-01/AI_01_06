@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { useAuth } from "./auth-context";
 
 interface PatientInfo {
   id: number;
@@ -30,6 +31,7 @@ function loadPatient(): PatientInfo | null {
 }
 
 export function PatientProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [activePatient, setActivePatient] = useState<PatientInfo | null>(loadPatient);
 
   const selectPatient = useCallback((patient: PatientInfo) => {
@@ -40,6 +42,18 @@ export function PatientProvider({ children }: { children: ReactNode }) {
   const clearPatient = useCallback(() => {
     setActivePatient(null);
     sessionStorage.removeItem("activePatient");
+  }, []);
+
+  // 로그아웃 시 대리 모드 해제 (React 상태 동기화)
+  useEffect(() => {
+    if (!user) clearPatient();
+  }, [user, clearPatient]);
+
+  // 대리 모드 중 매핑 해제 감지 (api.ts에서 proxy-revoked 이벤트 발행)
+  useEffect(() => {
+    const handler = () => setActivePatient(null);
+    window.addEventListener("proxy-revoked", handler);
+    return () => window.removeEventListener("proxy-revoked", handler);
   }, []);
 
   return (
