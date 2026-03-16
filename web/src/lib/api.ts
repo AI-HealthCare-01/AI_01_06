@@ -90,6 +90,11 @@ async function request<T>(
   });
 
   if (!res.ok) {
+    // 대리 모드 중 403 → 매핑 해제 감지 → proxy-revoked 이벤트 발행
+    if (res.status === 403 && headers["X-Acting-For"] && typeof window !== "undefined") {
+      sessionStorage.removeItem("activePatient");
+      window.dispatchEvent(new CustomEvent("proxy-revoked"));
+    }
     try {
       const body = await res.json();
       return {
