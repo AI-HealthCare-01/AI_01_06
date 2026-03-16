@@ -46,6 +46,9 @@ export function setRefreshToken(token: string) {
 export function clearTokens() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("activePatient");
+  }
 }
 
 export function isLoggedIn(): boolean {
@@ -63,6 +66,18 @@ async function request<T>(
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (typeof window !== "undefined") {
+    try {
+      const activePatient = sessionStorage.getItem("activePatient");
+      if (activePatient) {
+        const { id } = JSON.parse(activePatient);
+        headers["X-Acting-For"] = String(id);
+      }
+    } catch {
+      // sessionStorage 손상 시 무시
+    }
   }
 
   if (!(options.body instanceof FormData)) {
@@ -295,12 +310,24 @@ export async function streamChat(
   onError: (message: string) => void,
 ) {
   const token = getToken();
+  const streamHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  if (typeof window !== "undefined") {
+    try {
+      const ap = sessionStorage.getItem("activePatient");
+      if (ap) {
+        const { id } = JSON.parse(ap);
+        streamHeaders["X-Acting-For"] = String(id);
+      }
+    } catch {
+      // sessionStorage 손상 시 무시
+    }
+  }
   const res = await fetch(`${API_BASE}/api/chat/messages`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: streamHeaders,
     body: JSON.stringify({ thread_id: threadId, content }),
   });
 

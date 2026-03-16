@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { usePatient } from "@/lib/patient-context";
 
 /* ── Sidebar Icons (20×20) ── */
 function IconHome() {
@@ -80,6 +81,7 @@ const bottomMenuItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { isProxyMode } = usePatient();
   const role = user?.role?.toLowerCase() || "patient";
 
   function renderMenuItem(item: { href: string; label: (role: string) => string; roles: string[]; icon: () => React.JSX.Element }) {
@@ -111,7 +113,12 @@ export default function Sidebar() {
       style={{ background: "var(--color-card-bg)", borderColor: "var(--color-border)" }}
     >
       <nav className="flex-1 space-y-1" aria-label="메인 네비게이션">
-        {topMenuItems.filter((item) => item.roles.includes(role)).map(renderMenuItem)}
+        {topMenuItems
+          .filter((item) => {
+            if (isProxyMode) return item.roles.includes("patient") || item.roles.includes(role);
+            return item.roles.includes(role);
+          })
+          .map(renderMenuItem)}
       </nav>
       <hr style={{ borderColor: "var(--color-border)" }} className="my-2" />
       <nav className="space-y-1 py-2">

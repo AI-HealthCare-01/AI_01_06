@@ -2,6 +2,7 @@
 
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import Header from "./Header";
+import ProxyBanner from "./ProxyBanner";
 import Sidebar from "./Sidebar";
 import BottomNav from "./BottomNav";
 
@@ -18,6 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+      <ProxyBanner />
       <Header />
       <div className="flex">
         <Sidebar />
