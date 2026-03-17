@@ -55,28 +55,11 @@ function DiagnosisDisplay({ diagnosis }: { diagnosis: string }) {
   const mainEntries = entries.filter(e => !e.isSupplementary);
   const suppEntries = entries.filter(e => e.isSupplementary);
 
-  if (entries.length === 1) {
-    return <span className="font-medium">{entries[0].label}</span>;
-  }
-
-  return (
-    <div className="flex flex-wrap gap-1.5 items-center">
-      {mainEntries.map((entry, i) => (
-        <span
-          key={i}
-          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium text-white"
-          style={{ background: "var(--color-primary)" }}
-        >
-          {entry.label}
-        </span>
-      ))}
-      {suppEntries.map((entry, i) => (
-        <span key={i} className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-          ({entry.code ? `${entry.code} ` : ""}{entry.label})
-        </span>
-      ))}
-    </div>
-  );
+  const parts: string[] = [
+    ...mainEntries.map(e => e.label),
+    ...suppEntries.map(e => `(${e.code ? `${e.code} ` : ""}${e.label})`),
+  ];
+  return <span className="font-medium">{parts.join(", ")}</span>;
 }
 
 interface OcrData {
