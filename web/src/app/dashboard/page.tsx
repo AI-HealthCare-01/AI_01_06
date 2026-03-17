@@ -7,6 +7,7 @@ import AppLayout from "@/components/AppLayout";
 import TodayMedicationPanel from "@/components/dashboard/TodayMedicationPanel";
 import FeatureQuickAccessPanel from "@/components/dashboard/FeatureQuickAccessPanel";
 import RecentGuideListPanel from "@/components/dashboard/RecentGuideListPanel";
+import PatientHealthSummary from "@/components/dashboard/PatientHealthSummary";
 import { api, TodayScheduleItem } from "@/lib/api";
 
 export default function DashboardPage() {
@@ -49,6 +50,9 @@ export default function DashboardPage() {
           </p>
         )}
       </div>
+
+      {/* 대리 모드: 건강 요약 상단 패널 (모바일 전용) */}
+      <PatientHealthSummary />
 
       {/* 스케줄 로드 에러 */}
       {scheduleError && (
