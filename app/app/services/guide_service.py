@@ -116,11 +116,7 @@ class OpenAIGuideService(GuideServiceBase):
 
         patient_section = "\n".join(patient_lines) if patient_lines else "- 환자 정보 없음"
 
-        return (
-            f"환자 정보:\n{patient_section}\n\n"
-            f"처방 약물:\n{med_lines}\n\n"
-            f"{RESPONSE_FORMAT_GUIDE}"
-        )
+        return f"환자 정보:\n{patient_section}\n\n처방 약물:\n{med_lines}\n\n{RESPONSE_FORMAT_GUIDE}"
 
     async def generate(self, medications: list[dict], user_info: dict) -> dict:
         prompt = self._build_prompt(medications, user_info)
