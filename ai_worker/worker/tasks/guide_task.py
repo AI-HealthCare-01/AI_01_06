@@ -25,9 +25,9 @@ async def guide_task(ctx: dict, guide_id: int, user_id: int) -> None:
 
     profile = await PatientProfile.get_or_none(user=user)
     user_info = {
-        "name": user.name,
         "birth_date": str(user.birth_date) if user.birth_date else None,
         "gender": user.gender,
+        "has_profile": profile is not None,
         "height": float(profile.height_cm) if profile and profile.height_cm else None,
         "weight": float(profile.weight_kg) if profile and profile.weight_kg else None,
         "allergies": profile.allergy_details if profile else None,

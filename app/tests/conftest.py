@@ -60,11 +60,13 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
         ]
         profile = await PatientProfile.get_or_none(user=user)
         user_info = {
-            "name": user.name,
-            "height_cm": float(profile.height_cm) if profile and profile.height_cm is not None else None,
-            "weight_kg": float(profile.weight_kg) if profile and profile.weight_kg is not None else None,
-            "allergy_details": profile.allergy_details if profile else None,
-            "disease_details": profile.disease_details if profile else None,
+            "birth_date": str(user.birth_date) if user.birth_date else None,
+            "gender": user.gender,
+            "has_profile": profile is not None,
+            "height": float(profile.height_cm) if profile and profile.height_cm is not None else None,
+            "weight": float(profile.weight_kg) if profile and profile.weight_kg is not None else None,
+            "allergies": profile.allergy_details if profile else None,
+            "conditions": profile.disease_details if profile else None,
         }
 
         guide_service = get_guide_service()

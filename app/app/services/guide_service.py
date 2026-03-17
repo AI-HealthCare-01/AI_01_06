@@ -16,6 +16,7 @@ SYSTEM_PROMPT = (
     "- 약물 상호작용: 처방된 약물 간 실제 상호작용만 명시. 없으면 '해당 약물 간 주요 상호작용 없음'으로 작성.\n"
     "- 부작용: 해당 약물의 대표적인 부작용을 구체적 증상으로 명시. 예: '구역, 두통, 어지러움'\n"
     "- 음주: 각 약물의 음주 금기 여부를 명확히 명시. 금기 시 '복용 중 음주 금지'로 작성.\n"
+    "- 환자 프로필(생년월일, 성별, 키/몸무게, 알레르기, 기저질환)이 제공된 경우, 해당 정보를 반영하여 개인화된 복약 지도를 작성할 것.\n"
     "- 모든 항목은 한국어로, 간결하고 명확하게 작성할 것."
 )
 
@@ -97,12 +98,26 @@ class OpenAIGuideService(GuideServiceBase):
             f"/ 기간: {m.get('duration', '-')} / 지시: {m.get('instructions', '-')}"
             for m in medications
         )
+
+        patient_lines = []
+        birth_date = user_info.get("birth_date")
+        gender = user_info.get("gender")
+        if birth_date or gender:
+            patient_lines.append(f"- 생년월일/성별: {birth_date or '-'} / {gender or '-'}")
+
+        if user_info.get("has_profile"):
+            height = user_info.get("height")
+            weight = user_info.get("weight")
+            patient_lines.append(
+                f"- 키/몸무게: {height if height is not None else '-'}cm / {weight if weight is not None else '-'}kg"
+            )
+            patient_lines.append(f"- 알레르기: {user_info.get('allergies') or '없음'}")
+            patient_lines.append(f"- 기저질환: {user_info.get('conditions') or '없음'}")
+
+        patient_section = "\n".join(patient_lines) if patient_lines else "- 환자 정보 없음"
+
         return (
-            f"환자 정보:\n"
-            f"- 이름: {user_info.get('name', '알 수 없음')}\n"
-            f"- 키/몸무게: {user_info.get('height', '-')}cm / {user_info.get('weight', '-')}kg\n"
-            f"- 알레르기: {user_info.get('allergies') or '없음'}\n"
-            f"- 기저질환: {user_info.get('conditions') or '없음'}\n\n"
+            f"환자 정보:\n{patient_section}\n\n"
             f"처방 약물:\n{med_lines}\n\n"
             f"{RESPONSE_FORMAT_GUIDE}"
         )
