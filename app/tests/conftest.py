@@ -11,6 +11,7 @@ from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.services.guide_service import get_guide_service
+from app.services.icd_service import resolve_diagnosis
 from app.services.ocr_service import get_ocr_service
 
 TEST_DB_URL = "sqlite://:memory:"
@@ -28,7 +29,7 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
         prescription.hospital_name = ocr_result.get("hospital_name")
         prescription.doctor_name = ocr_result.get("doctor_name")
         prescription.prescription_date = ocr_result.get("prescription_date")
-        prescription.diagnosis = ocr_result.get("diagnosis")
+        prescription.diagnosis = await resolve_diagnosis(ocr_result.get("diagnosis"))
         prescription.ocr_raw = ocr_result
         prescription.ocr_status = "ocr_completed"
         await prescription.save()

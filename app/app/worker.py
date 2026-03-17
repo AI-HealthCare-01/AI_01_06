@@ -7,6 +7,7 @@ from tortoise import Tortoise
 from app import config
 from app.core.database import TORTOISE_ORM
 from app.models.prescription import Medication, Prescription
+from app.services.icd_service import resolve_diagnosis
 from app.services.ocr_service import get_ocr_service
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ async def ocr_task(ctx, prescription_id: int, filepath: str) -> None:
         prescription.hospital_name = ocr_result.get("hospital_name")
         prescription.doctor_name = ocr_result.get("doctor_name")
         prescription.prescription_date = ocr_result.get("prescription_date")
-        prescription.diagnosis = ocr_result.get("diagnosis")
+        prescription.diagnosis = await resolve_diagnosis(ocr_result.get("diagnosis"))
         prescription.ocr_raw = ocr_result
         prescription.ocr_status = "ocr_completed"
         await prescription.save()

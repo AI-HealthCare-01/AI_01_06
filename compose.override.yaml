@@ -10,6 +10,10 @@
 #   docker compose up --build           <- HMR 없이 기동 (빠른 확인용)
 
 services:
+  worker:
+    volumes:
+      - ./app/app:/srv/app/app   # 개발 시 app/ 코드 변경 즉시 반영
+
   web:
     build:
       context: ./web
