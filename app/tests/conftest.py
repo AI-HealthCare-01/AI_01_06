@@ -1,3 +1,4 @@
+import os
 from unittest.mock import patch
 
 import pytest
@@ -19,9 +20,10 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
     """Simulate worker inline: run OCR/guide synchronously for tests."""
     if task_name == "ocr_task":
         prescription_id = args[0]
+        filepath = args[1] if len(args) > 1 else None
         prescription = await Prescription.get(id=prescription_id)
         ocr_service = get_ocr_service()
-        ocr_result = await ocr_service.extract(prescription.image_path)
+        ocr_result = await ocr_service.extract(filepath or "")
 
         prescription.hospital_name = ocr_result.get("hospital_name")
         prescription.doctor_name = ocr_result.get("doctor_name")
@@ -40,6 +42,12 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
                 duration=med_data.get("duration"),
                 instructions=med_data.get("instructions"),
             )
+
+        if filepath:
+            try:
+                os.remove(filepath)
+            except OSError:
+                pass
     elif task_name == "guide_task":
         guide_id = args[0]
         user_id = args[1]
