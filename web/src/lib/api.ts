@@ -204,10 +204,10 @@ export const api = {
     }),
 
   // Guides
-  createGuide: (prescriptionId: number) =>
+  createGuide: (prescriptionId: number, force = false) =>
     request("/api/guides", {
       method: "POST",
-      body: JSON.stringify({ prescription_id: prescriptionId }),
+      body: JSON.stringify({ prescription_id: prescriptionId, force }),
     }),
 
   listGuides: () => request<GuideItem[]>("/api/guides"),

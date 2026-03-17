@@ -40,8 +40,9 @@ async def guide_task(ctx: dict, guide_id: int, user_id: int) -> None:
         guide.content = content
         guide.status = "completed"
         prescription.ocr_status = "guide_completed"
-    except Exception:
+    except BaseException:
         guide.status = "failed"
+        raise
     finally:
         await guide.save()
         await prescription.save()

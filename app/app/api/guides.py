@@ -17,7 +17,7 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
 
-    if prescription.ocr_status == "guide_completed":
+    if prescription.ocr_status == "guide_completed" and not req.force:
         existing = (
             await Guide.filter(prescription=prescription, user=user, status="completed").order_by("-created_at").first()
         )
