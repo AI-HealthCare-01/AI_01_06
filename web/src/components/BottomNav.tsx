@@ -75,17 +75,12 @@ function IconProfile({ active }: { active: boolean }) {
 }
 
 const menuItems = [
-  {
-    href: "/caregivers",
-    label: (role: string) => (role === "guardian" ? "돌봄 대상" : "나의 보호자"),
-    icon: IconGuardian,
-    roles: ["guardian", "patient"],
-  },
+  { href: "/caregivers", label: (_role: string) => "돌봄 대상", icon: IconGuardian, roles: ["guardian"] },
   { href: "/dashboard", label: () => "홈", icon: IconHome, roles: ["patient"] },
   { href: "/prescriptions/upload", label: () => "처방전", icon: IconPrescription, roles: ["patient"] },
   { href: "/guides", label: () => "가이드", icon: IconGuide, roles: ["patient"] },
-  { href: "/chat", label: () => "AI 상담", icon: IconChat, roles: ["patient", "guardian"] },
-  { href: "/chat/history", label: () => "상담기록", icon: IconChatHistory, roles: ["patient", "guardian"] },
+  { href: "/chat", label: () => "AI 상담", icon: IconChat, roles: ["patient"] },
+  { href: "/chat/history", label: () => "상담기록", icon: IconChatHistory, roles: ["guardian"] },
   { href: "/profile", label: () => "마이페이지", icon: IconProfile, roles: ["patient", "guardian"] },
 ];
 
@@ -95,10 +90,9 @@ export default function BottomNav() {
   const { isProxyMode } = usePatient();
   const role = user?.role?.toLowerCase() || "patient";
 
+  const proxyPaths = ["/dashboard", "/prescriptions/upload", "/guides", "/chat/history"];
   const visibleItems = menuItems.filter((item) => {
-    if (isProxyMode) {
-      return item.roles.includes("patient") && item.href !== "/caregivers";
-    }
+    if (isProxyMode) return proxyPaths.includes(item.href);
     return item.roles.includes(role);
   });
 

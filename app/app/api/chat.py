@@ -72,13 +72,19 @@ async def list_threads(
 ):
     current_user, patient = actors
     target_user = patient or current_user
-    threads = await ChatThread.filter(user=target_user).annotate(message_count=Count("messages")).order_by("-updated_at")
+    threads = (
+        await ChatThread.filter(user=target_user)
+        .annotate(message_count=Count("messages"))
+        .order_by("-updated_at")
+        .prefetch_related("acted_by")
+    )
     # 1. Virtual status 계산 (메시지 0개인 빈 thread 제외)
     all_results = []
     for t in threads:
         if t.message_count == 0:  # type: ignore[attr-defined]
             continue
         computed = _compute_thread_status(t)
+        acted_by_user = t.acted_by if t.acted_by_id else None
         all_results.append(
             {
                 "id": t.id,
@@ -88,6 +94,7 @@ async def list_threads(
                 "status": computed,
                 "created_at": str(t.created_at),
                 "updated_at": str(t.updated_at),
+                "acted_by_name": acted_by_user.name if acted_by_user else None,
             }
         )
 
