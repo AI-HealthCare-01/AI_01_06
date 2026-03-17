@@ -423,3 +423,69 @@ async def test_patient_sees_proxy_chat_with_badge(client: AsyncClient):
     assert len(proxy_threads) == 1
     assert len(own_threads) == 1
     assert proxy_threads[0]["acted_by_name"] == _GUARDIAN["name"]
+
+
+# --- 프로필 대리 접근 테스트 ---
+
+
+@pytest.mark.asyncio
+async def test_guardian_views_patient_profile(client: AsyncClient):
+    """보호자가 연결된 환자의 프로필을 조회 — 민감 정보 제외, is_proxy_view 플래그."""
+    patient_token, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.get("/api/users/me", headers={"X-Acting-For": str(patient_id)})
+    assert resp.status_code == 200
+
+    data = resp.json()["data"]
+    assert data["name"] == _PATIENT["name"]
+    assert data["role"] == "PATIENT"
+    assert data["is_proxy_view"] is True
+
+    # 민감 정보 미포함
+    assert "email" not in data
+    assert "has_password" not in data
+    assert "phone" not in data
+
+
+@pytest.mark.asyncio
+async def test_proxy_view_excludes_sensitive_fields(client: AsyncClient):
+    """대리 응답에 email, has_password, phone이 포함되지 않는다."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.get("/api/users/me", headers={"X-Acting-For": str(patient_id)})
+    data = resp.json()["data"]
+
+    sensitive_fields = {"email", "has_password", "phone"}
+    assert sensitive_fields.isdisjoint(data.keys())
+    assert "guardian_name" in data
+
+
+@pytest.mark.asyncio
+async def test_guardian_cannot_update_patient_profile(client: AsyncClient):
+    """보호자는 돌봄 대상의 어떤 필드도 수정할 수 없다 (건강 정보 포함)."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.patch(
+        "/api/users/me",
+        json={"height_cm": 165.0, "weight_kg": 60.0},
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_guardian_cannot_delete_patient_account(client: AsyncClient):
+    """보호자가 돌봄 대상의 계정을 삭제할 수 없다."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.request(
+        "DELETE",
+        "/api/users/me",
+        headers={"X-Acting-For": str(patient_id)},
+        json={"password": "Pass1234!"},
+    )
+    assert resp.status_code == 403

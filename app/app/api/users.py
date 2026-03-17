@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 
-from app.core.deps import get_current_user
+from app.core.deps import get_acting_patient, get_current_user
 from app.core.rate_limit import limiter
 from app.core.response import error_response, success_response
 from app.core.security import verify_password
@@ -16,40 +16,64 @@ _PATIENT_PROFILE_FIELDS = {"height_cm", "weight_kg", "has_allergy", "allergy_det
 
 
 @router.get("/me")
-async def get_me(user: User = Depends(get_current_user)):
-    profile = None
-    if user.role == "PATIENT":
-        profile = await PatientProfile.get_or_none(user=user)
+async def get_me(actors: tuple = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
 
-    return success_response(
-        {
-            "id": user.id,
-            "email": user.email,
-            "nickname": user.nickname,
-            "name": user.name,
-            "role": user.role,
-            "has_password": user.password_hash is not None,
-            "birth_date": str(user.birth_date) if user.birth_date else None,
-            "gender": user.gender,
-            "phone": user.phone,
-            "font_size_mode": user.font_size_mode,
-            "patient_profile": {
-                "height_cm": float(profile.height_cm) if profile and profile.height_cm is not None else None,
-                "weight_kg": float(profile.weight_kg) if profile and profile.weight_kg is not None else None,
-                "has_allergy": profile.has_allergy if profile else False,
-                "allergy_details": profile.allergy_details if profile else None,
-                "has_disease": profile.has_disease if profile else False,
-                "disease_details": profile.disease_details if profile else None,
-            }
-            if profile
-            else None,
+    profile = None
+    if target_user.role == "PATIENT":
+        profile = await PatientProfile.get_or_none(user=target_user)
+
+    response_data = {
+        "id": target_user.id,
+        "name": target_user.name,
+        "nickname": target_user.nickname,
+        "role": target_user.role,
+        "birth_date": str(target_user.birth_date) if target_user.birth_date else None,
+        "gender": target_user.gender,
+        "font_size_mode": target_user.font_size_mode,
+        "patient_profile": {
+            "height_cm": float(profile.height_cm) if profile and profile.height_cm is not None else None,
+            "weight_kg": float(profile.weight_kg) if profile and profile.weight_kg is not None else None,
+            "has_allergy": profile.has_allergy if profile else False,
+            "allergy_details": profile.allergy_details if profile else None,
+            "has_disease": profile.has_disease if profile else False,
+            "disease_details": profile.disease_details if profile else None,
         }
-    )
+        if profile
+        else None,
+    }
+
+    if patient is None:
+        # 본인 모드: 민감 정보 포함
+        response_data["email"] = target_user.email
+        response_data["has_password"] = target_user.password_hash is not None
+        response_data["phone"] = target_user.phone
+    else:
+        # 대리 모드: 민감 정보 제외 + 플래그
+        response_data["is_proxy_view"] = True
+        response_data["guardian_name"] = current_user.name
+
+    return success_response(response_data)
 
 
 @router.patch("/me")
 @limiter.limit("10/minute")
-async def update_me(request: Request, req: UserUpdateRequest, user: User = Depends(get_current_user)):
+async def update_me(
+    request: Request,
+    req: UserUpdateRequest,
+    actors: tuple = Depends(get_acting_patient),
+):
+    current_user, patient = actors
+
+    # 대리 모드: 수정 전면 거부
+    if patient:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="보호자는 돌봄 대상의 정보를 수정할 수 없습니다.",
+        )
+
+    user = current_user
     update_data = req.model_dump(exclude_unset=True)
 
     user_fields = {k: v for k, v in update_data.items() if k not in _PATIENT_PROFILE_FIELDS}
@@ -81,7 +105,15 @@ async def delete_me(
     request: Request,
     req: DeleteAccountRequest,
     user: User = Depends(get_current_user),
+    x_acting_for: int | None = Header(None, alias="X-Acting-For"),
 ):
+    # 대리 모드에서 계정 삭제 명시적 거부
+    if x_acting_for is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="대리 모드에서 계정을 삭제할 수 없습니다.",
+        )
+
     if user.password_hash:
         if not req.password or not verify_password(req.password, user.password_hash):
             return error_response("비밀번호가 올바르지 않습니다.")
