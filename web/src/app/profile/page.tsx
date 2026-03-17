@@ -53,7 +53,9 @@ export default function ProfilePage() {
       router.replace("/login");
       return;
     }
-    fetchProfile();
+    if (user.role === "PATIENT") {
+      fetchProfile();
+    }
   }, [user, authLoading, router]);
 
   useEffect(() => {
@@ -177,6 +179,11 @@ export default function ProfilePage() {
   const profile = profileData?.patient_profile;
   const isPatient = user.role === "PATIENT";
 
+  // GUARDIAN은 개인정보 탭 불필요 — 접근성 설정만 표시
+  useEffect(() => {
+    if (!isPatient) setActiveTab("accessibility");
+  }, [isPatient]);
+
   return (
     <AppLayout>
       {/* 상단 패널 */}
@@ -188,13 +195,13 @@ export default function ProfilePage() {
             className="text-lg font-bold"
             style={{ color: "var(--color-text)" }}
           >
-            {profileData?.name ?? user.name}
+            {isPatient ? (profileData?.name ?? user.name) : user.name}
           </h1>
           <p
             className="text-sm mt-0.5"
             style={{ color: "var(--color-text-muted)" }}
           >
-            {profileData?.email ?? user.email}
+            {isPatient ? (profileData?.email ?? user.email) : user.email}
           </p>
           <span
             className="inline-block mt-1 px-2 py-0.5 text-xs rounded-full"
@@ -223,28 +230,30 @@ export default function ProfilePage() {
         className="flex border-b mt-4"
         style={{ borderColor: "var(--color-border)" }}
       >
-        <button
-          role="tab"
-          aria-selected={activeTab === "info"}
-          tabIndex={activeTab === "info" ? 0 : -1}
-          id="tab-info"
-          aria-controls="panel-info"
-          onClick={() => setActiveTab("info")}
-          onKeyDown={handleTabKeyDown}
-          className="px-4 py-2 text-sm font-medium transition-colors"
-          style={{
-            color:
-              activeTab === "info"
-                ? "var(--color-primary)"
-                : "var(--color-text-muted)",
-            borderBottom:
-              activeTab === "info"
-                ? "2px solid var(--color-primary)"
-                : "2px solid transparent",
-          }}
-        >
-          개인정보
-        </button>
+        {isPatient && (
+          <button
+            role="tab"
+            aria-selected={activeTab === "info"}
+            tabIndex={activeTab === "info" ? 0 : -1}
+            id="tab-info"
+            aria-controls="panel-info"
+            onClick={() => setActiveTab("info")}
+            onKeyDown={handleTabKeyDown}
+            className="px-4 py-2 text-sm font-medium transition-colors"
+            style={{
+              color:
+                activeTab === "info"
+                  ? "var(--color-primary)"
+                  : "var(--color-text-muted)",
+              borderBottom:
+                activeTab === "info"
+                  ? "2px solid var(--color-primary)"
+                  : "2px solid transparent",
+            }}
+          >
+            개인정보
+          </button>
+        )}
         <button
           role="tab"
           aria-selected={activeTab === "accessibility"}
