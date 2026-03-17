@@ -65,11 +65,7 @@ async def list_threads(
     thread_status: str = Query("all", alias="status"),
     user: User = Depends(get_current_user),
 ):
-    threads = (
-        await ChatThread.filter(user=user)
-        .annotate(message_count=Count("messages"))
-        .order_by("-updated_at")
-    )
+    threads = await ChatThread.filter(user=user).annotate(message_count=Count("messages")).order_by("-updated_at")
 
     # 1. Virtual status 계산 (메시지 0개인 빈 thread 제외)
     all_results = []
