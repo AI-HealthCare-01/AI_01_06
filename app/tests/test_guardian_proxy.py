@@ -3,6 +3,7 @@ from unittest.mock import patch
 import pytest
 from httpx import AsyncClient
 
+from app.models.chat import ChatThread
 from app.models.guide import Guide
 from app.models.prescription import Prescription
 
@@ -276,3 +277,119 @@ async def test_guardian_cannot_delete_patient_guide(client: AsyncClient):
         headers={"X-Acting-For": str(patient_id)},
     )
     assert resp.status_code == 403
+
+
+# --- 채팅 대리 접근 테스트 ---
+
+
+@pytest.mark.asyncio
+async def test_guardian_views_patient_chat_threads(client: AsyncClient):
+    """보호자가 돌봄 대상의 상담 이력을 조회할 수 있다."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.get("/api/chat/threads", headers={"X-Acting-For": str(patient_id)})
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_guardian_creates_chat_for_patient(client: AsyncClient):
+    """보호자 대리 상담 생성 → user=환자, acted_by=보호자."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    # 보호자 ID 조회
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    me_resp = await client.get("/api/users/me")
+    guardian_id = me_resp.json()["data"]["id"]
+
+    resp = await client.post(
+        "/api/chat/threads",
+        json={},
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    assert resp.status_code == 200
+
+    thread_id = resp.json()["data"]["id"]
+    thread = await ChatThread.get(id=thread_id)
+    assert thread.user_id == patient_id
+    assert thread.acted_by_id == guardian_id
+
+
+@pytest.mark.asyncio
+async def test_guardian_own_chat_separate(client: AsyncClient):
+    """보호자 본인 상담과 대리 상담이 분리된다."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+
+    # 본인 상담 생성
+    resp1 = await client.post("/api/chat/threads", json={})
+    assert resp1.status_code == 200
+
+    # 대리 상담 생성
+    resp2 = await client.post(
+        "/api/chat/threads",
+        json={},
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    assert resp2.status_code == 200
+
+    # 본인 이력 조회 → 1개
+    resp_own = await client.get("/api/chat/threads")
+    assert len(resp_own.json()["data"]) == 1
+
+    # 대리 이력 조회 → 1개
+    resp_proxy = await client.get("/api/chat/threads", headers={"X-Acting-For": str(patient_id)})
+    assert len(resp_proxy.json()["data"]) == 1
+
+    # 서로 다른 thread
+    assert resp_own.json()["data"][0]["id"] != resp_proxy.json()["data"][0]["id"]
+
+
+@pytest.mark.asyncio
+async def test_guardian_views_patient_chat_messages(client: AsyncClient):
+    """보호자가 돌봄 대상의 상담 메시지를 조회할 수 있다."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+
+    # 대리 상담 생성
+    resp = await client.post(
+        "/api/chat/threads",
+        json={},
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    thread_id = resp.json()["data"]["id"]
+
+    # 메시지 조회
+    resp = await client.get(
+        f"/api/chat/threads/{thread_id}/messages",
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_guardian_ends_patient_chat_thread(client: AsyncClient):
+    """보호자가 대리 모드에서 상담 세션을 종료할 수 있다."""
+    _, guardian_token, patient_id = await _create_linked_pair(client)
+
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+
+    # 대리 상담 생성
+    resp = await client.post(
+        "/api/chat/threads",
+        json={},
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    thread_id = resp.json()["data"]["id"]
+
+    # 세션 종료
+    resp = await client.patch(
+        f"/api/chat/threads/{thread_id}/end",
+        headers={"X-Acting-For": str(patient_id)},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["data"]["is_active"] is False
