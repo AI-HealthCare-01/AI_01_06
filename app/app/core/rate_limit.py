@@ -5,10 +5,14 @@ from app import config
 
 
 def _get_client_ip(request: Request) -> str:
-    """X-Forwarded-For 헤더에서 클라이언트 IP를 추출. Nginx 프록시 뒤에서도 정확한 IP 반환."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """Nginx가 설정한 X-Real-IP 헤더에서 클라이언트 IP를 추출.
+
+    X-Forwarded-For는 클라이언트가 직접 조작할 수 있어 스푸핑 위험이 있으므로,
+    Nginx가 $remote_addr로 설정하는 X-Real-IP를 우선 사용한다.
+    """
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
     return request.client.host if request.client else "127.0.0.1"
 
 

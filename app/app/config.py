@@ -47,3 +47,5 @@ ALLOWED_ORIGINS: list[str] = [
     for o in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost").split(",")
     if o.strip()
 ]
+if "*" in ALLOWED_ORIGINS:
+    raise ValueError("ALLOWED_ORIGINS에 와일드카드('*')를 사용할 수 없습니다. 명시적 도메인을 설정하세요.")
