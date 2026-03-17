@@ -14,6 +14,54 @@ interface Medication {
   instructions?: string;
 }
 
+interface DiagnosisEntry {
+  code?: string;
+  label: string;
+  isSupplementary: boolean;
+}
+
+const SUPPLEMENTARY_PREFIXES = new Set(["Z", "V", "W", "X", "Y"]);
+
+function parseDiagnosis(diagnosis: string): DiagnosisEntry[] {
+  if (!diagnosis.trim()) return [];
+
+  const parseOnePart = (part: string): DiagnosisEntry => {
+    const codeMatch = part.trim().match(/^([A-Z]\d{2}(?:\.\d+)?)\s*(.*)/);
+    if (codeMatch) {
+      const code = codeMatch[1];
+      const label = codeMatch[2].trim() || code;
+      return { code, label, isSupplementary: SUPPLEMENTARY_PREFIXES.has(code[0]) };
+    }
+    return { label: part.trim(), isSupplementary: false };
+  };
+
+  // 쉼표 구분 우선 시도
+  const commaParts = diagnosis.split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+  if (commaParts.length > 1) return commaParts.map(parseOnePart);
+
+  // 쉼표 없이 ICD 코드가 공백으로 이어진 경우 (예: "J06.9 급성 상기도 감염 Z87.39 ...")
+  const spaceSplitParts = diagnosis.split(/\s+(?=[A-Z]\d{2}(?:\.\d+)?(?:\s|$))/).map(s => s.trim()).filter(Boolean);
+  if (spaceSplitParts.length > 1) return spaceSplitParts.map(parseOnePart);
+
+  return [parseOnePart(diagnosis.trim())];
+}
+
+function DiagnosisDisplay({ diagnosis }: { diagnosis: string }) {
+  if (!diagnosis) {
+    return <span className="italic" style={{ color: "var(--color-text-muted)" }}>인식이 되지 않았어요. 직접 입력해주세요</span>;
+  }
+
+  const entries = parseDiagnosis(diagnosis);
+  const mainEntries = entries.filter(e => !e.isSupplementary);
+  const suppEntries = entries.filter(e => e.isSupplementary);
+
+  const parts: string[] = [
+    ...mainEntries.map(e => e.label),
+    ...suppEntries.map(e => `(${e.code ? `${e.code} ` : ""}${e.label})`),
+  ];
+  return <span className="font-medium">{parts.join(", ")}</span>;
+}
+
 interface OcrData {
   hospital_name: string;
   doctor_name: string;
@@ -236,7 +284,7 @@ export default function OcrReviewPage() {
             {editing ? (
               <input value={data.diagnosis || ""} onChange={(e) => setData({ ...data, diagnosis: e.target.value })} placeholder="인식이 되지 않았어요. 직접 입력해주세요" className="px-3 py-2 w-full text-base input-field" />
             ) : (
-              <p className="font-medium">{data.diagnosis || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
+              <div className="font-medium"><DiagnosisDisplay diagnosis={data.diagnosis || ""} /></div>
             )}
           </div>
         </div>
@@ -290,9 +338,9 @@ export default function OcrReviewPage() {
                 <div className="col-span-2">
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>복용 지시사항</p>
                   {editing ? (
-                    <input value={med.instructions || ""} onChange={(e) => updateMed(i, "instructions", e.target.value)} placeholder="예: 식후 30분, 취침 전 복용 등" className="px-3 py-2 w-full text-base input-field" />
+                    <input value={med.instructions || ""} onChange={(e) => updateMed(i, "instructions", e.target.value)} placeholder="추가 지시 사항이 없다면 비워두셔도 됩니다. (※ 가장 정확한 복약 방법은 의사 및 약사의 안내를 우선해 주세요.)" className="px-3 py-2 w-full text-base input-field" />
                   ) : (
-                    <p>{med.instructions || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>인식이 되지 않았어요. 직접 입력해주세요</span>}</p>
+                    <p>{med.instructions || <span className="italic" style={{ color: 'var(--color-text-muted)' }}>추가 지시 사항이 없다면 비워두셔도 됩니다. (※ 가장 정확한 복약 방법은 의사 및 약사의 안내를 우선해 주세요.)</span>}</p>
                   )}
                 </div>
               </div>
@@ -300,6 +348,12 @@ export default function OcrReviewPage() {
           ))}
         </div>
       </section>
+
+      {/* 면책 문구 */}
+      <p className="text-xs text-center mb-4 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+        본 서비스는 글자 인식 기술을 활용하여 입력을 돕는 보조 도구입니다.<br />
+        정확한 정보 입력 및 복약에 대한 최종 확인은 사용자 본인에게 있습니다.
+      </p>
 
       {/* Buttons */}
       <div className="flex gap-4">

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class GuideCreateRequest(BaseModel):
     prescription_id: int
+    force: bool = False
 
 
 class GuideResponse(BaseModel):

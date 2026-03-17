@@ -33,9 +33,10 @@ function ChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prescriptionId = searchParams.get("prescriptionId");
+  const resumeThreadId = searchParams.get("threadId");
   const { activePatient, isProxyMode } = usePatient();
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "안녕하세요! AI 복약 상담 챗봇입니다. 복약과 관련하여 궁금하신 점을 물어보세요." },
+    { role: "assistant", content: "안녕하세요. 복약 상담을 도와드리는 설리반입니다. 약을 드시면서 궁금한 점이 있으시면 편하게 말씀해 주세요." },
   ]);
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<number | null>(null);
@@ -51,20 +52,42 @@ function ChatContent() {
   const [reasonText, setReasonText] = useState("");
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
-  const initThread = () => {
+  const initThread = async () => {
     setInitError(null);
-    api
-      .createThread(prescriptionId ? Number(prescriptionId) : undefined)
-      .then((res) => {
-        if (res.success && res.data) {
-          setThreadId((res.data as { id: number }).id);
-        } else {
-          setInitError(res.error || "채팅을 시작할 수 없습니다. 로그인 상태를 확인해주세요.");
+    try {
+      if (resumeThreadId) {
+        // 기존 스레드 이어가기
+        const threadRes = await api.getThread(Number(resumeThreadId));
+        if (!threadRes.success || !threadRes.data) {
+          setInitError(threadRes.error || "대화를 불러올 수 없습니다.");
+          return;
         }
-      })
-      .catch(() => {
-        setInitError("서버에 연결할 수 없습니다.");
-      });
+        const thread = threadRes.data as { id: number; status: string };
+
+        // ended/auto_closed → reactivate
+        if (thread.status === "ended" || thread.status === "auto_closed") {
+          const reactRes = await api.reactivateThread(thread.id);
+          if (!reactRes.success) {
+            setInitError(reactRes.error || "대화를 재개할 수 없습니다.");
+            return;
+          }
+        }
+
+        // 기존 메시지 로드
+        const msgRes = await api.getMessages(Number(resumeThreadId));
+        if (msgRes.success && msgRes.data) {
+          const loaded = (msgRes.data as Array<{ role: "user" | "assistant"; content: string; status?: string }>);
+          if (loaded.length > 0) {
+            setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status })));
+            setShowQuickActions(false);
+          }
+        }
+        setThreadId(Number(resumeThreadId));
+      }
+      // 새 채팅: thread는 첫 메시지 전송 시 생성 (lazy creation)
+    } catch {
+      setInitError("서버에 연결할 수 없습니다.");
+    }
   };
 
   useEffect(() => {
@@ -76,7 +99,24 @@ function ChatContent() {
   }, [messages]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || !threadId || isStreaming) return;
+    if (!text.trim() || isStreaming) return;
+
+    // Lazy thread creation: 첫 메시지 시점에 thread 생성
+    let currentThreadId = threadId;
+    if (!currentThreadId) {
+      try {
+        const res = await api.createThread(prescriptionId ? Number(prescriptionId) : undefined);
+        if (!res.success || !res.data) {
+          setInitError(res.error || "채팅을 시작할 수 없습니다. 로그인 상태를 확인해주세요.");
+          return;
+        }
+        currentThreadId = (res.data as { id: number }).id;
+        setThreadId(currentThreadId);
+      } catch {
+        setInitError("서버에 연결할 수 없습니다.");
+        return;
+      }
+    }
 
     setInput("");
     setShowQuickActions(false);
@@ -86,7 +126,7 @@ function ChatContent() {
     setMessages((prev) => [...prev, { role: "assistant", content: "", status: "streaming" }]);
 
     await streamChat(
-      threadId,
+      currentThreadId,
       text,
       (chunk) => {
         setMessages((prev) => {

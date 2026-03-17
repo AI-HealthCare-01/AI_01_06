@@ -28,7 +28,6 @@ class OcrUpdateRequest(BaseModel):
 
 class PrescriptionResponse(BaseModel):
     id: int
-    image_path: str
     hospital_name: str | None = None
     doctor_name: str | None = None
     prescription_date: str | None = None

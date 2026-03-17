@@ -32,11 +32,10 @@ async def upload_prescription(file: UploadFile, actors: tuple[User, User | None]
     prescription = await Prescription.create(
         user=target_user,
         acted_by=current_user if patient else None,
-        image_path=filepath,
         ocr_status="processing",
     )
 
-    await enqueue("ocr_task", prescription.id)
+    await enqueue("ocr_task", prescription.id, filepath)
 
     return success_response(
         {
@@ -79,7 +78,6 @@ async def get_prescription(prescription_id: int, actors: tuple[User, User | None
     return success_response(
         {
             "id": prescription.id,
-            "image_path": prescription.image_path,
             "hospital_name": prescription.hospital_name,
             "doctor_name": prescription.doctor_name,
             "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,

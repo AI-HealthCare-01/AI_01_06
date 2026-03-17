@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
@@ -10,6 +10,7 @@ interface MedicationGuide {
   name: string;
   dosage: string;
   frequency: string;
+  timing?: string;
   duration?: string;
   instructions: string;
   effect: string;
@@ -46,9 +47,22 @@ interface GuideData {
 
 export default function GuideDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const guideId = Number(params.id);
   const [guide, setGuide] = useState<GuideData | null>(null);
   const [generating, setGenerating] = useState(true);
+  const [regenerating, setRegenerating] = useState(false);
+
+  const handleRegenerate = async () => {
+    if (!guide || !confirm("가이드를 재생성하면 기존 가이드가 삭제됩니다. 계속할까요?")) return;
+    setRegenerating(true);
+    const res = await api.createGuide(guide.prescription_id, true);
+    setRegenerating(false);
+    if (res.success && res.data) {
+      const newGuide = res.data as { id: number };
+      router.push(`/guides/${newGuide.id}`);
+    }
+  };
 
   const pollGuide = useCallback(async () => {
     const res = await api.getGuide(guideId);
@@ -141,7 +155,8 @@ export default function GuideDetailPage() {
                 <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
               </div>
               <div className="space-y-1 text-sm">
-                <p><span style={{ color: 'var(--color-text-muted)' }}>복용 시간 :</span> {med.frequency}</p>
+                {med.timing && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 시간대 :</span> {med.timing}</p>}
+                <p><span style={{ color: 'var(--color-text-muted)' }}>복용 횟수 :</span> {med.frequency}</p>
                 {med.duration && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 기간 :</span> {med.duration}</p>}
                 <p><span style={{ color: 'var(--color-text-muted)' }}>복용 방법 :</span> {med.instructions}</p>
                 <p className="px-2 py-1 rounded mt-2" style={{ background: 'var(--color-warning-soft)', color: 'var(--color-warning-text)' }}>
@@ -207,6 +222,15 @@ export default function GuideDetailPage() {
         <Link href={`/chat?prescriptionId=${guide.prescription_id}`} className="flex-1 py-3 rounded-lg text-center btn-primary">
           AI에게 질문하기
         </Link>
+      </div>
+      <div className="mt-3">
+        <button
+          onClick={handleRegenerate}
+          disabled={regenerating}
+          className="w-full py-3 rounded-lg text-center btn-outline disabled:opacity-50"
+        >
+          {regenerating ? "재생성 중..." : "프로필 반영하여 재생성"}
+        </button>
       </div>
     </AppLayout>
   );
