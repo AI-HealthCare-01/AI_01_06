@@ -72,6 +72,13 @@ run_sql() {
     --defaults-extra-file=/tmp/.seed_my.cnf "$DB_NAME" <<< "$1"
 }
 
+# 테이블이 아직 생성되지 않았을 수 있는 경우 (Tortoise ORM이 generate_schemas 전)
+# 에러를 무시하고 계속 진행
+run_sql_optional() {
+  docker exec -i "$MYSQL_CONTAINER" mysql \
+    --defaults-extra-file=/tmp/.seed_my.cnf "$DB_NAME" <<< "$1" 2>/dev/null || true
+}
+
 # --- 연결 확인 ---
 echo "[1/6] MySQL 연결 확인..."
 run_sql "SELECT 1;" > /dev/null 2>&1 || { echo "[ERROR] MySQL 연결 실패"; exit 1; }
@@ -86,23 +93,21 @@ END_DATE=$(date -v+23d +%Y-%m-%d 2>/dev/null || date -d "23 days from now" +%Y-%
 PW_HASH='$2b$12$5LC6ltOo40UXKfEsKGl9d.9jzPg0/WuTXWC4sJStTkY52p7KHlD06'
 
 echo "[2/6] 기존 테스트 데이터 정리..."
+run_sql "SET FOREIGN_KEY_CHECKS = 0;"
+
+# 아직 Tortoise ORM이 생성하지 않았을 수 있는 테이블 (에러 무시)
+run_sql_optional "DELETE cf FROM chat_feedbacks cf INNER JOIN chat_threads ct ON cf.thread_id = ct.id INNER JOIN users u ON ct.user_id = u.id WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';"
+run_sql_optional "DELETE cm FROM chat_messages cm INNER JOIN chat_threads ct ON cm.thread_id = ct.id INNER JOIN users u ON ct.user_id = u.id WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';"
+run_sql_optional "DELETE FROM chat_threads WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
+run_sql_optional "DELETE al FROM adherence_logs al INNER JOIN medication_schedules ms ON al.schedule_id = ms.id INNER JOIN medications m ON ms.medication_id = m.id INNER JOIN prescriptions p ON m.prescription_id = p.id INNER JOIN users u ON p.user_id = u.id WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';"
+run_sql_optional "DELETE ms FROM medication_schedules ms INNER JOIN medications m ON ms.medication_id = m.id INNER JOIN prescriptions p ON m.prescription_id = p.id INNER JOIN users u ON p.user_id = u.id WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';"
+run_sql_optional "DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
+run_sql_optional "DELETE FROM notification_settings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
+run_sql_optional "DELETE FROM audit_logs WHERE actor_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
+run_sql_optional "DELETE FROM refresh_tokens WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
+
+# 핵심 테이블 (항상 존재)
 run_sql "
-SET FOREIGN_KEY_CHECKS = 0;
-
--- 기존 테스트 유저 ID 수집 후 관련 데이터 삭제
-DELETE al FROM adherence_logs al
-  INNER JOIN medication_schedules ms ON al.schedule_id = ms.id
-  INNER JOIN medications m ON ms.medication_id = m.id
-  INNER JOIN prescriptions p ON m.prescription_id = p.id
-  INNER JOIN users u ON p.user_id = u.id
-  WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';
-
-DELETE ms FROM medication_schedules ms
-  INNER JOIN medications m ON ms.medication_id = m.id
-  INNER JOIN prescriptions p ON m.prescription_id = p.id
-  INNER JOIN users u ON p.user_id = u.id
-  WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';
-
 DELETE g FROM guides g
   INNER JOIN users u ON g.user_id = u.id
   WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';
@@ -228,48 +233,48 @@ SET @p9 = (SELECT id FROM users WHERE email='testp9@test.com');
 
 -- ===== 처방전 (각 환자 1개씩) =====
 -- p1: 약 1개 (감기)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p1, '/uploads/test/rx_p1.jpg', '서울내과의원', '김의사', '${TODAY}', '급성 상기도 감염', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p1, '서울내과의원', '김의사', '${TODAY}', '급성 상기도 감염', 'confirmed', NOW());
 SET @rx1 = LAST_INSERT_ID();
 
 -- p2: 약 2개 (고혈압)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p2, '/uploads/test/rx_p2.jpg', '강남세브란스병원', '이의사', '${TODAY}', '본태성 고혈압', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p2, '강남세브란스병원', '이의사', '${TODAY}', '본태성 고혈압', 'confirmed', NOW());
 SET @rx2 = LAST_INSERT_ID();
 
 -- p3: 약 3개 (위장관)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p3, '/uploads/test/rx_p3.jpg', '연세소화기내과', '박의사', '${TODAY}', '기능성 소화불량', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p3, '연세소화기내과', '박의사', '${TODAY}', '기능성 소화불량', 'confirmed', NOW());
 SET @rx3 = LAST_INSERT_ID();
 
 -- p4: 약 4개 (당뇨+고혈압)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p4, '/uploads/test/rx_p4.jpg', '삼성서울병원', '최의사', '${TODAY}', '제2형 당뇨, 고혈압', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p4, '삼성서울병원', '최의사', '${TODAY}', '제2형 당뇨, 고혈압', 'confirmed', NOW());
 SET @rx4 = LAST_INSERT_ID();
 
 -- p5: 약 5개 (복합 만성질환)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p5, '/uploads/test/rx_p5.jpg', '서울아산병원', '정의사', '${TODAY}', '관상동맥질환, 골관절염', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p5, '서울아산병원', '정의사', '${TODAY}', '관상동맥질환, 골관절염', 'confirmed', NOW());
 SET @rx5 = LAST_INSERT_ID();
 
 -- p6: 약 2개 (피부)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p6, '/uploads/test/rx_p6.jpg', '미소피부과', '강의사', '${TODAY}', '아토피 피부염', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p6, '미소피부과', '강의사', '${TODAY}', '아토피 피부염', 'confirmed', NOW());
 SET @rx6 = LAST_INSERT_ID();
 
 -- p7: 약 6개 (고령 복합 - 스크롤 테스트용)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p7, '/uploads/test/rx_p7.jpg', '서울대학교병원', '조의사', '${TODAY}', 'COPD, 심방세동, 골다공증', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p7, '서울대학교병원', '조의사', '${TODAY}', 'COPD, 심방세동, 골다공증', 'confirmed', NOW());
 SET @rx7 = LAST_INSERT_ID();
 
 -- p8: 약 1개 (경미)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p8, '/uploads/test/rx_p8.jpg', '우리동네의원', '윤의사', '${TODAY}', '긴장형 두통', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p8, '우리동네의원', '윤의사', '${TODAY}', '긴장형 두통', 'confirmed', NOW());
 SET @rx8 = LAST_INSERT_ID();
 
 -- p9: 약 3개 (위장관)
-INSERT INTO prescriptions (user_id, image_path, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
-  VALUES (@p9, '/uploads/test/rx_p9.jpg', '한강내과', '한의사', '${TODAY}', '위식도역류질환', 'confirmed', NOW());
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@p9, '한강내과', '한의사', '${TODAY}', '위식도역류질환', 'confirmed', NOW());
 SET @rx9 = LAST_INSERT_ID();
 
 -- ===== 약물 데이터 =====
@@ -329,7 +334,7 @@ INSERT INTO medications (prescription_id, name, dosage, frequency, duration, ins
 "
 echo "  ✓ 처방전·약물 생성 완료"
 
-echo "[6/6] 복약 스케줄 생성 (오늘의 복약 표시용)..."
+echo "[6/6] 복약 스케줄 · 가이드 생성..."
 run_sql "
 SET @p1 = (SELECT id FROM users WHERE email='testp1@test.com');
 SET @p2 = (SELECT id FROM users WHERE email='testp2@test.com');
