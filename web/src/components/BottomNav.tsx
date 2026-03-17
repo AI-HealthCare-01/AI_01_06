@@ -84,8 +84,8 @@ const menuItems = [
   { href: "/dashboard", label: () => "홈", icon: IconHome, roles: ["patient"] },
   { href: "/prescriptions/upload", label: () => "처방전", icon: IconPrescription, roles: ["patient"] },
   { href: "/guides", label: () => "가이드", icon: IconGuide, roles: ["patient"] },
-  { href: "/chat", label: () => "AI 상담", icon: IconChat, roles: ["patient", "guardian"] },
-  { href: "/chat/history", label: () => "상담기록", icon: IconChatHistory, roles: ["patient", "guardian"] },
+  { href: "/chat", label: () => "AI 상담", icon: IconChat, roles: ["patient"] },
+  { href: "/chat/history", label: () => "상담기록", icon: IconChatHistory, roles: ["guardian"] },
   { href: "/profile", label: () => "마이페이지", icon: IconProfile, roles: ["patient", "guardian"] },
 ];
 
@@ -97,7 +97,7 @@ export default function BottomNav() {
 
   const visibleItems = menuItems.filter((item) => {
     if (isProxyMode) {
-      return item.roles.includes("patient") && item.href !== "/caregivers";
+      return (item.roles.includes("patient") || item.href === "/chat/history") && item.href !== "/caregivers";
     }
     return item.roles.includes(role);
   });

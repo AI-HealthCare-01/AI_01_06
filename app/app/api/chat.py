@@ -51,9 +51,10 @@ async def create_thread(req: ThreadCreateRequest, actors: tuple[User, User | Non
 async def list_threads(actors: tuple[User, User | None] = Depends(get_acting_patient)):
     current_user, patient = actors
     target_user = patient or current_user
-    threads = await ChatThread.filter(user=target_user).order_by("-updated_at")
+    threads = await ChatThread.filter(user=target_user).order_by("-updated_at").prefetch_related("acted_by")
     result = []
     for t in threads:
+        acted_by_user = t.acted_by if t.acted_by_id else None
         result.append(
             {
                 "id": t.id,
@@ -62,6 +63,7 @@ async def list_threads(actors: tuple[User, User | None] = Depends(get_acting_pat
                 "is_active": t.is_active,
                 "created_at": str(t.created_at),
                 "updated_at": str(t.updated_at),
+                "acted_by_name": acted_by_user.name if acted_by_user else None,
             }
         )
     return success_response(result)

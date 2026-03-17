@@ -393,3 +393,33 @@ async def test_guardian_ends_patient_chat_thread(client: AsyncClient):
     )
     assert resp.status_code == 200
     assert resp.json()["data"]["is_active"] is False
+
+
+@pytest.mark.asyncio
+async def test_patient_sees_proxy_chat_with_badge(client: AsyncClient):
+    """환자가 보호자 대리 상담을 acted_by_name 포함하여 조회할 수 있다."""
+    patient_token, guardian_token, patient_id = await _create_linked_pair(client)
+
+    # 보호자가 대리 상담 생성
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    await client.post(
+        "/api/chat/threads",
+        json={},
+        headers={"X-Acting-For": str(patient_id)},
+    )
+
+    # 환자가 본인 상담 생성
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    await client.post("/api/chat/threads", json={})
+
+    # 환자가 목록 조회 → 2개 (본인 + 대리)
+    resp = await client.get("/api/chat/threads")
+    data = resp.json()["data"]
+    assert len(data) == 2
+
+    # acted_by_name 확인: 대리 상담에만 보호자 이름 포함
+    proxy_threads = [t for t in data if t["acted_by_name"] is not None]
+    own_threads = [t for t in data if t["acted_by_name"] is None]
+    assert len(proxy_threads) == 1
+    assert len(own_threads) == 1
+    assert proxy_threads[0]["acted_by_name"] == _GUARDIAN["name"]
