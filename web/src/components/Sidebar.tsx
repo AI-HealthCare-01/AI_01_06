@@ -83,6 +83,7 @@ const topMenuItems = [
   { href: "/guides", label: () => "가이드 내역", roles: ["patient"], icon: IconGuide },
   { href: "/chat", label: () => "AI 상담", roles: ["patient", "guardian"], icon: IconChat },
   { href: "/chat/history", label: () => "상담기록", roles: ["patient", "guardian"], icon: IconChatHistory },
+  { href: "/proxy-profile", label: () => "돌봄 대상 프로필", roles: ["guardian_proxy"], icon: IconProfile },
 ];
 
 const bottomMenuItems = [
@@ -128,6 +129,7 @@ export default function Sidebar() {
       <nav className="flex-1 space-y-1" aria-label="메인 네비게이션">
         {topMenuItems
           .filter((item) => {
+            if (item.roles.includes("guardian_proxy")) return isProxyMode;
             if (isProxyMode) return item.roles.includes("patient") || item.roles.includes(role);
             return item.roles.includes(role);
           })

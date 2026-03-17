@@ -11,6 +11,7 @@ const PATIENT_ONLY_PREFIXES = [
   "/guides",
   "/medications",
   "/onboarding",
+  "/proxy-profile",
 ];
 
 export function useAuthGuard() {
