@@ -16,7 +16,7 @@ _PATIENT_PROFILE_FIELDS = {"height_cm", "weight_kg", "has_allergy", "allergy_det
 
 
 @router.get("/me")
-async def get_me(actors: tuple = Depends(get_acting_patient)):
+async def get_me(actors: tuple[User, User | None] = Depends(get_acting_patient)):
     current_user, patient = actors
     target_user = patient or current_user
 
@@ -62,7 +62,7 @@ async def get_me(actors: tuple = Depends(get_acting_patient)):
 async def update_me(
     request: Request,
     req: UserUpdateRequest,
-    actors: tuple = Depends(get_acting_patient),
+    actors: tuple[User, User | None] = Depends(get_acting_patient),
 ):
     current_user, patient = actors
 
@@ -105,7 +105,7 @@ async def delete_me(
     request: Request,
     req: DeleteAccountRequest,
     user: User = Depends(get_current_user),
-    x_acting_for: int | None = Header(None, alias="X-Acting-For"),
+    x_acting_for: int | None = Header(None, alias="X-Acting-For", ge=1),
 ):
     # 대리 모드에서 계정 삭제 명시적 거부
     if x_acting_for is not None:

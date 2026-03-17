@@ -3,15 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { usePatient } from "@/lib/patient-context";
-
-interface PatientProfile {
-  height_cm: number | null;
-  weight_kg: number | null;
-  has_allergy: boolean;
-  allergy_details: string | null;
-  has_disease: boolean;
-  disease_details: string | null;
-}
+import type { PatientProfile } from "@/types/profile";
 
 interface ProfileResponse {
   name: string;
@@ -22,17 +14,21 @@ interface ProfileResponse {
 export default function PatientHealthSummary() {
   const { activePatient, isProxyMode } = usePatient();
   const [profile, setProfile] = useState<PatientProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!isProxyMode) return;
+    let cancelled = false;
+    setLoading(true);
     api.getMe().then((res) => {
+      if (cancelled) return;
       if (res.success) {
         const data = res.data as ProfileResponse;
         setProfile(data.patient_profile);
       }
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [isProxyMode, activePatient?.id]);
 
   if (!isProxyMode || !activePatient) return null;
@@ -99,6 +95,7 @@ export default function PatientHealthSummary() {
           <div className="flex items-center gap-1.5">
             <span
               className="w-2 h-2 rounded-full"
+              aria-hidden="true"
               style={{
                 background: hasAllergy
                   ? "var(--color-danger)"
@@ -125,6 +122,7 @@ export default function PatientHealthSummary() {
           <div className="flex items-center gap-1.5">
             <span
               className="w-2 h-2 rounded-full"
+              aria-hidden="true"
               style={{
                 background: hasDisease
                   ? "var(--color-warning, #f59e0b)"

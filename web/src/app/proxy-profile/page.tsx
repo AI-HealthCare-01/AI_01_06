@@ -5,15 +5,7 @@ import { useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
 import { usePatient } from "@/lib/patient-context";
-
-interface PatientProfile {
-  height_cm: number | null;
-  weight_kg: number | null;
-  has_allergy: boolean;
-  allergy_details: string | null;
-  has_disease: boolean;
-  disease_details: string | null;
-}
+import type { PatientProfile } from "@/types/profile";
 
 interface ProxyProfileData {
   name: string;
@@ -30,19 +22,23 @@ export default function ProxyProfilePage() {
   const { activePatient, isProxyMode } = usePatient();
   const router = useRouter();
   const [profileData, setProfileData] = useState<ProxyProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!isProxyMode) {
       router.replace("/caregivers");
       return;
     }
+    let cancelled = false;
+    setLoading(true);
     api.getMe().then((res) => {
+      if (cancelled) return;
       if (res.success) {
         setProfileData(res.data as ProxyProfileData);
       }
       setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [isProxyMode, activePatient?.id, router]);
 
   if (!isProxyMode || !activePatient) return null;
@@ -139,6 +135,7 @@ function StatusField({ label, hasCondition }: { label: string; hasCondition: boo
     <div className="flex items-center gap-2">
       <span
         className="w-3 h-3 rounded-full"
+        aria-hidden="true"
         style={{
           background: hasCondition ? "var(--color-danger)" : "var(--color-success, #22c55e)",
         }}

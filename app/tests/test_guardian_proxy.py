@@ -442,21 +442,7 @@ async def test_guardian_views_patient_profile(client: AsyncClient):
     assert data["role"] == "PATIENT"
     assert data["is_proxy_view"] is True
 
-    # 민감 정보 미포함
-    assert "email" not in data
-    assert "has_password" not in data
-    assert "phone" not in data
-
-
-@pytest.mark.asyncio
-async def test_proxy_view_excludes_sensitive_fields(client: AsyncClient):
-    """대리 응답에 email, has_password, phone이 포함되지 않는다."""
-    _, guardian_token, patient_id = await _create_linked_pair(client)
-
-    client.headers["Authorization"] = f"Bearer {guardian_token}"
-    resp = await client.get("/api/users/me", headers={"X-Acting-For": str(patient_id)})
-    data = resp.json()["data"]
-
+    # 민감 정보 미포함 + 보호자 이름 포함
     sensitive_fields = {"email", "has_password", "phone"}
     assert sensitive_fields.isdisjoint(data.keys())
     assert "guardian_name" in data

@@ -5,18 +5,10 @@ import { useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import type { PatientProfile } from "@/types/profile";
 
 const TABS = ["info", "accessibility"] as const;
 type Tab = (typeof TABS)[number];
-
-interface PatientProfile {
-  height_cm: number | null;
-  weight_kg: number | null;
-  has_allergy: boolean;
-  allergy_details: string | null;
-  has_disease: boolean;
-  disease_details: string | null;
-}
 
 interface ProfileData {
   email: string;
@@ -57,6 +49,11 @@ export default function ProfilePage() {
       fetchProfile();
     }
   }, [user, authLoading, router]);
+
+  // GUARDIAN은 개인정보 탭 불필요 — 접근성 설정만 표시
+  useEffect(() => {
+    if (user && user.role !== "PATIENT") setActiveTab("accessibility");
+  }, [user]);
 
   useEffect(() => {
     const saved = (localStorage.getItem("fontSize") as FontSize) ?? "large";
@@ -178,11 +175,6 @@ export default function ProfilePage() {
 
   const profile = profileData?.patient_profile;
   const isPatient = user.role === "PATIENT";
-
-  // GUARDIAN은 개인정보 탭 불필요 — 접근성 설정만 표시
-  useEffect(() => {
-    if (!isPatient) setActiveTab("accessibility");
-  }, [isPatient]);
 
   return (
     <AppLayout>
