@@ -20,6 +20,8 @@ NAVER_OCR_URL: str = os.environ.get("NAVER_OCR_URL", "")
 
 CHAT_CONTEXT_MESSAGE_COUNT: int = int(os.environ.get("CHAT_CONTEXT_MESSAGE_COUNT", "3"))
 CHAT_STREAMING_TIMEOUT_SECONDS: int = int(os.environ.get("CHAT_STREAMING_TIMEOUT_SECONDS", "60"))
+CHAT_AUTO_CLOSE_HOURS: int = int(os.environ.get("CHAT_AUTO_CLOSE_HOURS", "24"))
+CHAT_DEFAULT_PAGE_SIZE: int = int(os.environ.get("CHAT_DEFAULT_PAGE_SIZE", "10"))
 
 RAG_ENABLED: bool = os.environ.get("RAG_ENABLED", "false").lower() == "true"
 RAG_MAX_CONTEXT_CHARS: int = int(os.environ.get("RAG_MAX_CONTEXT_CHARS", "2000"))

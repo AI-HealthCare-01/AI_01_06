@@ -243,7 +243,14 @@ export const api = {
       body: JSON.stringify({ prescription_id: prescriptionId ?? null }),
     }),
 
-  listThreads: () => request("/api/chat/threads"),
+  listThreads: (page = 1, pageSize = 10, status = "all") =>
+    request(`/api/chat/threads?page=${page}&page_size=${pageSize}&status=${status}`),
+
+  getThread: (threadId: number) =>
+    request(`/api/chat/threads/${threadId}`),
+
+  reactivateThread: (threadId: number) =>
+    request(`/api/chat/threads/${threadId}/reactivate`, { method: "PATCH" }),
 
   getMessages: (threadId: number) =>
     request(`/api/chat/threads/${threadId}/messages`),

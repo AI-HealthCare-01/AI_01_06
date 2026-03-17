@@ -1,9 +1,12 @@
 import json
 import logging
+import math
 import time
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
+from tortoise.functions import Count
 
 from app import config
 from app.core.deps import get_current_user
@@ -19,6 +22,19 @@ from app.services.retrieval_service import format_retrieved_docs, get_retrieval_
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
+
+
+def _compute_thread_status(thread: ChatThread) -> str:
+    """Virtual status: active / auto_closed / ended."""
+    if not thread.is_active:
+        return "ended"
+    now = datetime.now(UTC)
+    updated = thread.updated_at
+    if updated.tzinfo is None:
+        updated = updated.replace(tzinfo=UTC)
+    if (now - updated) > timedelta(hours=config.CHAT_AUTO_CLOSE_HOURS):
+        return "auto_closed"
+    return "active"
 
 
 @router.post("/threads")
@@ -43,21 +59,79 @@ async def create_thread(req: ThreadCreateRequest, user: User = Depends(get_curre
 
 
 @router.get("/threads")
-async def list_threads(user: User = Depends(get_current_user)):
-    threads = await ChatThread.filter(user=user).order_by("-updated_at")
-    result = []
+async def list_threads(
+    page: int = 1,
+    page_size: int = config.CHAT_DEFAULT_PAGE_SIZE,
+    thread_status: str = Query("all", alias="status"),
+    user: User = Depends(get_current_user),
+):
+    threads = (
+        await ChatThread.filter(user=user)
+        .annotate(message_count=Count("messages"))
+        .order_by("-updated_at")
+    )
+
+    # 1. Virtual status 계산 (메시지 0개인 빈 thread 제외)
+    all_results = []
     for t in threads:
-        result.append(
+        if t.message_count == 0:  # type: ignore[attr-defined]
+            continue
+        computed = _compute_thread_status(t)
+        all_results.append(
             {
                 "id": t.id,
                 "title": t.title,
                 "prescription_id": t.prescription_id,
                 "is_active": t.is_active,
+                "status": computed,
                 "created_at": str(t.created_at),
                 "updated_at": str(t.updated_at),
             }
         )
-    return success_response(result)
+
+    # 2. Status 필터
+    if thread_status == "active":
+        all_results = [r for r in all_results if r["status"] == "active"]
+    elif thread_status == "ended":
+        all_results = [r for r in all_results if r["status"] in ("ended", "auto_closed")]
+
+    # 3. Total 계산
+    total = len(all_results)
+    page = max(1, page)
+    page_size = max(1, min(page_size, 100))
+    total_pages = max(1, math.ceil(total / page_size))
+
+    # 4. Pagination slice
+    start = (page - 1) * page_size
+    paginated = all_results[start : start + page_size]
+
+    return success_response(
+        {
+            "threads": paginated,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+        }
+    )
+
+
+@router.get("/threads/{thread_id}")
+async def get_thread(thread_id: int, user: User = Depends(get_current_user)):
+    thread = await ChatThread.get_or_none(id=thread_id, user=user)
+    if not thread:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
+    return success_response(
+        {
+            "id": thread.id,
+            "title": thread.title,
+            "prescription_id": thread.prescription_id,
+            "is_active": thread.is_active,
+            "status": _compute_thread_status(thread),
+            "created_at": str(thread.created_at),
+            "updated_at": str(thread.updated_at),
+        }
+    )
 
 
 @router.get("/threads/{thread_id}/messages")
@@ -90,6 +164,33 @@ async def end_thread(thread_id: int, user: User = Depends(get_current_user)):
     thread.is_active = False
     await thread.save()
     return success_response({"id": thread.id, "is_active": False})
+
+
+@router.patch("/threads/{thread_id}/reactivate")
+async def reactivate_thread(thread_id: int, user: User = Depends(get_current_user)):
+    thread = await ChatThread.get_or_none(id=thread_id, user=user)
+    if not thread:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
+
+    if _compute_thread_status(thread) == "active":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="이미 활성 상태인 대화입니다.",
+        )
+
+    thread.is_active = True
+    await thread.save()
+    return success_response(
+        {
+            "id": thread.id,
+            "title": thread.title,
+            "prescription_id": thread.prescription_id,
+            "is_active": True,
+            "status": "active",
+            "created_at": str(thread.created_at),
+            "updated_at": str(thread.updated_at),
+        }
+    )
 
 
 RAG_INSTRUCTION = (
@@ -220,9 +321,8 @@ async def _build_context(thread: ChatThread) -> list[dict]:  # noqa: C901
     return messages
 
 
-@router.post("/messages")
-async def send_message(req: MessageSendRequest, user: User = Depends(get_current_user)):
-    thread = await ChatThread.get_or_none(id=req.thread_id, user=user)
+async def _validate_thread_for_message(thread: ChatThread | None) -> None:
+    """메시지 전송 전 스레드 상태 검증 및 stale stream 정리."""
     if not thread:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
 
@@ -231,7 +331,12 @@ async def send_message(req: MessageSendRequest, user: User = Depends(get_current
             status_code=status.HTTP_400_BAD_REQUEST, detail="종료된 대화에는 메시지를 보낼 수 없습니다."
         )
 
-    # 동시 streaming 방지: stale streaming 정리
+    if _compute_thread_status(thread) == "auto_closed":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="장시간 미활동으로 자동 종료된 대화입니다. 대화 이어가기를 이용해주세요.",
+        )
+
     stale = await ChatMessage.filter(thread=thread, status="streaming").first()
     if stale:
         elapsed = time.time() - stale.created_at.timestamp()
@@ -239,6 +344,12 @@ async def send_message(req: MessageSendRequest, user: User = Depends(get_current
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이전 응답이 생성 중입니다.")
         stale.status = "failed"
         await stale.save()
+
+
+@router.post("/messages")
+async def send_message(req: MessageSendRequest, user: User = Depends(get_current_user)):
+    thread = await ChatThread.get_or_none(id=req.thread_id, user=user)
+    await _validate_thread_for_message(thread)
 
     # user 메시지 저장
     await ChatMessage.create(thread=thread, role="user", content=req.content, status="completed")
@@ -273,12 +384,14 @@ async def send_message(req: MessageSendRequest, user: User = Depends(get_current
             assistant_msg.content = accumulated
             assistant_msg.status = "completed"
             await assistant_msg.save()
+            await thread.save()  # updated_at 갱신
             yield f"data: {json.dumps({'type': 'done', 'message_id': assistant_msg.id})}\n\n"
 
         except Exception:
             assistant_msg.content = accumulated
             assistant_msg.status = "failed"
             await assistant_msg.save()
+            await thread.save()  # updated_at 갱신
             yield f"data: {json.dumps({'type': 'error', 'message': '응답 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
