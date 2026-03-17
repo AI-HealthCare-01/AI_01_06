@@ -449,29 +449,45 @@ async def test_guardian_views_patient_profile(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_guardian_cannot_update_patient_profile(client: AsyncClient):
-    """보호자는 돌봄 대상의 어떤 필드도 수정할 수 없다 (건강 정보 포함)."""
-    _, guardian_token, patient_id = await _create_linked_pair(client)
+async def test_patch_me_always_updates_self_not_patient(client: AsyncClient):
+    """PATCH /me는 X-Acting-For가 있어도 항상 보호자 본인만 수정한다 (환자 데이터 불변)."""
+    patient_token, guardian_token, patient_id = await _create_linked_pair(client)
 
+    # 보호자가 X-Acting-For와 함께 PATCH → 본인 닉네임 변경
     client.headers["Authorization"] = f"Bearer {guardian_token}"
     resp = await client.patch(
         "/api/users/me",
-        json={"height_cm": 165.0, "weight_kg": 60.0},
+        json={"nickname": "변경된보호자"},
         headers={"X-Acting-For": str(patient_id)},
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
+
+    # 보호자 본인 닉네임이 변경됨 확인
+    me_resp = await client.get("/api/users/me")
+    assert me_resp.json()["data"]["nickname"] == "변경된보호자"
+
+    # 환자 닉네임은 변경되지 않음 확인
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    patient_resp = await client.get("/api/users/me")
+    assert patient_resp.json()["data"]["nickname"] == _PATIENT["nickname"]
 
 
 @pytest.mark.asyncio
-async def test_guardian_cannot_delete_patient_account(client: AsyncClient):
-    """보호자가 돌봄 대상의 계정을 삭제할 수 없다."""
-    _, guardian_token, patient_id = await _create_linked_pair(client)
+async def test_delete_me_always_targets_self_not_patient(client: AsyncClient):
+    """DELETE /me는 X-Acting-For가 있어도 항상 보호자 본인 계정만 삭제한다."""
+    patient_token, guardian_token, patient_id = await _create_linked_pair(client)
 
+    # 보호자가 X-Acting-For와 함께 DELETE → 본인 계정 삭제
     client.headers["Authorization"] = f"Bearer {guardian_token}"
     resp = await client.request(
         "DELETE",
         "/api/users/me",
         headers={"X-Acting-For": str(patient_id)},
-        json={"password": "Pass1234!"},
+        json={"password": _GUARDIAN["password"]},
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
+
+    # 환자 계정은 여전히 살아있음 확인
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    patient_resp = await client.get("/api/users/me")
+    assert patient_resp.status_code == 200

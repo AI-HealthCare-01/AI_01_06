@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request
 
 from app.core.deps import get_acting_patient, get_current_user
 from app.core.rate_limit import limiter
@@ -59,21 +59,7 @@ async def get_me(actors: tuple[User, User | None] = Depends(get_acting_patient))
 
 @router.patch("/me")
 @limiter.limit("10/minute")
-async def update_me(
-    request: Request,
-    req: UserUpdateRequest,
-    actors: tuple[User, User | None] = Depends(get_acting_patient),
-):
-    current_user, patient = actors
-
-    # 대리 모드: 수정 전면 거부
-    if patient:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="보호자는 돌봄 대상의 정보를 수정할 수 없습니다.",
-        )
-
-    user = current_user
+async def update_me(request: Request, req: UserUpdateRequest, user: User = Depends(get_current_user)):
     update_data = req.model_dump(exclude_unset=True)
 
     user_fields = {k: v for k, v in update_data.items() if k not in _PATIENT_PROFILE_FIELDS}
@@ -105,15 +91,7 @@ async def delete_me(
     request: Request,
     req: DeleteAccountRequest,
     user: User = Depends(get_current_user),
-    x_acting_for: int | None = Header(None, alias="X-Acting-For", ge=1),
 ):
-    # 대리 모드에서 계정 삭제 명시적 거부
-    if x_acting_for is not None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="대리 모드에서 계정을 삭제할 수 없습니다.",
-        )
-
     if user.password_hash:
         if not req.password or not verify_password(req.password, user.password_hash):
             return error_response("비밀번호가 올바르지 않습니다.")
