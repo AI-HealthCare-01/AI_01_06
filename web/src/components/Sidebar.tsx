@@ -42,6 +42,16 @@ function IconChat() {
   );
 }
 
+function IconChatHistory() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" />
+      <circle cx="12" cy="10" r="3" />
+      <polyline points="12 8 12 10 13.5 11" />
+    </svg>
+  );
+}
+
 function IconGuardian() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -72,6 +82,7 @@ const topMenuItems = [
   { href: "/prescriptions/upload", label: () => "처방전 업로드", roles: ["patient"], icon: IconPrescription },
   { href: "/guides", label: () => "가이드 내역", roles: ["patient"], icon: IconGuide },
   { href: "/chat", label: () => "AI 상담", roles: ["patient", "guardian"], icon: IconChat },
+  { href: "/chat/history", label: () => "상담기록", roles: ["patient", "guardian"], icon: IconChatHistory },
 ];
 
 const bottomMenuItems = [
@@ -85,7 +96,9 @@ export default function Sidebar() {
   const role = user?.role?.toLowerCase() || "patient";
 
   function renderMenuItem(item: { href: string; label: (role: string) => string; roles: string[]; icon: () => React.JSX.Element }) {
-    const active = pathname.startsWith(item.href);
+    const active = item.href === "/chat"
+      ? pathname === "/chat" || (pathname.startsWith("/chat/") && !pathname.startsWith("/chat/history"))
+      : pathname.startsWith(item.href);
     const Icon = item.icon;
     return (
       <Link

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from app import config
-from app.core.deps import get_acting_patient, get_current_user
+from app.core.deps import get_acting_patient
 from app.core.response import success_response
 from app.models.chat import ChatFeedback, ChatMessage, ChatThread
 from app.models.patient_profile import PatientProfile

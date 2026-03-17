@@ -45,6 +45,16 @@ function IconChat({ active }: { active: boolean }) {
   );
 }
 
+function IconChatHistory({ active }: { active: boolean }) {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: active ? "var(--color-primary)" : "var(--color-text-muted)" }}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" />
+      <circle cx="12" cy="10" r="3" />
+      <polyline points="12 8 12 10 13.5 11" />
+    </svg>
+  );
+}
+
 function IconGuardian({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: active ? "var(--color-primary)" : "var(--color-text-muted)" }}>
@@ -75,6 +85,7 @@ const menuItems = [
   { href: "/prescriptions/upload", label: () => "처방전", icon: IconPrescription, roles: ["patient"] },
   { href: "/guides", label: () => "가이드", icon: IconGuide, roles: ["patient"] },
   { href: "/chat", label: () => "AI 상담", icon: IconChat, roles: ["patient", "guardian"] },
+  { href: "/chat/history", label: () => "상담기록", icon: IconChatHistory, roles: ["patient", "guardian"] },
   { href: "/profile", label: () => "마이페이지", icon: IconProfile, roles: ["patient", "guardian"] },
 ];
 
@@ -99,7 +110,9 @@ export default function BottomNav() {
     >
       <div className="flex items-center justify-around h-16">
         {visibleItems.map((item) => {
-          const active = pathname.startsWith(item.href);
+          const active = item.href === "/chat"
+            ? pathname === "/chat" || (pathname.startsWith("/chat/") && !pathname.startsWith("/chat/history"))
+            : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
             <Link

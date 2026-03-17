@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
+import { usePatient } from "@/lib/patient-context";
 
 interface ThreadItem {
   id: number;
@@ -15,6 +16,7 @@ interface ThreadItem {
 }
 
 export default function ChatHistoryPage() {
+  const { activePatient, isProxyMode } = usePatient();
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,8 +43,16 @@ export default function ChatHistoryPage() {
     <AppLayout>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">대화 기록</h1>
-          <p style={{ color: 'var(--color-text-muted)' }}>이전 AI 상담 내역을 확인하세요</p>
+          <h1 className="text-2xl font-bold">
+            {isProxyMode && activePatient
+              ? `${activePatient.name}님의 상담 기록`
+              : "대화 기록"}
+          </h1>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            {isProxyMode && activePatient
+              ? `${activePatient.name}님의 이전 AI 상담 내역입니다`
+              : "이전 AI 상담 내역을 확인하세요"}
+          </p>
         </div>
         <Link
           href="/chat"

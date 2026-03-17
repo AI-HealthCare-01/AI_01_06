@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api, streamChat } from "@/lib/api";
+import { usePatient } from "@/lib/patient-context";
 
 const DISCLAIMER = "AI가 제공하는 정보는 참고용입니다. 정확한 진단과 처방은 의료 전문가와 상담하세요.";
 
@@ -32,6 +33,7 @@ function ChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prescriptionId = searchParams.get("prescriptionId");
+  const { activePatient, isProxyMode } = usePatient();
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "안녕하세요! AI 복약 상담 챗봇입니다. 복약과 관련하여 궁금하신 점을 물어보세요." },
   ]);
@@ -194,6 +196,22 @@ function ChatContent() {
             상담 종료
           </button>
         </div>
+
+        {/* Proxy mode banner */}
+        {isProxyMode && activePatient && (
+          <div
+            className="px-4 py-2 text-sm"
+            style={{
+              backgroundColor: "var(--color-primary-soft)",
+              color: "var(--color-primary)",
+              borderLeft: "1px solid var(--color-border)",
+              borderRight: "1px solid var(--color-border)",
+            }}
+          >
+            이 상담은 <strong>{activePatient.name}</strong>님에 대한 상담입니다.
+            {activePatient.name}님의 건강 정보를 바탕으로 답변합니다.
+          </div>
+        )}
 
         {/* Init Error */}
         {initError && (
