@@ -6,8 +6,8 @@ from tortoise import Tortoise
 
 from worker import config
 from worker.tasks.guide_task import guide_task
-from worker.tasks.ocr_task import ocr_task
 from worker.tasks.medication_check_task import medication_check_cron
+from worker.tasks.ocr_task import ocr_task
 from worker.tasks.purge_task import purge_deleted_users
 
 KST = timezone(timedelta(hours=9))

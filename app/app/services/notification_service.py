@@ -133,7 +133,9 @@ async def _load_batch_data(
     logged_schedule_ids = {log.schedule_id for log in today_logs}
 
     today_med_notifications = await Notification.filter(
-        user_id__in=user_ids, notification_type="MEDICATION", created_at__gte=today_dt,
+        user_id__in=user_ids,
+        notification_type="MEDICATION",
+        created_at__gte=today_dt,
     )
     sent_tags: set[tuple[int, str]] = set()
     for n in today_med_notifications:
@@ -171,14 +173,17 @@ async def check_missed_medications() -> None:
     today_dt = datetime(today.year, today.month, today.day, tzinfo=KST)
 
     active_schedules = await MedicationSchedule.filter(
-        start_date__lte=today, end_date__gte=today,
+        start_date__lte=today,
+        end_date__gte=today,
     ).prefetch_related("medication__prescription__user")
 
     if not active_schedules:
         return
 
     logged_ids, settings_map, patient_caregivers, cg_settings, user_map, sent_tags = await _load_batch_data(
-        active_schedules, today, today_dt,
+        active_schedules,
+        today,
+        today_dt,
     )
 
     # 사용자별·시간대별 스케줄 그룹핑

@@ -13,17 +13,24 @@ from app.models.user import User
 from app.services.notification_service import check_missed_medications
 
 KST = ZoneInfo("Asia/Seoul")
+MOCK_DATE = date(2026, 3, 18)
+MOCK_NOW = datetime(2026, 3, 18, 8, 31, tzinfo=KST)
 
 
-async def _create_schedule_for_user(user: User, med_name: str, time_of_day: str) -> MedicationSchedule:
+async def _create_schedule_for_user(
+    user: User,
+    med_name: str,
+    time_of_day: str,
+    target_date: date = MOCK_DATE,
+) -> MedicationSchedule:
     """테스트용 스케줄 생성 헬퍼."""
     prescription = await Prescription.create(user=user, ocr_status="confirmed")
     medication = await Medication.create(prescription=prescription, name=med_name, dosage="500mg", frequency="1일 3회")
     return await MedicationSchedule.create(
         medication=medication,
         time_of_day=time_of_day,
-        start_date=date.today(),
-        end_date=date.today(),
+        start_date=target_date,
+        end_date=target_date,
     )
 
 
@@ -35,7 +42,7 @@ async def test_missed_single_medication_specific_message(auth_client: AsyncClien
     await NotificationSetting.create(user=user, morning_time="08:00")
     await _create_schedule_for_user(user, "타이레놀", "MORNING")
 
-    fake_now = datetime(2026, 3, 18, 8, 31, tzinfo=KST)
+    fake_now = MOCK_NOW
     with patch("app.services.notification_service._now_kst", return_value=fake_now):
         await check_missed_medications()
 
@@ -54,7 +61,7 @@ async def test_missed_multiple_medications_generic_message(auth_client: AsyncCli
     await _create_schedule_for_user(user, "타이레놀", "MORNING")
     await _create_schedule_for_user(user, "아스피린", "MORNING")
 
-    fake_now = datetime(2026, 3, 18, 8, 31, tzinfo=KST)
+    fake_now = MOCK_NOW
     with patch("app.services.notification_service._now_kst", return_value=fake_now):
         await check_missed_medications()
 
@@ -72,9 +79,9 @@ async def test_taken_medication_no_notification(auth_client: AsyncClient):
     await NotificationSetting.create(user=user, morning_time="08:00")
     schedule = await _create_schedule_for_user(user, "타이레놀", "MORNING")
 
-    await AdherenceLog.create(schedule=schedule, actor_user=user, target_date=date.today(), status="TAKEN")
+    await AdherenceLog.create(schedule=schedule, actor_user=user, target_date=MOCK_DATE, status="TAKEN")
 
-    fake_now = datetime(2026, 3, 18, 8, 31, tzinfo=KST)
+    fake_now = MOCK_NOW
     with patch("app.services.notification_service._now_kst", return_value=fake_now):
         await check_missed_medications()
 
@@ -93,21 +100,35 @@ async def test_missed_medication_notifies_all_caregivers(auth_client: AsyncClien
     # 보호자 2명 생성
     await client.post(
         "/api/auth/signup",
-        json={"email": "g1@test.com", "password": "Test1234!", "nickname": "보호자1",
-              "name": "김보호", "role": "GUARDIAN", "terms_of_service": True, "privacy_policy": True},
+        json={
+            "email": "g1@test.com",
+            "password": "Test1234!",
+            "nickname": "보호자1",
+            "name": "김보호",
+            "role": "GUARDIAN",
+            "terms_of_service": True,
+            "privacy_policy": True,
+        },
     )
     g1 = await User.get(email="g1@test.com")
     await CaregiverPatientMapping.create(caregiver=g1, patient=user, status="APPROVED")
 
     await client.post(
         "/api/auth/signup",
-        json={"email": "g2@test.com", "password": "Test1234!", "nickname": "보호자2",
-              "name": "이보호", "role": "GUARDIAN", "terms_of_service": True, "privacy_policy": True},
+        json={
+            "email": "g2@test.com",
+            "password": "Test1234!",
+            "nickname": "보호자2",
+            "name": "이보호",
+            "role": "GUARDIAN",
+            "terms_of_service": True,
+            "privacy_policy": True,
+        },
     )
     g2 = await User.get(email="g2@test.com")
     await CaregiverPatientMapping.create(caregiver=g2, patient=user, status="APPROVED")
 
-    fake_now = datetime(2026, 3, 18, 8, 31, tzinfo=KST)
+    fake_now = MOCK_NOW
     with patch("app.services.notification_service._now_kst", return_value=fake_now):
         await check_missed_medications()
 
@@ -126,7 +147,7 @@ async def test_duplicate_missed_notification_prevention(auth_client: AsyncClient
     await NotificationSetting.create(user=user, morning_time="08:00")
     await _create_schedule_for_user(user, "타이레놀", "MORNING")
 
-    fake_now = datetime(2026, 3, 18, 8, 31, tzinfo=KST)
+    fake_now = MOCK_NOW
     with patch("app.services.notification_service._now_kst", return_value=fake_now):
         await check_missed_medications()
         await check_missed_medications()  # 2회 실행
@@ -143,7 +164,7 @@ async def test_medication_disabled_no_notification(auth_client: AsyncClient):
     await NotificationSetting.create(user=user, morning_time="08:00", medication_enabled=False)
     await _create_schedule_for_user(user, "타이레놀", "MORNING")
 
-    fake_now = datetime(2026, 3, 18, 8, 31, tzinfo=KST)
+    fake_now = MOCK_NOW
     with patch("app.services.notification_service._now_kst", return_value=fake_now):
         await check_missed_medications()
 

@@ -128,8 +128,15 @@ export default function TodayMedicationPanel({ schedules, onSchedulesChange, not
       {/* 캐러셀 영역 */}
       <div
         className="overflow-hidden"
+        tabIndex={0}
+        role="region"
+        aria-label="시간대별 복약 캐러셀"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight" && currentPage < TIME_SLOTS.length - 1) setCurrentPage((p) => p + 1);
+          if (e.key === "ArrowLeft" && currentPage > 0) setCurrentPage((p) => p - 1);
+        }}
       >
         <div
           className="flex transition-transform duration-300 ease-out"

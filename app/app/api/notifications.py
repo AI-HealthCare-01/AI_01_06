@@ -1,10 +1,11 @@
 import asyncio
 import json
+import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.core.deps import get_current_user
 from app.core.response import success_response
@@ -12,6 +13,9 @@ from app.models.notification import Notification, NotificationSetting
 from app.models.user import User
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
+
+
+_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$")
 
 
 class NotificationSettingUpdate(BaseModel):
@@ -23,6 +27,13 @@ class NotificationSettingUpdate(BaseModel):
     noon_time: str | None = None
     evening_time: str | None = None
     bedtime_time: str | None = None
+
+    @field_validator("morning_time", "noon_time", "evening_time", "bedtime_time")
+    @classmethod
+    def validate_time_format(cls, v: str | None) -> str | None:
+        if v is not None and not _TIME_RE.match(v):
+            raise ValueError("시간은 HH:MM 형식이어야 합니다 (00:00~23:59)")
+        return v
 
 
 @router.get("")

@@ -52,6 +52,9 @@ export default function DashboardPage() {
         });
       }
       setLoadingSchedules(false);
+    }).catch(() => {
+      setScheduleError("서버에 연결할 수 없습니다.");
+      setLoadingSchedules(false);
     });
   }, []);
 
