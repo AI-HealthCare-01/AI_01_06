@@ -7,7 +7,9 @@ load_dotenv("infra/env/.local.env")
 
 DATABASE_URL: str = os.environ.get("DATABASE_URL", "sqlite://db.sqlite3")
 REDIS_URL: str = os.environ.get("REDIS_URL", "redis://localhost:6379")
-SECRET_KEY: str = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
+SECRET_KEY: str = os.environ.get("SECRET_KEY", "")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY 환경변수가 설정되지 않았습니다.")
 ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 REFRESH_TOKEN_EXPIRE_DAYS: int = 7
