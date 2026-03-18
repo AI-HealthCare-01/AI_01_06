@@ -57,17 +57,6 @@ async def read_all(user: User = Depends(get_current_user)):
     return success_response({"updated_count": updated_count})
 
 
-@router.patch("/{notification_id}/read")
-async def mark_as_read(notification_id: int, user: User = Depends(get_current_user)):
-    notification = await Notification.get_or_none(id=notification_id, user=user)
-    if not notification:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="알림을 찾을 수 없습니다.")
-    notification.is_read = True
-    notification.read_at = datetime.now(UTC)
-    await notification.save()
-    return success_response({"id": notification.id, "is_read": notification.is_read})
-
-
 @router.get("/stream")
 async def notification_stream(user: User = Depends(get_current_user)):
     """SSE 스트림: 읽지 않은 알림 카운트를 실시간으로 전송한다.
@@ -95,6 +84,17 @@ async def notification_stream(user: User = Depends(get_current_user)):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.patch("/{notification_id}/read")
+async def mark_as_read(notification_id: int, user: User = Depends(get_current_user)):
+    notification = await Notification.get_or_none(id=notification_id, user=user)
+    if not notification:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="알림을 찾을 수 없습니다.")
+    notification.is_read = True
+    notification.read_at = datetime.now(UTC)
+    await notification.save()
+    return success_response({"id": notification.id, "is_read": notification.is_read})
 
 
 @router.get("/settings")
