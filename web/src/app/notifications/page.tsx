@@ -18,13 +18,11 @@ interface NotificationItem {
 const TYPE_ICON: Record<string, string> = {
   MEDICATION: "\uD83D\uDC8A",
   CAREGIVER: "\uD83D\uDEE1\uFE0F",
-  SYSTEM: "\uD83D\uDCE2",
 };
 
 const TYPE_LABEL: Record<string, string> = {
   MEDICATION: "\uBCF5\uC57D",
   CAREGIVER: "\uBCF4\uD638\uC790",
-  SYSTEM: "\uC2DC\uC2A4\uD15C",
 };
 
 export default function NotificationsPage() {

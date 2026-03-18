@@ -21,7 +21,7 @@ class NotificationSetting(Model):
 class Notification(Model):
     id = fields.IntField(primary_key=True)
     user = fields.ForeignKeyField("models.User", related_name="notifications")
-    notification_type = fields.CharField(max_length=50)  # MEDICATION | CAREGIVER | SYSTEM
+    notification_type = fields.CharField(max_length=50)  # MEDICATION | CAREGIVER
     title = fields.CharField(max_length=255, null=True)
     body = fields.TextField(null=True)
     is_read = fields.BooleanField(default=False)

@@ -14,7 +14,7 @@ async def test_create_and_list_notifications(auth_client: AsyncClient):
     user_resp = await auth_client.get("/api/users/me")
     user_id = user_resp.json()["data"]["id"]
     user = await User.get(id=user_id)
-    await Notification.create(user=user, notification_type="SYSTEM", title="테스트", body="내용")
+    await Notification.create(user=user, notification_type="MEDICATION", title="테스트", body="내용")
 
     resp = await auth_client.get("/api/notifications")
     assert resp.json()["success"] is True
@@ -56,8 +56,8 @@ async def test_unread_count(auth_client: AsyncClient):
     user_id = user_resp.json()["data"]["id"]
     user = await User.get(id=user_id)
 
-    await Notification.create(user=user, notification_type="SYSTEM", title="알림1")
-    await Notification.create(user=user, notification_type="SYSTEM", title="알림2", is_read=True)
+    await Notification.create(user=user, notification_type="MEDICATION", title="알림1")
+    await Notification.create(user=user, notification_type="MEDICATION", title="알림2", is_read=True)
 
     resp = await auth_client.get("/api/notifications/unread-count")
     assert resp.status_code == 200
@@ -71,8 +71,8 @@ async def test_read_all_notifications(auth_client: AsyncClient):
     user_id = user_resp.json()["data"]["id"]
     user = await User.get(id=user_id)
 
-    await Notification.create(user=user, notification_type="SYSTEM", title="알림1")
-    await Notification.create(user=user, notification_type="SYSTEM", title="알림2")
+    await Notification.create(user=user, notification_type="CAREGIVER", title="알림1")
+    await Notification.create(user=user, notification_type="CAREGIVER", title="알림2")
 
     resp = await auth_client.post("/api/notifications/read-all")
     assert resp.status_code == 200
@@ -149,8 +149,8 @@ async def test_sse_stream_sends_initial_count(auth_client: AsyncClient):
     user_resp = await auth_client.get("/api/users/me")
     user_id = user_resp.json()["data"]["id"]
     user = await User.get(id=user_id)
-    await Notification.create(user=user, notification_type="SYSTEM", title="test1", is_read=False)
-    await Notification.create(user=user, notification_type="SYSTEM", title="test2", is_read=True)
+    await Notification.create(user=user, notification_type="MEDICATION", title="test1", is_read=False)
+    await Notification.create(user=user, notification_type="MEDICATION", title="test2", is_read=True)
 
     # SSE 스트림의 첫 이벤트 확인 — sleep을 CancelledError로 대체하여 1회만 실행
     async def one_shot_sleep(_seconds):

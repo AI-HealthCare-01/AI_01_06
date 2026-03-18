@@ -1,7 +1,7 @@
 from app.models.notification import Notification, NotificationSetting
 from app.models.user import User
 
-_ALLOWED_TYPES = {"MEDICATION", "CAREGIVER", "SYSTEM"}
+_ALLOWED_TYPES = {"MEDICATION", "CAREGIVER"}
 
 _TYPE_SETTING_MAP: dict[str, str] = {
     "MEDICATION": "medication_enabled",
