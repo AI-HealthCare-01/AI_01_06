@@ -7,11 +7,11 @@ from tortoise import Tortoise
 # Fallback to local default just in case, but prefer the env var
 DATABASE_URL = os.getenv("DATABASE_URL", "mysql://root:root@mysql:3306/sullivan")
 
-# Make this test skip if NO_DB_INTEGRATION_TEST environment variable is set
-# This helps in environments where docker is not running (e.g., standard CI without DB)
+# 기본적으로 skip. Docker가 실행 중일 때만 DB_INTEGRATION_TEST=1 로 활성화.
+# 실행 방법: DB_INTEGRATION_TEST=1 uv run pytest tests/integration/
 pytestmark = pytest.mark.skipif(
-    os.getenv("NO_DB_INTEGRATION_TEST") == "1",
-    reason="Database integration tests are disabled via NO_DB_INTEGRATION_TEST=1",
+    os.getenv("DB_INTEGRATION_TEST") != "1",
+    reason="Docker MySQL 필요. DB_INTEGRATION_TEST=1 환경변수 설정 후 실행하세요.",
 )
 
 

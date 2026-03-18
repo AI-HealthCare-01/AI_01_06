@@ -1,72 +1,159 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
-export default function LoginPage() {
+/** returnUrl이 안전한 내부 경로인지 검증 ("/"로 시작 + "//"로 시작하지 않음) */
+function getSafeReturnUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return null;
+}
+
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // 이미 로그인된 사용자는 적절한 페이지로 리다이렉트
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+    if (returnUrl) {
+      router.replace(returnUrl);
+    } else {
+      router.replace(user.role === "GUARDIAN" ? "/caregivers" : "/dashboard");
+    }
+  }, [user, authLoading, router, searchParams]);
+
+  const handleKakaoLogin = async () => {
+    const res = await api.getKakaoUrl();
+    if (res.success && res.data) {
+      window.location.href = res.data.url;
+    } else {
+      setError("카카오 로그인을 시작할 수 없습니다.");
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    const res = await api.getGoogleUrl();
+    if (res.success && res.data) {
+      window.location.href = res.data.url;
+    } else {
+      setError("Google 로그인을 시작할 수 없습니다.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const err = await login(email, password);
-    if (err) {
-      setError(err);
+    const result = await login(email, password);
+    if (typeof result === "string") {
+      setError(result);
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+      if (returnUrl) {
+        router.push(returnUrl);
+      } else {
+        router.push(result.role === "GUARDIAN" ? "/caregivers" : "/dashboard");
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
       <Header />
-      <div className="flex items-center justify-center py-20">
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-sm w-full max-w-md space-y-6">
+      <div className="flex items-center justify-center py-10 md:py-20 px-4 pb-24 md:pb-10">
+        <form onSubmit={handleSubmit} className="p-6 md:p-8 rounded-lg w-full max-w-md space-y-6" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
           <h1 className="text-2xl font-bold text-center">로그인</h1>
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {error && <p className="text-sm text-center" style={{ color: 'var(--color-danger)' }}>{error}</p>}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>이메일</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full px-4 py-2 input-field"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>비밀번호</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full px-4 py-2 input-field"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="w-full py-2 btn-primary"
           >
             {loading ? "로그인 중..." : "로그인"}
           </button>
-          <p className="text-center text-sm text-gray-500">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t" style={{ borderColor: 'var(--color-border)' }} />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2" style={{ background: 'var(--color-card-bg)', color: 'var(--color-text-muted)' }}>또는</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleKakaoLogin}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium hover:brightness-95 transition"
+            style={{ background: 'var(--color-kakao)', color: 'var(--color-kakao-text)' }}
+          >
+            카카오로 시작하기
+          </button>
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium transition"
+            style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            Google로 시작하기
+          </button>
+          <p className="text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
             계정이 없으신가요?{" "}
-            <Link href="/signup" className="text-blue-600 hover:underline">회원가입</Link>
+            <Link href="/signup" className="hover:underline" style={{ color: 'var(--color-primary)' }}>회원가입</Link>
           </p>
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-bg)" }}>
+          <p style={{ color: "var(--color-text-muted)" }}>로딩 중...</p>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

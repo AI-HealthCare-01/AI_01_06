@@ -9,8 +9,11 @@ __pycache__/
 
 # Environment Variables
 .env
+.env*
+*.env
 .env.local
 .*.env
+envs/*.env
 
 # Build & Packaging
 build/
@@ -33,7 +36,13 @@ node_modules/
 
 # Databases
 *.db
-db.sqlite3
+*.sqlite3
+*.sqlite3-???
+
+# SQLite 관련 임시/백업 파일
+*.db-shm
+*.db-wal
+*.dump
 
 # Uploads & Media
 uploads/
@@ -45,3 +54,9 @@ uploads/
 docs/*
 .agents/*
 .claude/*
+.serena/*
+.mcp.json
+
+# RAG generated data
+app/data/faiss/
+app/data/raw_drug_chunks.json

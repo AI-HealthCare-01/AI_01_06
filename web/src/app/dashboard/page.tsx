@@ -1,56 +1,77 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { usePatient } from "@/lib/patient-context";
 import AppLayout from "@/components/AppLayout";
+import TodayMedicationPanel from "@/components/dashboard/TodayMedicationPanel";
+import FeatureQuickAccessPanel from "@/components/dashboard/FeatureQuickAccessPanel";
+import RecentGuideListPanel from "@/components/dashboard/RecentGuideListPanel";
+import PatientHealthSummary from "@/components/dashboard/PatientHealthSummary";
+import { api, TodayScheduleItem } from "@/lib/api";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const { activePatient, isProxyMode } = usePatient();
+  const [schedules, setSchedules] = useState<TodayScheduleItem[]>([]);
+  const [loadingSchedules, setLoadingSchedules] = useState(true);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.listTodaySchedules().then((res) => {
+      if (res.success && res.data) {
+        setSchedules(res.data);
+      } else {
+        setScheduleError(res.error || "복약 스케줄을 불러오지 못했습니다.");
+      }
+      setLoadingSchedules(false);
+    });
+  }, []);
+
+  const hasActiveSchedules = !loadingSchedules && schedules.length > 0;
+  const today = new Date().toLocaleDateString("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
+
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold mb-6">대시보드</h1>
+      {/* 인사 헤더 */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">안녕하세요, {user?.nickname}님</h1>
+        {isProxyMode && activePatient ? (
+          <p className="text-sm mt-1" style={{ color: "var(--color-primary)" }}>
+            {activePatient.name}님의 건강 현황입니다
+          </p>
+        ) : (
+          <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+            {today}
+          </p>
+        )}
+      </div>
 
-      {/* Main feature cards */}
-      <section className="mb-8">
-        <h2 className="text-lg font-bold mb-4">주요기능</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <Link href="/prescriptions/upload" className="bg-white rounded-lg p-6 shadow-sm text-center hover:shadow-md transition">
-            <div className="w-16 h-16 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-              <span className="text-2xl">📋</span>
-            </div>
-            <h3 className="font-bold">처방전 업로드</h3>
-            <p className="text-sm text-gray-500 mt-1">새로운 처방전을 업로드하고 가이드를 받아보세요</p>
-          </Link>
-          <Link href="/guides" className="bg-white rounded-lg p-6 shadow-sm text-center hover:shadow-md transition">
-            <div className="w-16 h-16 bg-green-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-              <span className="text-2xl">📖</span>
-            </div>
-            <h3 className="font-bold">복약 가이드 확인</h3>
-            <p className="text-sm text-gray-500 mt-1">이전에 생성된 가이드를 다시 확인하세요</p>
-          </Link>
-          <Link href="/chat" className="bg-white rounded-lg p-6 shadow-sm text-center hover:shadow-md transition">
-            <div className="w-16 h-16 bg-purple-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-              <span className="text-2xl">💬</span>
-            </div>
-            <h3 className="font-bold">AI 상담</h3>
-            <p className="text-sm text-gray-500 mt-1">복약에 대해 AI에게 질문하세요</p>
-          </Link>
-        </div>
-      </section>
+      {/* 대리 모드: 건강 요약 상단 패널 (모바일 전용) */}
+      <PatientHealthSummary />
 
-      {/* Today's schedule placeholder */}
-      <section className="mb-8">
-        <h2 className="text-lg font-bold mb-4">오늘의 복약 일정</h2>
-        <div className="bg-white rounded-lg p-6 shadow-sm text-center text-gray-400">
-          아직 복약 일정이 없습니다. 처방전을 업로드하여 가이드를 생성해보세요.
-        </div>
-      </section>
+      {/* 스케줄 로드 에러 */}
+      {scheduleError && (
+        <p className="text-sm mb-4" style={{ color: "var(--color-danger)" }}>
+          {scheduleError}
+        </p>
+      )}
 
-      {/* Recent guide placeholder */}
-      <section>
-        <h2 className="text-lg font-bold mb-4">최근 복약 가이드</h2>
-        <div className="bg-white rounded-lg p-6 shadow-sm text-center text-gray-400">
-          아직 생성된 가이드가 없습니다.
-        </div>
-      </section>
+      {/* 조건부 상단 패널 */}
+      {loadingSchedules ? (
+        <FeatureQuickAccessPanel loading />
+      ) : hasActiveSchedules ? (
+        <TodayMedicationPanel schedules={schedules} onSchedulesChange={setSchedules} />
+      ) : (
+        <FeatureQuickAccessPanel loading={false} />
+      )}
+
+      {/* 공통 하단 패널 */}
+      <RecentGuideListPanel />
     </AppLayout>
   );
 }

@@ -3,7 +3,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 
-from app.core.deps import get_current_user
+from app.core.deps import get_acting_patient
 from app.core.redis import enqueue
 from app.core.response import success_response
 from app.models.prescription import Medication, Prescription
@@ -12,11 +12,14 @@ from app.schemas.prescription import OcrUpdateRequest
 
 router = APIRouter(prefix="/api/prescriptions", tags=["prescriptions"])
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "uploads")
 
 
 @router.post("")
-async def upload_prescription(file: UploadFile, user: User = Depends(get_current_user)):
+async def upload_prescription(file: UploadFile, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     ext = os.path.splitext(file.filename or "image.png")[1]
     filename = f"{uuid.uuid4()}{ext}"
@@ -27,12 +30,12 @@ async def upload_prescription(file: UploadFile, user: User = Depends(get_current
         f.write(content)
 
     prescription = await Prescription.create(
-        user=user,
-        image_path=filepath,
+        user=target_user,
+        acted_by=current_user if patient else None,
         ocr_status="processing",
     )
 
-    await enqueue("ocr_task", prescription.id)
+    await enqueue("ocr_task", prescription.id, filepath)
 
     return success_response(
         {
@@ -43,8 +46,10 @@ async def upload_prescription(file: UploadFile, user: User = Depends(get_current
 
 
 @router.get("")
-async def list_prescriptions(user: User = Depends(get_current_user)):
-    prescriptions = await Prescription.filter(user=user).order_by("-created_at")
+async def list_prescriptions(actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    prescriptions = await Prescription.filter(user=target_user).order_by("-created_at")
     result = []
     for p in prescriptions:
         med_count = await Medication.filter(prescription=p).count()
@@ -64,14 +69,15 @@ async def list_prescriptions(user: User = Depends(get_current_user)):
 
 
 @router.get("/{prescription_id}")
-async def get_prescription(prescription_id: int, user: User = Depends(get_current_user)):
-    prescription = await Prescription.get_or_none(id=prescription_id, user=user)
+async def get_prescription(prescription_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    prescription = await Prescription.get_or_none(id=prescription_id, user=target_user)
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
     return success_response(
         {
             "id": prescription.id,
-            "image_path": prescription.image_path,
             "hospital_name": prescription.hospital_name,
             "doctor_name": prescription.doctor_name,
             "prescription_date": str(prescription.prescription_date) if prescription.prescription_date else None,
@@ -83,8 +89,10 @@ async def get_prescription(prescription_id: int, user: User = Depends(get_curren
 
 
 @router.delete("/{prescription_id}")
-async def delete_prescription(prescription_id: int, user: User = Depends(get_current_user)):
-    prescription = await Prescription.get_or_none(id=prescription_id, user=user)
+async def delete_prescription(prescription_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    prescription = await Prescription.get_or_none(id=prescription_id, user=target_user)
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
     await Medication.filter(prescription=prescription).delete()
@@ -93,8 +101,10 @@ async def delete_prescription(prescription_id: int, user: User = Depends(get_cur
 
 
 @router.get("/{prescription_id}/ocr")
-async def get_ocr_result(prescription_id: int, user: User = Depends(get_current_user)):
-    prescription = await Prescription.get_or_none(id=prescription_id, user=user)
+async def get_ocr_result(prescription_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    prescription = await Prescription.get_or_none(id=prescription_id, user=target_user)
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
     medications = await Medication.filter(prescription=prescription)
@@ -124,9 +134,11 @@ async def get_ocr_result(prescription_id: int, user: User = Depends(get_current_
 async def update_ocr_result(
     prescription_id: int,
     req: OcrUpdateRequest,
-    user: User = Depends(get_current_user),
+    actors: tuple[User, User | None] = Depends(get_acting_patient),
 ):
-    prescription = await Prescription.get_or_none(id=prescription_id, user=user)
+    current_user, patient = actors
+    target_user = patient or current_user
+    prescription = await Prescription.get_or_none(id=prescription_id, user=target_user)
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
 
@@ -152,8 +164,10 @@ async def update_ocr_result(
 
 
 @router.get("/{prescription_id}/medications")
-async def list_medications(prescription_id: int, user: User = Depends(get_current_user)):
-    prescription = await Prescription.get_or_none(id=prescription_id, user=user)
+async def list_medications(prescription_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    prescription = await Prescription.get_or_none(id=prescription_id, user=target_user)
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
     medications = await Medication.filter(prescription=prescription)

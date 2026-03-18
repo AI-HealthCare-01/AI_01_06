@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
@@ -11,13 +12,16 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), salt).decode()
 
 
-def verify_password(plain: str, hashed: str) -> bool:
+def verify_password(plain: str, hashed: str | None) -> bool:
+    if not hashed:
+        return False
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
 def create_access_token(user_id: int, role: str) -> str:
+    jti = str(uuid.uuid4())
     expire = datetime.now(UTC) + timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "role": role, "exp": expire, "type": "access"}
+    payload = {"sub": str(user_id), "role": role, "exp": expire, "type": "access", "jti": jti}
     return jwt.encode(payload, config.SECRET_KEY, algorithm=config.ALGORITHM)
 
 

@@ -5,7 +5,7 @@ from tortoise.models import Model
 class Prescription(Model):
     id = fields.IntField(primary_key=True)
     user = fields.ForeignKeyField("models.User", related_name="prescriptions")
-    image_path = fields.CharField(max_length=500)
+    acted_by = fields.ForeignKeyField("models.User", null=True, related_name="proxy_prescriptions")
     hospital_name = fields.CharField(max_length=200, null=True)
     doctor_name = fields.CharField(max_length=100, null=True)
     prescription_date = fields.DateField(null=True)

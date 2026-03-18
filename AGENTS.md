@@ -96,3 +96,32 @@ Always write one test at a time, make it run, then improve structure. Always run
 
 Output have to be Korean.
 
+# GIT OPERATION RULES
+
+Git 관련 작업은 항상 **사용자가 직접 수행**합니다.  
+AI 에이전트는 Git 저장소 상태를 변경하는 작업을 수행하지 않습니다.
+
+## 금지된 작업
+AI 에이전트는 다음 작업을 실행하거나 자동화하지 않습니다.
+
+- git commit
+- git push
+- git pull
+- git merge
+- git rebase
+- git stash
+- git branch 생성 / 삭제 / 전환
+- 원격 저장소 변경
+
+## 허용된 작업
+AI 에이전트는 다음 작업만 수행할 수 있습니다.
+
+- 현재 변경사항에 대한 Git 작업 **권장 절차 설명**
+- 커밋 메시지 **제안**
+- 변경 단위가 **structural / behavioral** 중 어떤 유형인지 설명
+- 적절한 **커밋 분리 전략 안내**
+
+## 원칙
+- AGENTS.md의 **commit discipline 규칙은 유지**합니다.
+- 단, 실제 Git 명령 실행은 **항상 사용자 책임**입니다.
+- AI는 Git 작업을 직접 수행하지 않고 **설명만 제공합니다.
