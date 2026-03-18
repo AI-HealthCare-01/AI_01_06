@@ -581,41 +581,45 @@ export default function ProfilePage() {
                   알림 유형
                 </h3>
 
-                {/* 복약 알림 */}
-                <div className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>복약알림</p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-                      약 복용 시간을 알려드립니다.
-                    </p>
-                  </div>
-                  <button
-                    role="switch"
-                    aria-checked={notiSettings.medication_enabled}
-                    aria-label="복약 알림 켜기/끄기"
-                    onClick={() => {
-                      const prev = notiSettings;
-                      const next = !notiSettings.medication_enabled;
-                      setNotiSettings({ ...notiSettings, medication_enabled: next });
-                      handleNotiSave("medication_enabled", next, prev);
-                    }}
-                    className="w-11 h-6 rounded-full transition-colors relative cursor-pointer"
-                    style={{
-                      backgroundColor: notiSettings.medication_enabled
-                        ? "var(--color-primary)"
-                        : "var(--color-border)",
-                    }}
-                  >
-                    <span
-                      className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
-                      style={{
-                        transform: notiSettings.medication_enabled ? "translateX(20px)" : "translateX(0)",
-                      }}
-                    />
-                  </button>
-                </div>
+                {/* 복약 알림 (환자만 — 보호자는 본인 복약이 없으므로 불필요) */}
+                {isPatient && (
+                  <>
+                    <div className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>복약알림</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                          약 복용 시간을 알려드립니다.
+                        </p>
+                      </div>
+                      <button
+                        role="switch"
+                        aria-checked={notiSettings.medication_enabled}
+                        aria-label="복약 알림 켜기/끄기"
+                        onClick={() => {
+                          const prev = notiSettings;
+                          const next = !notiSettings.medication_enabled;
+                          setNotiSettings({ ...notiSettings, medication_enabled: next });
+                          handleNotiSave("medication_enabled", next, prev);
+                        }}
+                        className="w-11 h-6 rounded-full transition-colors relative cursor-pointer"
+                        style={{
+                          backgroundColor: notiSettings.medication_enabled
+                            ? "var(--color-primary)"
+                            : "var(--color-border)",
+                        }}
+                      >
+                        <span
+                          className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+                          style={{
+                            transform: notiSettings.medication_enabled ? "translateX(20px)" : "translateX(0)",
+                          }}
+                        />
+                      </button>
+                    </div>
 
-                <hr style={{ borderColor: "var(--color-border)" }} />
+                    <hr style={{ borderColor: "var(--color-border)" }} />
+                  </>
+                )}
 
                 {/* 보호자/돌봄대상 알림 */}
                 <div className="flex items-center justify-between py-3">
