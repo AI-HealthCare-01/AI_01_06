@@ -312,6 +312,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  // Notifications
+  getNotificationSettings: () =>
+    request("/api/notifications/settings"),
+
+  updateNotificationSettings: (data: Record<string, unknown>) =>
+    request("/api/notifications/settings", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 };
 
 export async function streamChat(
