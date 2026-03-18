@@ -128,15 +128,8 @@ export default function TodayMedicationPanel({ schedules, onSchedulesChange, not
       {/* 캐러셀 영역 */}
       <div
         className="overflow-hidden"
-        tabIndex={0}
-        role="region"
-        aria-label="시간대별 복약 캐러셀"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowRight" && currentPage < TIME_SLOTS.length - 1) setCurrentPage((p) => p + 1);
-          if (e.key === "ArrowLeft" && currentPage > 0) setCurrentPage((p) => p - 1);
-        }}
       >
         <div
           className="flex transition-transform duration-300 ease-out"
@@ -200,7 +193,7 @@ export default function TodayMedicationPanel({ schedules, onSchedulesChange, not
                             disabled={isTaken || !slotReached}
                             aria-label={`${item.medication_name} ${isTaken ? "복약완료" : slotReached ? "복약하기" : "예정"}`}
                             aria-pressed={isTaken}
-                            className="flex-shrink-0 ml-3 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200"
+                            className="flex-shrink-0 ml-3 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap"
                             style={
                               isTaken
                                 ? { background: "var(--color-success)", color: "#fff", cursor: "default" }
@@ -232,20 +225,52 @@ export default function TodayMedicationPanel({ schedules, onSchedulesChange, not
         </div>
       </div>
 
-      {/* 점 인디케이터 */}
-      <div className="flex justify-center gap-2 py-3">
-        {TIME_SLOTS.map((slot, i) => (
-          <button
-            key={slot}
-            onClick={() => setCurrentPage(i)}
-            aria-label={`${TIME_LABEL[slot]} 페이지`}
-            aria-current={currentPage === i ? "true" : undefined}
-            className="w-2 h-2 rounded-full transition-colors"
-            style={{
-              background: currentPage === i ? "var(--color-primary)" : "var(--color-border)",
-            }}
-          />
-        ))}
+      {/* 점 인디케이터 + 웹 전용 화살표 */}
+      <div className="flex items-center justify-center gap-3 py-3">
+        <button
+          onClick={() => setCurrentPage((p) => p - 1)}
+          disabled={currentPage === 0}
+          aria-label="이전 시간대"
+          className="hidden md:flex items-center justify-center w-7 h-7 rounded-full transition-colors"
+          style={{
+            border: "1px solid var(--color-border)",
+            color: currentPage === 0 ? "var(--color-border)" : "var(--color-text-muted)",
+            cursor: currentPage === 0 ? "not-allowed" : "pointer",
+            opacity: currentPage === 0 ? 0.4 : 1,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+
+        <div className="flex gap-2">
+          {TIME_SLOTS.map((slot, i) => (
+            <button
+              key={slot}
+              onClick={() => setCurrentPage(i)}
+              aria-label={`${TIME_LABEL[slot]} 페이지`}
+              aria-current={currentPage === i ? "true" : undefined}
+              className="w-2 h-2 rounded-full transition-colors"
+              style={{
+                background: currentPage === i ? "var(--color-primary)" : "var(--color-border)",
+              }}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={() => setCurrentPage((p) => p + 1)}
+          disabled={currentPage === TIME_SLOTS.length - 1}
+          aria-label="다음 시간대"
+          className="hidden md:flex items-center justify-center w-7 h-7 rounded-full transition-colors"
+          style={{
+            border: "1px solid var(--color-border)",
+            color: currentPage === TIME_SLOTS.length - 1 ? "var(--color-border)" : "var(--color-text-muted)",
+            cursor: currentPage === TIME_SLOTS.length - 1 ? "not-allowed" : "pointer",
+            opacity: currentPage === TIME_SLOTS.length - 1 ? 0.4 : 1,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
       </div>
     </div>
   );
