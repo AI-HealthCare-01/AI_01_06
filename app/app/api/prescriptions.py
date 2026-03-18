@@ -38,6 +38,13 @@ async def upload_prescription(file: UploadFile, actors: tuple[User, User | None]
 
     await enqueue("ocr_task", prescription.id, filepath)
 
+    if patient:
+        await create_notification(
+            user_id=patient.id,
+            notification_type="CAREGIVER",
+            title=f"{current_user.name}님이 처방전을 등록했습니다.",
+        )
+
     return success_response(
         {
             "id": prescription.id,

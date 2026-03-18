@@ -66,6 +66,13 @@ async def create_guide(req: GuideCreateRequest, actors: tuple[User, User | None]
 
     await enqueue("guide_task", guide.id, target_user.id)
 
+    if patient:
+        await create_notification(
+            user_id=patient.id,
+            notification_type="CAREGIVER",
+            title=f"{current_user.name}님이 복약 가이드를 생성했습니다.",
+        )
+
     return success_response(
         {
             "id": guide.id,

@@ -53,6 +53,14 @@ async def create_thread(req: ThreadCreateRequest, actors: tuple[User, User | Non
         kwargs["prescription"] = prescription
 
     thread = await ChatThread.create(**kwargs)
+
+    if patient:
+        await create_notification(
+            user_id=patient.id,
+            notification_type="CAREGIVER",
+            title=f"{current_user.name}님이 AI 상담을 진행했습니다.",
+        )
+
     return success_response(
         {
             "id": thread.id,

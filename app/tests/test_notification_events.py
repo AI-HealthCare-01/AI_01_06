@@ -118,9 +118,9 @@ async def test_proxy_prescription_creates_notification(client: AsyncClient):
     )
     assert resp.status_code == 200
 
+    # 수락 알림(환자=초대자에게 1개) + 처방전 알림(환자에게 1개) = 2
     notifications = await Notification.filter(user_id=patient_id, notification_type="CAREGIVER")
-    # 수락 알림(환자→보호자에게 갔으므로 환자 수신은 없음) + 처방전 알림 = 1
-    assert len(notifications) == 1
+    assert len(notifications) == 2
 
 
 @pytest.mark.asyncio
@@ -141,8 +141,9 @@ async def test_proxy_guide_creates_notification(client: AsyncClient):
     resp = await client.post("/api/guides", json={"prescription_id": prescription.id})
     assert resp.status_code == 200
 
+    # 수락 알림(환자=초대자에게 1개) + 가이드 알림(환자에게 1개) = 2
     notifications = await Notification.filter(user_id=patient_id, notification_type="CAREGIVER")
-    assert len(notifications) == 1
+    assert len(notifications) == 2
 
 
 # ──────────────────────────────────────────────
@@ -163,8 +164,9 @@ async def test_proxy_chat_creates_notification(client: AsyncClient):
     resp = await client.post("/api/chat/threads", json={})
     assert resp.status_code == 200
 
+    # 수락 알림(환자=초대자에게 1개) + 채팅 알림(환자에게 1개) = 2
     notifications = await Notification.filter(user_id=patient_id, notification_type="CAREGIVER")
-    assert len(notifications) == 1
+    assert len(notifications) == 2
 
 
 # ──────────────────────────────────────────────
@@ -184,5 +186,5 @@ async def test_own_mode_no_notification(client: AsyncClient):
     )
     assert resp.status_code == 200
 
-    notifications = await Notification.filter(notification_type="CAREGIVER")
+    notifications = await Notification.filter(user_id=patient_id, notification_type="CAREGIVER")
     assert len(notifications) == 0
