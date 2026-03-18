@@ -19,6 +19,7 @@ export interface TodayScheduleItem {
   medication_name: string;
   dosage: string | null;
   frequency: string | null;
+  instructions: string | null;
   time_of_day: "MORNING" | "NOON" | "EVENING" | "BEDTIME";
   today_status: "TAKEN" | "MISSED" | "SKIPPED" | null;
   today_log_id: number | null;

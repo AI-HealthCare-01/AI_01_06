@@ -79,6 +79,7 @@ async def get_today_schedules(actors: tuple = Depends(get_acting_patient)):
                 "medication_name": s.medication.name,
                 "dosage": s.medication.dosage,
                 "frequency": s.medication.frequency,
+                "instructions": s.medication.instructions,
                 "time_of_day": s.time_of_day,
                 "today_status": today_log.status if today_log else None,
                 "today_log_id": today_log.id if today_log else None,
