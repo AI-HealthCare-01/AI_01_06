@@ -656,36 +656,38 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* 시간 설정 */}
-              <div className="app-card p-6">
-                <h3 className="text-sm font-bold mb-4" style={{ color: "var(--color-text)" }}>
-                  시간 설정
-                </h3>
-                {([
-                  { key: "morning_time", label: "아침" },
-                  { key: "noon_time", label: "점심" },
-                  { key: "evening_time", label: "저녁" },
-                  { key: "bedtime_time", label: "자기전" },
-                ] as const).map(({ key, label }) => (
-                  <div key={key} className="flex items-center justify-between py-3">
-                    <span className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
-                      {label}
-                    </span>
-                    <input
-                      type="time"
-                      value={notiSettings[key] ?? ""}
-                      onChange={(e) => {
-                        setNotiSettings({ ...notiSettings, [key]: e.target.value });
-                      }}
-                      onBlur={(e) => {
-                        handleNotiSave(key, e.target.value, notiSettings);
-                      }}
-                      className="px-3 py-1.5 rounded-lg text-sm input-field"
-                      style={{ width: "120px" }}
-                    />
-                  </div>
-                ))}
-              </div>
+              {/* 시간 설정 — 환자만 (복약 스케줄 연동) */}
+              {isPatient && (
+                <div className="app-card p-6">
+                  <h3 className="text-sm font-bold mb-4" style={{ color: "var(--color-text)" }}>
+                    시간 설정
+                  </h3>
+                  {([
+                    { key: "morning_time", label: "아침" },
+                    { key: "noon_time", label: "점심" },
+                    { key: "evening_time", label: "저녁" },
+                    { key: "bedtime_time", label: "자기전" },
+                  ] as const).map(({ key, label }) => (
+                    <div key={key} className="flex items-center justify-between py-3">
+                      <span className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+                        {label}
+                      </span>
+                      <input
+                        type="time"
+                        value={notiSettings[key] ?? ""}
+                        onChange={(e) => {
+                          setNotiSettings({ ...notiSettings, [key]: e.target.value });
+                        }}
+                        onBlur={(e) => {
+                          handleNotiSave(key, e.target.value, notiSettings);
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-sm input-field"
+                        style={{ width: "120px" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* 저장 메시지 */}
               {notiMessage && (
