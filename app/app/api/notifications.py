@@ -116,10 +116,43 @@ async def get_settings(user: User = Depends(get_current_user)):
     )
 
 
+_TIME_FIELDS_ORDERED = ["morning_time", "noon_time", "evening_time", "bedtime_time"]
+_TIME_LABELS = {"morning_time": "아침", "noon_time": "점심", "evening_time": "저녁", "bedtime_time": "자기전"}
+_MIN_GAP_MINUTES = 240  # 4시간
+
+
+def _parse_time_minutes(time_str: str) -> int:
+    """'HH:MM' → 분 단위 정수."""
+    h, m = map(int, time_str.split(":")[:2])
+    return h * 60 + m
+
+
 @router.put("/settings")
 async def update_settings(req: NotificationSettingUpdate, user: User = Depends(get_current_user)):
     setting, _ = await NotificationSetting.get_or_create(user=user)
     update_data = req.model_dump(exclude_unset=True)
+
+    # 시간 필드가 포함된 경우 간격 검증
+    time_fields_in_request = [f for f in _TIME_FIELDS_ORDERED if f in update_data]
+    if time_fields_in_request:
+        final_times: dict[str, str | None] = {}
+        for f in _TIME_FIELDS_ORDERED:
+            if f in update_data:
+                final_times[f] = update_data[f]
+            else:
+                final_times[f] = str(getattr(setting, f)) if getattr(setting, f, None) else None
+
+        present = [(f, final_times[f]) for f in _TIME_FIELDS_ORDERED if final_times[f]]
+        for i in range(len(present) - 1):
+            curr_field, curr_val = present[i]
+            next_field, next_val = present[i + 1]
+            gap = _parse_time_minutes(str(next_val)) - _parse_time_minutes(str(curr_val))
+            if gap < _MIN_GAP_MINUTES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"{_TIME_LABELS[curr_field]}과 {_TIME_LABELS[next_field]} 사이 간격은 최소 4시간이어야 합니다.",
+                )
+
     for field, value in update_data.items():
         setattr(setting, field, value)
     await setting.save()

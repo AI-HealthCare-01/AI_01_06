@@ -169,3 +169,34 @@ async def test_sse_stream_sends_initial_count(auth_client: AsyncClient):
     event = json.loads(data_lines[0][6:])
     assert event["type"] == "unread_count"
     assert event["count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_settings_time_gap_validation(auth_client: AsyncClient):
+    """인접한 시간대 간격이 4시간 미만이면 400을 반환한다."""
+    resp = await auth_client.put(
+        "/api/notifications/settings",
+        json={"morning_time": "08:00", "noon_time": "09:00"},
+    )
+    assert resp.status_code == 400
+    assert "4시간" in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_settings_time_gap_valid(auth_client: AsyncClient):
+    """인접한 시간대 간격이 4시간 이상이면 정상 저장된다."""
+    resp = await auth_client.put(
+        "/api/notifications/settings",
+        json={"morning_time": "08:00", "noon_time": "12:00", "evening_time": "18:00", "bedtime_time": "22:00"},
+    )
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_settings_partial_update_no_gap_check(auth_client: AsyncClient):
+    """시간 필드 미포함 요청은 간격 검증을 수행하지 않는다."""
+    resp = await auth_client.put(
+        "/api/notifications/settings",
+        json={"medication_enabled": False},
+    )
+    assert resp.status_code == 200
