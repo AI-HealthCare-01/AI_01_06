@@ -10,9 +10,6 @@ from app.services.notification_service import create_notification
 async def test_create_and_list_notifications(auth_client: AsyncClient):
     user_resp = await auth_client.get("/api/users/me")
     user_id = user_resp.json()["data"]["id"]
-
-    from app.models.user import User
-
     user = await User.get(id=user_id)
     await Notification.create(user=user, notification_type="SYSTEM", title="테스트", body="내용")
 
@@ -26,9 +23,6 @@ async def test_create_and_list_notifications(auth_client: AsyncClient):
 async def test_mark_notification_read(auth_client: AsyncClient):
     user_resp = await auth_client.get("/api/users/me")
     user_id = user_resp.json()["data"]["id"]
-
-    from app.models.user import User
-
     user = await User.get(id=user_id)
     notif = await Notification.create(user=user, notification_type="MEDICATION", title="복약 알림")
 
