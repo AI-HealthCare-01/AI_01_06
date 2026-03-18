@@ -17,6 +17,7 @@ from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.chat import FeedbackRequest, MessageSendRequest, ThreadCreateRequest
 from app.services.chat_service import SYSTEM_PROMPT, get_chat_service
+from app.services.notification_service import create_notification
 from app.services.retrieval_service import format_retrieved_docs, get_retrieval_service
 
 logger = logging.getLogger(__name__)

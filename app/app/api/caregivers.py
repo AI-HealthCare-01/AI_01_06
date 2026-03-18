@@ -10,6 +10,7 @@ from app.core.response import success_response
 from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.user import User
 from app.services.invite_service import consume_invite_token, create_invite_token, get_invite_data
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/api/caregivers", tags=["caregivers"])
 

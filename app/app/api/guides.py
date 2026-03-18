@@ -7,6 +7,7 @@ from app.models.guide import Guide
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.guide import GuideCreateRequest
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/api/guides", tags=["guides"])
 
