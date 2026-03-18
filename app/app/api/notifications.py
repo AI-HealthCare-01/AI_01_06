@@ -12,6 +12,8 @@ router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
 
 class NotificationSettingUpdate(BaseModel):
+    medication_enabled: bool | None = None
+    caregiver_enabled: bool | None = None
     time_format: str | None = None
     sound_key: str | None = None
     morning_time: str | None = None
@@ -40,6 +42,18 @@ async def list_notifications(is_read: bool | None = None, user: User = Depends(g
     return success_response(result)
 
 
+@router.get("/unread-count")
+async def get_unread_count(user: User = Depends(get_current_user)):
+    count = await Notification.filter(user=user, is_read=False).count()
+    return success_response({"count": count})
+
+
+@router.post("/read-all")
+async def read_all(user: User = Depends(get_current_user)):
+    updated_count = await Notification.filter(user=user, is_read=False).update(is_read=True, read_at=datetime.now(UTC))
+    return success_response({"updated_count": updated_count})
+
+
 @router.patch("/{notification_id}/read")
 async def mark_as_read(notification_id: int, user: User = Depends(get_current_user)):
     notification = await Notification.get_or_none(id=notification_id, user=user)
@@ -58,6 +72,8 @@ async def get_settings(user: User = Depends(get_current_user)):
         return success_response(None)
     return success_response(
         {
+            "medication_enabled": setting.medication_enabled,
+            "caregiver_enabled": setting.caregiver_enabled,
             "time_format": setting.time_format,
             "sound_key": setting.sound_key,
             "morning_time": str(setting.morning_time) if setting.morning_time else None,

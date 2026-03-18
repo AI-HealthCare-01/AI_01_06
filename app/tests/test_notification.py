@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 
-from app.models.notification import Notification, NotificationSetting
+from app.models.notification import Notification
 from app.models.user import User
 from app.services.notification_service import create_notification
 
