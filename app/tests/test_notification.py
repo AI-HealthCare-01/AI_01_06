@@ -153,8 +153,6 @@ async def test_sse_stream_sends_initial_count(auth_client: AsyncClient):
     await Notification.create(user=user, notification_type="SYSTEM", title="test2", is_read=True)
 
     # SSE 스트림의 첫 이벤트 확인 — sleep을 CancelledError로 대체하여 1회만 실행
-    original_sleep = asyncio.sleep
-
     async def one_shot_sleep(_seconds):
         raise asyncio.CancelledError
 
@@ -166,7 +164,7 @@ async def test_sse_stream_sends_initial_count(auth_client: AsyncClient):
             async for line in response.aiter_lines():
                 lines.append(line)
 
-    data_lines = [l for l in lines if l.startswith("data: ")]
+    data_lines = [line for line in lines if line.startswith("data: ")]
     assert len(data_lines) == 1
     event = json.loads(data_lines[0][6:])
     assert event["type"] == "unread_count"

@@ -30,3 +30,4 @@ class Notification(Model):
 
     class Meta:
         table = "notifications"
+        indexes = [("user_id", "is_read")]
