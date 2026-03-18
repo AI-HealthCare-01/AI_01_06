@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { PatientProvider } from "@/lib/patient-context";
 import { SocialRegistrationProvider } from "@/lib/social-registration-context";
 
 export const metadata: Metadata = {
@@ -24,7 +25,9 @@ export default function RootLayout({
     <html lang="ko">
       <body className="antialiased">
         <SocialRegistrationProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <PatientProvider>{children}</PatientProvider>
+          </AuthProvider>
         </SocialRegistrationProvider>
       </body>
     </html>

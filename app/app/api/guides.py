@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.deps import get_current_user
+from app.core.deps import get_acting_patient
 from app.core.redis import enqueue
 from app.core.response import success_response
 from app.models.guide import Guide
@@ -12,14 +12,19 @@ router = APIRouter(prefix="/api/guides", tags=["guides"])
 
 
 @router.post("")
-async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current_user)):
-    prescription = await Prescription.get_or_none(id=req.prescription_id, user=user)
+async def create_guide(req: GuideCreateRequest, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+
+    prescription = await Prescription.get_or_none(id=req.prescription_id, user=target_user)
     if not prescription:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
 
     if prescription.ocr_status == "guide_completed" and not req.force:
         existing = (
-            await Guide.filter(prescription=prescription, user=user, status="completed").order_by("-created_at").first()
+            await Guide.filter(prescription=prescription, user=target_user, status="completed")
+            .order_by("-created_at")
+            .first()
         )
         if existing:
             return success_response(
@@ -31,7 +36,7 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
                 }
             )
 
-    generating = await Guide.filter(prescription=prescription, user=user, status="generating").first()
+    generating = await Guide.filter(prescription=prescription, user=target_user, status="generating").first()
     if generating:
         return success_response(
             {
@@ -49,15 +54,16 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
     if not medications:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="처방된 약물 정보가 없습니다.")
 
-    await Guide.filter(prescription=prescription, user=user).delete()
+    await Guide.filter(prescription=prescription, user=target_user).delete()
 
     guide = await Guide.create(
-        user=user,
+        user=target_user,
+        acted_by=current_user if patient else None,
         prescription=prescription,
         status="generating",
     )
 
-    await enqueue("guide_task", guide.id, user.id)
+    await enqueue("guide_task", guide.id, target_user.id)
 
     return success_response(
         {
@@ -70,8 +76,14 @@ async def create_guide(req: GuideCreateRequest, user: User = Depends(get_current
 
 
 @router.get("")
-async def list_guides(user: User = Depends(get_current_user)):
-    guides = await Guide.filter(user=user, status="completed").order_by("-created_at").prefetch_related("prescription")
+async def list_guides(actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    guides = (
+        await Guide.filter(user=target_user, status="completed")
+        .order_by("-created_at")
+        .prefetch_related("prescription")
+    )
     result = []
     for guide in guides:
         prescription = guide.prescription
@@ -95,8 +107,14 @@ async def list_guides(user: User = Depends(get_current_user)):
 
 
 @router.delete("/{guide_id}")
-async def delete_guide(guide_id: int, user: User = Depends(get_current_user)):
-    guide = await Guide.get_or_none(id=guide_id, user=user)
+async def delete_guide(guide_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    if patient:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="보호자는 가이드를 삭제할 수 없습니다.",
+        )
+    guide = await Guide.get_or_none(id=guide_id, user=current_user)
     if not guide:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="가이드를 찾을 수 없습니다.")
     await guide.delete()
@@ -104,8 +122,10 @@ async def delete_guide(guide_id: int, user: User = Depends(get_current_user)):
 
 
 @router.get("/{guide_id}")
-async def get_guide(guide_id: int, user: User = Depends(get_current_user)):
-    guide = await Guide.get_or_none(id=guide_id, user=user)
+async def get_guide(guide_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    guide = await Guide.get_or_none(id=guide_id, user=target_user)
     if not guide:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="가이드를 찾을 수 없습니다.")
 

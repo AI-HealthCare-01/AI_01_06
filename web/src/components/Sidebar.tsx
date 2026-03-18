@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { usePatient } from "@/lib/patient-context";
 
 /* ── Sidebar Icons (20×20) ── */
 function IconHome() {
@@ -41,11 +42,12 @@ function IconChat() {
   );
 }
 
-function IconSettings() {
+function IconChatHistory() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" />
+      <circle cx="12" cy="10" r="3" />
+      <polyline points="12 8 12 10 13.5 11" />
     </svg>
   );
 }
@@ -70,25 +72,34 @@ function IconProfile() {
 }
 
 const topMenuItems = [
-  { href: "/caregivers", label: "보호자 관리", roles: ["guardian"], icon: IconGuardian },
-  { href: "/dashboard", label: "대시보드", roles: ["patient"], icon: IconHome },
-  { href: "/prescriptions/upload", label: "처방전 업로드", roles: ["patient"], icon: IconPrescription },
-  { href: "/guides", label: "가이드 내역", roles: ["patient"], icon: IconGuide },
-  { href: "/chat", label: "AI 상담", roles: ["patient", "guardian"], icon: IconChat },
+  {
+    href: "/caregivers",
+    label: (role: string) => (role === "guardian" ? "돌봄 대상 관리" : "나의 보호자"),
+    roles: ["guardian", "patient"],
+    icon: IconGuardian,
+  },
+  { href: "/dashboard", label: () => "대시보드", roles: ["patient"], icon: IconHome },
+  { href: "/prescriptions/upload", label: () => "처방전 업로드", roles: ["patient"], icon: IconPrescription },
+  { href: "/guides", label: () => "가이드 내역", roles: ["patient"], icon: IconGuide },
+  { href: "/chat", label: () => "AI 상담", roles: ["patient", "guardian"], icon: IconChat },
+  { href: "/chat/history", label: () => "상담기록", roles: ["patient", "guardian"], icon: IconChatHistory },
+  { href: "/proxy-profile", label: () => "돌봄 대상 프로필", roles: ["guardian_proxy"], icon: IconProfile },
 ];
 
 const bottomMenuItems = [
-  { href: "/profile", label: "내 정보", roles: ["patient", "guardian"], icon: IconProfile },
-  { href: "/settings", label: "설정", roles: ["patient", "guardian"], icon: IconSettings },
+  { href: "/profile", label: () => "마이페이지", roles: ["patient", "guardian"], icon: IconProfile },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { isProxyMode } = usePatient();
   const role = user?.role?.toLowerCase() || "patient";
 
-  function renderMenuItem(item: { href: string; label: string; roles: string[]; icon: () => React.JSX.Element }) {
-    const active = pathname.startsWith(item.href);
+  function renderMenuItem(item: { href: string; label: (role: string) => string; roles: string[]; icon: () => React.JSX.Element }) {
+    const active = item.href === "/chat"
+      ? pathname === "/chat" || (pathname.startsWith("/chat/") && !pathname.startsWith("/chat/history"))
+      : pathname.startsWith(item.href);
     const Icon = item.icon;
     return (
       <Link
@@ -105,7 +116,7 @@ export default function Sidebar() {
         onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = ""; }}
       >
         <Icon />
-        {item.label}
+        {item.label(role)}
       </Link>
     );
   }
@@ -116,7 +127,13 @@ export default function Sidebar() {
       style={{ background: "var(--color-card-bg)", borderColor: "var(--color-border)" }}
     >
       <nav className="flex-1 space-y-1" aria-label="메인 네비게이션">
-        {topMenuItems.filter((item) => item.roles.includes(role)).map(renderMenuItem)}
+        {topMenuItems
+          .filter((item) => {
+            if (item.roles.includes("guardian_proxy")) return isProxyMode;
+            if (isProxyMode) return item.roles.includes("patient") || item.roles.includes(role);
+            return item.roles.includes(role);
+          })
+          .map(renderMenuItem)}
       </nav>
       <hr style={{ borderColor: "var(--color-border)" }} className="my-2" />
       <nav className="space-y-1 py-2">

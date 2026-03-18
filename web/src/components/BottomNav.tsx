@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { usePatient } from "@/lib/patient-context";
 
 /* ── Nav Icons (24×24, stroke-based) ── */
 function IconHome({ active }: { active: boolean }) {
@@ -44,11 +45,12 @@ function IconChat({ active }: { active: boolean }) {
   );
 }
 
-function IconSettings({ active }: { active: boolean }) {
+function IconChatHistory({ active }: { active: boolean }) {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: active ? "var(--color-primary)" : "var(--color-text-muted)" }}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" />
+      <circle cx="12" cy="10" r="3" />
+      <polyline points="12 8 12 10 13.5 11" />
     </svg>
   );
 }
@@ -73,21 +75,26 @@ function IconProfile({ active }: { active: boolean }) {
 }
 
 const menuItems = [
-  { href: "/caregivers", label: "보호자", icon: IconGuardian, roles: ["guardian"] },
-  { href: "/dashboard", label: "홈", icon: IconHome, roles: ["patient"] },
-  { href: "/prescriptions/upload", label: "처방전", icon: IconPrescription, roles: ["patient"] },
-  { href: "/guides", label: "가이드", icon: IconGuide, roles: ["patient"] },
-  { href: "/chat", label: "AI 상담", icon: IconChat, roles: ["patient", "guardian"] },
-  { href: "/profile", label: "내 정보", icon: IconProfile, roles: ["guardian"] },
-  { href: "/settings", label: "설정", icon: IconSettings, roles: ["patient", "guardian"] },
+  { href: "/caregivers", label: (_role: string) => "돌봄 대상", icon: IconGuardian, roles: ["guardian"] },
+  { href: "/dashboard", label: () => "홈", icon: IconHome, roles: ["patient"] },
+  { href: "/prescriptions/upload", label: () => "처방전", icon: IconPrescription, roles: ["patient"] },
+  { href: "/guides", label: () => "가이드", icon: IconGuide, roles: ["patient"] },
+  { href: "/chat", label: () => "AI 상담", icon: IconChat, roles: ["patient"] },
+  { href: "/chat/history", label: () => "상담기록", icon: IconChatHistory, roles: ["guardian"] },
+  { href: "/profile", label: () => "마이페이지", icon: IconProfile, roles: ["patient", "guardian"] },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { isProxyMode } = usePatient();
   const role = user?.role?.toLowerCase() || "patient";
 
-  const visibleItems = menuItems.filter((item) => item.roles.includes(role));
+  const proxyPaths = ["/dashboard", "/prescriptions/upload", "/guides", "/chat/history"];
+  const visibleItems = menuItems.filter((item) => {
+    if (isProxyMode) return proxyPaths.includes(item.href);
+    return item.roles.includes(role);
+  });
 
   return (
     <nav
@@ -97,13 +104,15 @@ export default function BottomNav() {
     >
       <div className="flex items-center justify-around h-16">
         {visibleItems.map((item) => {
-          const active = pathname.startsWith(item.href);
+          const active = item.href === "/chat"
+            ? pathname === "/chat" || (pathname.startsWith("/chat/") && !pathname.startsWith("/chat/history"))
+            : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              aria-label={item.label}
+              aria-label={item.label(role)}
               aria-current={active ? "page" : undefined}
               className="flex flex-col items-center justify-center gap-0.5 min-w-[48px] min-h-[48px] px-2"
             >
@@ -112,7 +121,7 @@ export default function BottomNav() {
                 className="text-[10px] font-medium leading-tight"
                 style={{ color: active ? "var(--color-primary)" : "var(--color-text-muted)" }}
               >
-                {item.label}
+                {item.label(role)}
               </span>
             </Link>
           );
