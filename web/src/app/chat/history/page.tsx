@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
+import { usePatient } from "@/lib/patient-context";
 
 interface ThreadItem {
   id: number;
@@ -13,6 +14,7 @@ interface ThreadItem {
   status: "active" | "auto_closed" | "ended";
   created_at: string;
   updated_at: string;
+  acted_by_name: string | null;
 }
 
 interface PaginatedThreads {
@@ -41,6 +43,7 @@ function usePageSize() {
 }
 
 export default function ChatHistoryPage() {
+  const { activePatient, isProxyMode } = usePatient();
   const pageSize = usePageSize();
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,8 +105,16 @@ export default function ChatHistoryPage() {
     <AppLayout>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">대화 기록</h1>
-          <p style={{ color: "var(--color-text-muted)" }}>이전 AI 상담 내역을 확인하세요</p>
+          <h1 className="text-2xl font-bold">
+            {isProxyMode && activePatient
+              ? `${activePatient.name}님의 상담 기록`
+              : "대화 기록"}
+          </h1>
+          <p style={{ color: "var(--color-text-muted)" }}>
+            {isProxyMode && activePatient
+              ? `${activePatient.name}님의 이전 AI 상담 내역입니다`
+              : "이전 AI 상담 내역을 확인하세요"}
+          </p>
         </div>
         <Link href="/chat" className="px-4 py-2 rounded-lg btn-primary">
           새 상담 시작
@@ -145,6 +156,14 @@ export default function ChatHistoryPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold truncate">{thread.title || "제목 없음"}</h3>
+                      {thread.acted_by_name && (
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
+                          style={{ background: "var(--color-warning-soft, #fef3c7)", color: "var(--color-warning-text, #92400e)" }}
+                        >
+                          보호자 대리
+                        </span>
+                      )}
                       {thread.prescription_id && (
                         <span
                           className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"

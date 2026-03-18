@@ -2,8 +2,11 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from tortoise.contrib.fastapi import register_tortoise
 
+from app import config
 from app.api import (
     auth,
     caregivers,
@@ -18,6 +21,7 @@ from app.api import (
     users,
 )
 from app.core.database import TORTOISE_ORM
+from app.core.rate_limit import limiter
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,12 +31,16 @@ logging.basicConfig(
 
 app = FastAPI(title="Project & Sullivan API", version="0.1.0")
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=config.ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Acting-For"],
+    max_age=600,
 )
 
 app.include_router(auth.router)

@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user
+from app.core.deps import get_acting_patient, get_current_user
 from app.core.response import success_response
 from app.models.prescription import Medication
 from app.models.schedule import AdherenceLog, MedicationSchedule
@@ -55,12 +55,14 @@ async def create_schedules(items: list[ScheduleCreateItem], user: User = Depends
 
 
 @router.get("/today")
-async def get_today_schedules(user: User = Depends(get_current_user)):
+async def get_today_schedules(actors: tuple = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
     today = date.today()
     schedules = await MedicationSchedule.filter(
         start_date__lte=today,
         end_date__gte=today,
-        medication__prescription__user=user,
+        medication__prescription__user=target_user,
     ).prefetch_related("medication")
 
     schedule_ids = [s.id for s in schedules]
@@ -86,7 +88,10 @@ async def get_today_schedules(user: User = Depends(get_current_user)):
 
 
 @router.post("/{schedule_id}/log")
-async def log_adherence(schedule_id: int, req: AdherenceLogRequest, user: User = Depends(get_current_user)):
+async def log_adherence(schedule_id: int, req: AdherenceLogRequest, actors: tuple = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+
     valid_statuses = {"TAKEN", "MISSED", "SKIPPED"}
     if req.status not in valid_statuses:
         raise HTTPException(
@@ -98,12 +103,12 @@ async def log_adherence(schedule_id: int, req: AdherenceLogRequest, user: User =
     if not schedule:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="스케줄을 찾을 수 없습니다.")
     await schedule.fetch_related("medication__prescription")
-    if schedule.medication.prescription.user_id != user.id:
+    if schedule.medication.prescription.user_id != target_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="권한이 없습니다.")
 
     log = await AdherenceLog.create(
         schedule=schedule,
-        actor_user=user,
+        actor_user=current_user,
         target_date=date.fromisoformat(req.target_date),
         status=req.status,
         note=req.note,

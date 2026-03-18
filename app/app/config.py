@@ -39,3 +39,13 @@ KAKAO_REDIRECT_URI: str = os.environ.get("KAKAO_REDIRECT_URI", "http://localhost
 GOOGLE_CLIENT_ID: str = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET: str = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI: str = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:3000/auth/google/callback")
+
+FRONTEND_URL: str = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+ALLOWED_ORIGINS: list[str] = [
+    o.strip()
+    for o in os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost").split(",")
+    if o.strip()
+]
+if "*" in ALLOWED_ORIGINS:
+    raise ValueError("ALLOWED_ORIGINS에 와일드카드('*')를 사용할 수 없습니다. 명시적 도메인을 설정하세요.")

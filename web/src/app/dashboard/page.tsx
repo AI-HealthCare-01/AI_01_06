@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { usePatient } from "@/lib/patient-context";
 import AppLayout from "@/components/AppLayout";
 import TodayMedicationPanel from "@/components/dashboard/TodayMedicationPanel";
 import FeatureQuickAccessPanel from "@/components/dashboard/FeatureQuickAccessPanel";
 import RecentGuideListPanel from "@/components/dashboard/RecentGuideListPanel";
+import PatientHealthSummary from "@/components/dashboard/PatientHealthSummary";
 import { api, TodayScheduleItem } from "@/lib/api";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { activePatient, isProxyMode } = usePatient();
   const [schedules, setSchedules] = useState<TodayScheduleItem[]>([]);
   const [loadingSchedules, setLoadingSchedules] = useState(true);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
@@ -37,10 +40,19 @@ export default function DashboardPage() {
       {/* 인사 헤더 */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">안녕하세요, {user?.nickname}님</h1>
-        <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-          {today}
-        </p>
+        {isProxyMode && activePatient ? (
+          <p className="text-sm mt-1" style={{ color: "var(--color-primary)" }}>
+            {activePatient.name}님의 건강 현황입니다
+          </p>
+        ) : (
+          <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+            {today}
+          </p>
+        )}
       </div>
+
+      {/* 대리 모드: 건강 요약 상단 패널 (모바일 전용) */}
+      <PatientHealthSummary />
 
       {/* 스케줄 로드 에러 */}
       {scheduleError && (

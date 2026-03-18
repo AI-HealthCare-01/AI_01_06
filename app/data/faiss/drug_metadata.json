@@ -1,0 +1,1352 @@
+[
+  {
+    "chunk_id": 0,
+    "drug_name": "아세트아미노펜",
+    "drug_name_en": "",
+    "section": "efficacy",
+    "content": "이 약은 감기의 제증상(여러증상)(콧물, 코막힘, 재채기, 인후(목구멍)통, 기침, 오한(춥고 떨리는 증상), 발열, 두통, 관절통, 근육통)의 완화에 사용합니다.",
+    "source": "e약은요",
+    "item_seq": "202106954"
+  },
+  {
+    "chunk_id": 1,
+    "drug_name": "아세트아미노펜",
+    "drug_name_en": "",
+    "section": "dosage",
+    "content": "만 7~12세 소아는 1회 권장용량을 4~6시간마다 필요시 물 없이 혀에 직접 복용합니다.\n\n이 약은 가능한 최단기간동안 최소 유효용량으로 복용하며, 1일 5회(75 mg/kg)를 초과하여 복용하지 않습니다.\n\n몸무게를 아는 경우 몸무게에 따른 용량(10~15 mg/kg)으로 복용하는 것이 더 적절합니다.\n\n연령대별 용량은 허가사항을 참고하십시오.",
+    "source": "e약은요",
+    "item_seq": "202005623"
+  },
+  {
+    "chunk_id": 2,
+    "drug_name": "아세트아미노펜",
+    "drug_name_en": "",
+    "section": "precautions",
+    "content": "이 약에 과민증 또는 경험자, 다른 해열진통제, 감기약 복용 시 천식을 일으킨 적이 있는 사람, 만 3개월 미만의 영아(갓난아기), 중증 또는 조절되지 않는 고혈압 환자는 이 약을 복용하지 마십시오.\n이 약을 복용하기 전에 만 2세 미만의 영·유아, 황색 4호, 황색 5호에 과민증 또는 경험자, 수두 또는 인플루엔자에 감염되어 있거나 또는 의심되는 영아 및 만 15세 미만의 어린이, 알레르기 체질, 약에 의한 알레르기(발열, 발진, 관절통, 천식, 가려움증 등) 경험자, 간장질환, 신장질환, 심장질환, 갑상선질환, 당뇨병, 고혈압, 위십이지장궤양, 녹내장(눈의 통증, 눈이 침침함 등), 배뇨(소변을 눔) 곤란 등이 있는 사람, 고령자, 몸이 약한 사람 또는 고열이 있는 사람, 속쓰림, 위부불쾌감, 위통과 같은 위장문제가 지속 혹은 재발되거나 궤양, 출혈 문제를 가지고 있는 사람, 임부 또는 임신하고 있을 가능성이 있는 여성, 수유부, 덱스트로메토르판 분해효소 CYP2D6 느린 대사자, 글루타치온 보유량이 낮은 상태의 환자, 흡연, 천식, 만성 기관지염, 폐기종, 과도한 가래가 동반되는 기침, 1주 이상 지속 또는 재발되는 기침, 만성 기침, 발열·발진이나 지속적인 두통이 동반되는 기침 등의 증상이 나타나는 경우 의사 또는 약사와 상의하십시오.\n5~6회 복용하여도 증상이 좋아지지 않을 경우 의사 또는 약사와 상의하십시오.\n정해진 용법과 용량을 잘 지키십시오.\n어린이에게 투여할 경우 보호자의 지도·감독하에 투여하십시오.\n복용 후 졸음이 나타날 수 있으므로 운전 및 기계조작 시 주의하십시오.",
+    "source": "e약은요",
+    "item_seq": "202106954"
+  },
+  {
+    "chunk_id": 3,
+    "drug_name": "아세트아미노펜",
+    "drug_name_en": "",
+    "section": "interactions",
+    "content": "MAO 억제제(항우울제, 항정신병제, 감정조절제, 항파킨슨제 등), 진해거담제(기침·가래약), 다른 감기약, 해열진통제, 진정제, 항히스타민제를 함유하는 내복약(비염[코염]용 경구제, 멀미약, 알레르기용약)과 함께 복용하지 마십시오.\n\nMAO억제제(항우울제, 항정신병제, 감정조절제, 항파킨슨제 등) 복용을 중단한 후 2주 이내의 사람은 이 약을 복용하지 마십시오.\n\n이 약을 복용하기 전에 당뇨약, 통풍약, 관절염약, 항응고제, 스테로이드제, 플루클록사실린 등 다른 약물을 투여 받고 있는 사람은 의사 또는 약사와 상의하십시오.\n\n바르비탈계 약물, 삼환계 항우울제 및 알코올을 투여하는 환자는 의사 또는 약사와 상의하십시오.\n\n복용 중에 음주하지 마십시오.",
+    "source": "e약은요",
+    "item_seq": "202106954"
+  },
+  {
+    "chunk_id": 4,
+    "drug_name": "아세트아미노펜",
+    "drug_name_en": "",
+    "section": "side_effects",
+    "content": "발진·발적(충혈되어 붉어짐), 가려움, 구역·구토, 식욕부진, 변비, 부종(부기), 배뇨(소변을 눔)곤란, 지속적이거나 심한 목마름, 어지러움, 불안, 떨림, 불면, 뇌혈관사고(뇌졸중), 감각이상, 심근경색증, 허혈성 대장염(급성 복통, 장출혈 등), 쇽 증상(복용후 바로 두드러기, 부종, 가슴답답함 등과 함께 안색이 창백하고, 손발이 차고, 식은땀, 숨쉬기 곤란함), 피부점막안증후군(스티븐스-존슨증후군), 독성표피괴사용해(리엘증후군: 고열을 동반하고, 발진·발적, 화상과 같이 물집이 생기는 등의 심한 증상), 급성 전신성 발진성 농포증, 발열, 홍반, 천식, 전신의 나른함, 황달(피부 또는 눈의 흰자위가 황색을 띄게 됨), 간질성폐렴(기침을 동반하고, 숨이 차고, 호흡곤란, 발열 등), 고정발진, 가역적 후뇌 병증 증후군 및 가역적 뇌혈관 수축 증후군으 징후/증상(급작스런 심한 두통, 구역, 구토, 시각 장애 등) 등이 나타날 경우 복용을 즉각 중지하고 의사 또는 약사와 상의하십시오.",
+    "source": "e약은요",
+    "item_seq": "202106954"
+  },
+  {
+    "chunk_id": 5,
+    "drug_name": "아세트아미노펜",
+    "drug_name_en": "",
+    "section": "storage",
+    "content": "습기와 빛을 피해 실온에서 보관하십시오.\n\n어린이의 손이 닿지 않는 곳에 보관하십시오.",
+    "source": "e약은요",
+    "item_seq": "202106954"
+  },
+  {
+    "chunk_id": 6,
+    "drug_name": "이부프로펜",
+    "drug_name_en": "",
+    "section": "efficacy",
+    "content": "이 약은 류마티양 관절염, 연소성 류마티양 관절염, 골관절염(퇴행성 관절질환), 감기로 인한 발열 및 동통, 요통, 월경곤란증, 수술후 동통과 강직성 척추염, 두통, 치통, 근육통, 신경통, 급성통풍, 건선성 관절염, 연조직손상(염좌, 좌상), 비관절 류마티스질환(건염, 건초염, 활액낭염)에 사용합니다.",
+    "source": "e약은요",
+    "item_seq": "197700120"
+  },
+  {
+    "chunk_id": 7,
+    "drug_name": "이부프로펜",
+    "drug_name_en": "",
+    "section": "dosage",
+    "content": "류마티양 관절염, 골관절염, 강직성 척추염, 연조직손상, 비관절 류마티스질환, 급성통풍, 건선성 관절염에 성인은 1회 200-600 mg씩, 1일 3-4회 복용합니다. 1일 최고 3,200 mg까지 투여할 수 있습니다.\n\n연소성 류마티양 관절염에 체중(kg)당 1회 30-40 mg씩, 1일 3~4회 복용합니다.\n\n경증 및 중등도의 동통, 감기에 성인은 1회 200-400 mg씩, 1일 3~4회 복용합니다.\n\n연령, 증상에 따라 적절히 증감할 수 있습니다.\n\n어린이의 경우 11~14세는 200-250 mg(10~13 ml)씩, 7~10세는 150~200 mg(8~10 ml)씩, 3~6세는 100~150 mg(5~8 ml), 1~2세는 50~100 mg(3~5 ml)씩, 1일 3~4회 복용합니다. \n체중이 30 kg미만인 어린이는 1일량이 500 mg(25 ml)을 초과해서는 안되며 공복에 복용을 피하는 것이 바람직합니다.",
+    "source": "e약은요",
+    "item_seq": "198601920"
+  },
+  {
+    "chunk_id": 8,
+    "drug_name": "이부프로펜",
+    "drug_name_en": "",
+    "section": "precautions",
+    "content": "이 약에 과민증 환자, 위장관 궤양, 위장관 출혈 또는 경험자, 심한 혈액이상, 간장애, 신장장애, 심장기능부전, 고혈압, 기관지천식 또는 경험자, 아스피린이나 다른 비스테로이드성 소염진통제(COX-2 저해제 포함)에 대하여 천식, 두드러기 또는 알레르기 반응 경험자, 관상동맥(심장동맥) 우회로술(CABG) 전후 통증발생 환자, 임신 말기 3개월 기간에 해당하는 임부, 항암요법으로 고용량 메토트렉세이트를 투여중인 환자, 갈락토오스 불내성, Lapp 유당분해효소 결핍증 또는 포도당-갈락토오스 흡수장애 등의 유전적인 문제가 있는 환자는 이 약을 복용하지 마십시오.\n\n이 약을 복용하기 전에 혈액이상 또는 경험자, 출혈경향, 간경화, 간장애 또는 경험자, 신장장애 또는 경험자, 심장기능부전 또는 심질환, 고혈압, 과민증 경험자, 전신성 홍반성 루푸스(SLE) 환자 및 혼합 결합조직질환(MCTD) 환자, 궤양성 대장염, 크론병, 수두 환자, 노인, 만 2세 미만의 소아, 임부, 수유부는 의사 또는 약사와 상의하십시오.\n\n정해진 용법과 용량을 잘 지키십시오.\n\n복용 후 운전 및 기계조작 시 주의하십시오.\n\n의사 또는 약사의 지시 없이 통증에 10일 이상(성인) 또는 5일 이상(소아) 복용하지 마시고 발열에 3일 이상 복용하지 마십시오.",
+    "source": "e약은요",
+    "item_seq": "198601920"
+  },
+  {
+    "chunk_id": 9,
+    "drug_name": "이부프로펜",
+    "drug_name_en": "",
+    "section": "interactions",
+    "content": "항암요법으로 고용량 메토트렉세이트를 투여중인 환자, 다른 비스테로이드성 소염진통제와 함께 이 약을 복용하지 마십시오.\n\n이 약을 복용하기 전에 저용량 아스피린, ACE 저해제 복용자, 리튬, 푸로세미드 및 티아지드계 이뇨제, 저용량 메토트렉세이트, 쿠마린계 항응혈제(와파린 등), 선택적 세로토닌 재흡수억제제를 복용하는 환자는 의사 또는 약사와 상의하십시오.",
+    "source": "e약은요",
+    "item_seq": "197700120"
+  },
+  {
+    "chunk_id": 10,
+    "drug_name": "이부프로펜",
+    "drug_name_en": "",
+    "section": "side_effects",
+    "content": "쇽 증상(호흡곤란, 혈압저하 등), 헤마토크릿 감소, 헤모글로빈 감소, 빈혈, 재생불량성빈혈, 용혈성빈혈, 무과립구증, 과립구감소, 백혈구감소, 혈소판감소, 혈소판 기능 저하, 호산구 증가 등의 혈액장애, 소화성궤양, 위장관궤양, 위장출혈, 천공(뚫림), 궤양성 대장염, 혈변, 위염, 췌장염, 혈액구토, 크론병, 식욕부진, 구역, 구토, 복통, 소화불량, 설사, 위부불쾌감, 상복부통증, 구갈, 구내염, 복부팽만감, 구강궤양, 변비, 흑변, 피부점막안증후군(스티븐스-존슨증후군), 독성표피괴사용해(리엘증후군), 빈도불명의 광민감 반응, 빈도불명의 호산구 증가 및 전신 증후군을 동반한 약물 발진, 혈관신경성 부종, 수포성피부염, 다형 홍반, 반구진 발진, 피부 붉어짐, 물집, 발진, 급성전신발진고름물집증, 간염, 황달, GOT, GPT, 알칼라인 포스파타제(ALP)의 상승 등과 같은 간기능이상, 간장애, 과민증 또는 아나필락시스 반응, 천식발작, 두드러기, 습진, 자반(자주색반점), 발진, 가려움증, 천식, 기관지수축, 호흡곤란 또는 쌕쌕거림, 암점 등 시각장애, 난청(귀먹음), 이명(귀울림), 미각이상, 현기증, 졸음, 어지러움, 우울, 두통, 뇌혈관 사고 또는 신경질, 무균성 수막염 또는 수막염, 혈압저하, 혈압상승, 심계항진(두근거림), 심부전, 심근경색증 또는 협심증, 코니스 증후군, 급성신부전, 핍뇨(소변감소), 혈뇨, 요단백, BUN, 혈중크레아티닌의 상승, 고칼륨혈증, 간질성 콩팥염, 콩팥염증후군, 콩팥유두괴사, 요량 감소, 전신부종 및 이에 수반하는 숨가쁨, 나른함, 안와주위부종(눈주변 부기), 안면부종(얼굴부기), 권태감, 발열, 비출혈(코피), 부종(부기), 말초부종 등이 나타나는 경우 복용을 즉각 중지하고 의사 또는 약사와 상의하십시오.",
+    "source": "e약은요",
+    "item_seq": "198601920"
+  },
+  {
+    "chunk_id": 11,
+    "drug_name": "이부프로펜",
+    "drug_name_en": "",
+    "section": "storage",
+    "content": "빛을 피해 실온에서 보관하십시오.\n\n어린이의 손이 닿지 않는 곳에 보관하십시오.",
+    "source": "e약은요",
+    "item_seq": "198601920"
+  },
+  {
+    "chunk_id": 12,
+    "drug_name": "아스피린",
+    "drug_name_en": "",
+    "section": "efficacy",
+    "content": "이 약은 심근경색, 뇌경색, 불안정형 협심증에서 혈전 생성 억제와 관상동맥 우회술(CABG) 또는 경피경관 관상동맥 성형술(PTCA) 후 혈전 생성 억제와 고위험군환자(허혈성 심장질환의 가족력, 고혈압, 고콜레스테롤혈증, 비만, 당뇨 등 복합적 위험인자를 가진 환자)에서 심혈관계 위험성 감소에 사용합니다.",
+    "source": "e약은요",
+    "item_seq": "199001012"
+  },
+  {
+    "chunk_id": 13,
+    "drug_name": "아스피린",
+    "drug_name_en": "",
+    "section": "dosage",
+    "content": "성인 및 만 15세 이상은 1회 1~2정(500~1,000 mg)을 최소 4시간 이상 간격으로 복용합니다.\n\n1일 최대 용량으로서 8정(4,000 mg)을 초과하지 않도록 합니다.",
+    "source": "e약은요",
+    "item_seq": "200008591"
+  },
+  {
+    "chunk_id": 14,
+    "drug_name": "아스피린",
+    "drug_name_en": "",
+    "section": "precautions",
+    "content": "이 약 또는 다른 살리실산제제에 과민증 환자, 소화성궤양, 아스피린천식 또는 경험자, 혈우병, 심한 간장애, 심한 신장애, 심한 심기능부전, 출혈경향, 일주일 동안 메토트렉세이트 15밀리그람(15 mg/주) 이상의 용량을 병용 투여하는 환자, 임신 3기에 해당하는 임부는 복용하지 마십시오.\n\n임신 1기와 2기에는 반드시 필요한 경우가 아니라면 이 약을 복용하지 마십시오.\n\n이 약을 복용하기 전에 신장애, 심혈관 순환기능이상(신혈관 질환, 울혈성 심부전, 체액 감소, 큰 수술, 패혈증 또는 주요 출혈 사고 등), 간장애 또는 경험자, 심기능 이상, 혈액 이상 또는 경험자, 기관지천식, 수술전의 환자, 3세 이하의 유아, 진통제, 소염제, 항류마티스제에 과민증 및 알레르기 질환 환자, 고령자, 포도당-6-인산염 탈수소효소(G6PD)결핍 환자, 레이증후군, 14세 이하의 수두 또는 인플루엔자 감염 환자, 통풍환자는 의사 또는 약사와 상의하십시오.\n\n출혈의 위험이 있으므로 수술(치과수술 포함)을 하는 경우에는 의사에게 이 약을 복용하고 있음을 알리십시오.\n\n이 약의 장용피막을 파손하지 않도록 유의하십시오.",
+    "source": "e약은요",
+    "item_seq": "200108429"
+  },
+  {
+    "chunk_id": 15,
+    "drug_name": "아스피린",
+    "drug_name_en": "",
+    "section": "interactions",
+    "content": "다른 비스테로이드성 소염진통제 및 살리실산 제제, 일주일 동안 메토트렉세이트 15밀리그람(15mg/주) 이상의 용량은 이 약과 병용 투여 시 출혈이 증가되거나 신기능이 감소될 수 있으므로 함께 사용하지 않습니다.\n\n항응고제, 이부프로펜, 나프록센 등 일부 비스테로이드성 소염진통제, 혈전용해제, 다른 혈소판응집억제제, 지혈제, 당뇨병치료제(인슐린제제, 톨부타미드 등), 요산배설촉진제(벤즈브로마론, 프로베네시드), 티아지드계 이뇨제, 리튬제제, 선택적 세포토닌 재흡수 억제제, 디곡신, 전신 작용 부신피질호르몬 제제(애디슨병 대체요법용 히드로코티손 제외), 안지오텐신 전환 효소 억제제, 발프로산 제제를 복용하는 사람은 의사 또는 약사와 상의하십시오.\n\n알칼리제제(예: 탄산수소나트륨, 탄산마그네슘) 또는 습기가 차기 쉬운 제제와 함께 섞지 마십시오.\n\n알코올과 병용 투여 시 위장관 점막 손상이 증가하고, 이 약과 알코올의 상승효과로 인해 출혈시간이 연장될 수 있습니다.",
+    "source": "e약은요",
+    "item_seq": "199703010"
+  },
+  {
+    "chunk_id": 16,
+    "drug_name": "아스피린",
+    "drug_name_en": "",
+    "section": "side_effects",
+    "content": "쇽 증상(예: 호흡곤란, 전신조홍, 혈관부종, 두드러기), 천식발작, 홍반, 간지러움, 코막힘, 심장-호흡기 장애, 때때로 발진, 부종, 두드러기, 비염증상, 결막염, 드물게 독성표피괴사용해(리엘증후군), 피부점막안증후군(스티븐스-존슨증후군), 박탈성피부염, 드물게 재생불량성빈혈, 빈혈, 백혈구감소, 혈소판감소, 혈소판기능 저하(출혈시간의 지연), 귀에서 소리가 남, 귀 먹음, 어지러움, 두통, 흥분, 드물게 간장애, 매우 드물게 간 트랜스아미나제 상승에 따른 일시적인 간손상, 신장애, 급성신부전, 과호흡, 대사성산증, 과도한 체온강하, 허탈, 사지냉각 등이 나타나는 경우 복용을 즉각 중지하고 의사 또는 약사와 상담하십시오.\n\n식욕부진, 가슴쓰림, 위통, 구역, 구토 등이 나타날 수 있습니다.",
+    "source": "e약은요",
+    "item_seq": "199001012"
+  },
+  {
+    "chunk_id": 17,
+    "drug_name": "아스피린",
+    "drug_name_en": "",
+    "section": "storage",
+    "content": "습기를 피해 실온에서 보관하십시오.\n\n어린이의 손이 닿지 않는 곳에 보관하십시오.",
+    "source": "e약은요",
+    "item_seq": "199703010"
+  },
+  {
+    "chunk_id": 18,
+    "drug_name": "로사르탄",
+    "drug_name_en": "",
+    "section": "efficacy",
+    "content": "이 약은 일시적 불면증의 완화에 사용합니다.",
+    "source": "e약은요",
+    "item_seq": "202001554"
+  },
+  {
+    "chunk_id": 19,
+    "drug_name": "로사르탄",
+    "drug_name_en": "",
+    "section": "dosage",
+    "content": "성인은 1일 1회 1캡슐(50 mg)을 취침전 복용합니다.개인에 따라 1캡슐(50 mg) 복용시 과도한 진정작용이 나타날 경우 1/2캡슐(25 mg)을 취침전 복용합니다.",
+    "source": "e약은요",
+    "item_seq": "202001554"
+  },
+  {
+    "chunk_id": 20,
+    "drug_name": "로사르탄",
+    "drug_name_en": "",
+    "section": "precautions",
+    "content": "이 약에 과민증 환자, 천식발작, 폐기종, 만성기관지염에 의한 호흡곤란, 녹내장, 하부 요로 폐색성 질환(전립선비대 등), 협착성 소화성 궤양, 유문십이지장 폐색, 15세 미만의 소아, 간질, 크롬친화성세포종, 수유부, 일상적으로 불면이거나 불면증 진단을 받은 환자는 이 약을 복용하지 마십시오.이 약을 복용하기 전에 중증 근무력증, 고령자, 알레르기 체질인 환자, 임부 또는 임신을 하고있을 가능성이 있는 여성은 의사 또는 약사와 상의하십시오.이 약 복용 후 졸음이 나타날 수 있으므로 운전 및 기계조작 시 주의하십시오.정해진 용법과 용량을 잘 지키십시오.",
+    "source": "e약은요",
+    "item_seq": "202001554"
+  },
+  {
+    "chunk_id": 21,
+    "drug_name": "로사르탄",
+    "drug_name_en": "",
+    "section": "interactions",
+    "content": "디펜히드라민염산염을 포함한 다른 제제, 다른 최면진정제, MAO 저해제, 감기약, 해열진통제, 진해거담약, 항히스타민제를 함유하고 있는 내복약(비염용 내복약, 멀미약, 알러지용약)과 함께 복용하지 마십시오.복용 중에는 음주하지 마십시오.",
+    "source": "e약은요",
+    "item_seq": "202001554"
+  },
+  {
+    "chunk_id": 22,
+    "drug_name": "로사르탄",
+    "drug_name_en": "",
+    "section": "side_effects",
+    "content": "발진, 발적, 가려움, 구갈, 위통, 오심ㆍ구토, 식욕부진, 설사, 어지러움, 두통, 기상시의 두중감, 활동중의 졸음, 불쾌감, 신경과민, 일시적인 의식장해(주의력의 저하, 잠이 덜깨는 증상, 판단력의 저하, 말ㆍ행동의 이상 등), 두근거림, 권태감, 배뇨곤란, 시야혼란, 폐쇄각 녹내장 등이 나타나는 경우 복용을 즉각 중지하고 의사 또는 약사와 상의하십시오.",
+    "source": "e약은요",
+    "item_seq": "202001554"
+  },
+  {
+    "chunk_id": 23,
+    "drug_name": "로사르탄",
+    "drug_name_en": "",
+    "section": "storage",
+    "content": "실온에서 보관하십시오.어린이의 손이 닿지 않는 곳에 보관하십시오.",
+    "source": "e약은요",
+    "item_seq": "202001554"
+  },
+  {
+    "chunk_id": 24,
+    "drug_name": "세티리진",
+    "drug_name_en": "",
+    "section": "efficacy",
+    "content": "이 약은 계절성 및 다년성 알레르기성 비염, 알레르기성 결막염, 만성 특발성 두드러기, 피부가려움증과 하이드로코티손 외용제와 병용에 의한 습진, 피부염에 사용합니다.",
+    "source": "e약은요",
+    "item_seq": "199700265"
+  },
+  {
+    "chunk_id": 25,
+    "drug_name": "세티리진",
+    "drug_name_en": "",
+    "section": "dosage",
+    "content": "성인 및 6세 이상의 소아는 1일 1회 1정(10 mg)을 취침 전에 복용하고, 이상반응에 민감한 환자의 경우는 1/2정(5 mg)씩을 아침, 저녁에 분할 복용합니다.\n\n연령, 증상에 따라 적절히 증감합니다.\n\n중등도~중증(심한 증상)의 신장애 환자의 투여 간격은 환자의 신기능에 따라 조절되어야 하고, 신장애를 가진 소아 환자는 환자의 신 청소율과 체중을 고려하여 개별적으로 용량을 조절해야 하므로 자세한 사항은 허가사항을 참고하십시오.",
+    "source": "e약은요",
+    "item_seq": "199700120"
+  },
+  {
+    "chunk_id": 26,
+    "drug_name": "세티리진",
+    "drug_name_en": "",
+    "section": "precautions",
+    "content": "이 약 및 히드록시진 또는 피페라진 유도체에 과민증 환자, 신부전, 임부 및 임신하고 있을 가능성이 있는 여성 및 수유부, 6세 미만의 유아, 갈락토오스 불내성, Lapp 유당분해효소 결핍증 또는 포도당-갈락토오스 흡수장애 등의 유전적인 문제가 있는 환자는 이 약을 복용하지 마십시오.\n\n이 약을 복용하기 전에 신장애, 간장애, 노인, 간질 환자 및 발작 위험성이 있는 환자, 소변고임의 선행요인(척수 병변, 전립선 비대증 등)이 있는 환자는 의사 또는 약사와 상의하십시오.",
+    "source": "e약은요",
+    "item_seq": "199700120"
+  },
+  {
+    "chunk_id": 27,
+    "drug_name": "세티리진",
+    "drug_name_en": "",
+    "section": "interactions",
+    "content": "테오필린, 리토나비어와 함께 복용하지 마십시오.\n\n과량의 알코올과 함께 복용하지 마십시오.",
+    "source": "e약은요",
+    "item_seq": "199700265"
+  },
+  {
+    "chunk_id": 28,
+    "drug_name": "세티리진",
+    "drug_name_en": "",
+    "section": "side_effects",
+    "content": "졸음, 두통, 혈관염, 광과민증, 현기증, 관절통, 근육통, 때때로 권태감, 마비감, 무력증, 초조, 감각이상, 목마름, 입술건조감, 구역, 식욕부진, 위부불쾌감, 소화불량, 복통, 위통, 복부불쾌감, 설사, 두근거림, 백혈구, 호중구 감소, 림프구, 호산구 증가, 부기, 가려움, 발진, AST, ALT, ALP, 총빌리루빈, -GTP, LDH의 상승 등 간기능 장애, 황달, 간염, BUN 상승, 당뇨, 피섞인 소변, 가슴통증, 인두염, 기침, 코피, 기관지경련, 청력이상, 시각이상, 드물게 가볍고 일시적인 나른함, 피로, 어지러움, 머리무거움, 흥분, 경련, 운동이상, 근육긴장이상, 실신, 떨림, 공격성, 혼돈, 우울, 환각, 불면증, 틱 장애, 기억상실, 기억장애, 자살관념, 악몽, 구토, 위장장애, 입술염, 미각이상, 식욕증진, 빠른맥, 부정맥, 혈압상승, 단구 증가, 혈소판 증가, 혈소판 감소, 과민증 및 과민성 쇼크, 두드러기, 혈관신경성부종, 고정약물발진, 급성전신발진농포증, 시야 흐림, 결막충혈, 안조절 장애, 안운동발작, 배뇨 곤란, 야뇨증, 소변고임, 월경불순, 귀울림, 비염, 체중 증가가 나타나는 경우 복용을 즉각 중지하고 의사 또는 약사와 상의하십시오.\n\n이 약 투여 중단 후 가려움증, 두드러기가 나타날 수 있습니다.",
+    "source": "e약은요",
+    "item_seq": "199700265"
+  },
+  {
+    "chunk_id": 29,
+    "drug_name": "세티리진",
+    "drug_name_en": "",
+    "section": "storage",
+    "content": "실온에서 보관하십시오.\n\n어린이의 손이 닿지 않는 곳에 보관하십시오.",
+    "source": "e약은요",
+    "item_seq": "199700120"
+  },
+  {
+    "chunk_id": 30,
+    "drug_name": "로라타딘",
+    "drug_name_en": "",
+    "section": "efficacy",
+    "content": "이 약은 알레르기성 비염(재채기, 코막힘, 가려움, 눈의 작열감), 만성 특발성(원인 불명의) 두드러기에 사용합니다.",
+    "source": "e약은요",
+    "item_seq": "199700873"
+  },
+  {
+    "chunk_id": 31,
+    "drug_name": "로라타딘",
+    "drug_name_en": "",
+    "section": "dosage",
+    "content": "성인 및 12세 이상의 소아는 1일 1회 1정(10 mg) 복용합니다.\n\n6~12세 미만의 소아는 체중이 30 kg이상인 경우 1일 1회 1정(10 mg), 30 kg이하인 경우 1일 1회 1/2정(5 mg) 복용합니다.\n\n연령, 증상에 따라 적절히 증감합니다.",
+    "source": "e약은요",
+    "item_seq": "199700873"
+  },
+  {
+    "chunk_id": 32,
+    "drug_name": "로라타딘",
+    "drug_name_en": "",
+    "section": "precautions",
+    "content": "이 약에 과민증 환자, 만 6세 미만의 소아, 임부 및 수유부,갈락토오스 불내성, Lapp 유당분해효소 결핍증 또는 포도당-갈락토오스 흡수장애 등의 유전적인 문제가 있는 환자는 이 약을 복용하지 마십시오.\n\n이 약을 복용하기 전에 간장애, 신부전 환자는 의사 또는 약사와 상의하십시오.",
+    "source": "e약은요",
+    "item_seq": "199700873"
+  },
+  {
+    "chunk_id": 33,
+    "drug_name": "로라타딘",
+    "drug_name_en": "",
+    "section": "interactions",
+    "content": "이 약을 복용하는 동안 시메티딘, 에리트로마이신, 케토코나졸, 퀴니딘, 플루코나졸, 플루옥세틴, 간 대사를 억제하는 약물을 함께 복용하지 마십시오.",
+    "source": "e약은요",
+    "item_seq": "199700873"
+  },
+  {
+    "chunk_id": 34,
+    "drug_name": "로라타딘",
+    "drug_name_en": "",
+    "section": "side_effects",
+    "content": "진정작용, 항콜린작용, 두통, 실신, 졸음, 목마름, 위장장애(구역, 위염), 식욕증진, 빈맥, 피로, 발진, 탈모증, 혈관부종을 포함한 아나필락시스, 간기능 장애, 상실성 부정빈맥, 두근거림, 어지러움, 경련 등이 나타나는 경우 복용을 즉각 중지하고 의사 또는 약사와 상의하십시오.",
+    "source": "e약은요",
+    "item_seq": "199700873"
+  },
+  {
+    "chunk_id": 35,
+    "drug_name": "로라타딘",
+    "drug_name_en": "",
+    "section": "storage",
+    "content": "실온에서 보관하십시오.\n\n어린이의 손이 닿지 않는 곳에 보관하십시오.",
+    "source": "e약은요",
+    "item_seq": "199700873"
+  },
+  {
+    "chunk_id": 36,
+    "drug_name": "아목시실린",
+    "drug_name_en": "Amoxicillin",
+    "section": "efficacy",
+    "content": "세균 감염증 치료에 사용됩니다. 상기도 감염, 중이염, 비뇨기 감염, 피부 감염 등에 처방됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 37,
+    "drug_name": "아목시실린",
+    "drug_name_en": "Amoxicillin",
+    "section": "dosage",
+    "content": "성인: 1회 250~500mg, 1일 3회 복용합니다. 식사와 관계없이 복용할 수 있으나 위장 장애가 있을 경우 식후 복용을 권장합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 38,
+    "drug_name": "아목시실린",
+    "drug_name_en": "Amoxicillin",
+    "section": "precautions",
+    "content": "페니실린 계열 항생제에 알레르기가 있는 경우 복용하지 마세요. 임산부·수유부는 의사와 상담 후 복용하세요. 처방된 기간 동안 끝까지 복용해야 합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 39,
+    "drug_name": "아목시실린",
+    "drug_name_en": "Amoxicillin",
+    "section": "side_effects",
+    "content": "설사, 구역, 구토, 발진이 나타날 수 있습니다. 심한 피부 발진이나 호흡 곤란이 나타나면 즉시 의료기관을 방문하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 40,
+    "drug_name": "아목시실린",
+    "drug_name_en": "Amoxicillin",
+    "section": "interactions",
+    "content": "메토트렉세이트와 병용 시 메토트렉세이트의 혈중 농도가 증가할 수 있습니다. 경구 피임약의 효과가 감소할 수 있으므로 추가 피임 조치를 고려하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 41,
+    "drug_name": "아목시실린",
+    "drug_name_en": "Amoxicillin",
+    "section": "storage",
+    "content": "실온(1~30°C)에서 습기와 빛을 피해 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 42,
+    "drug_name": "오메프라졸",
+    "drug_name_en": "Omeprazole",
+    "section": "efficacy",
+    "content": "위산 분비를 억제합니다. 위궤양, 십이지장궤양, 역류성 식도염 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 43,
+    "drug_name": "오메프라졸",
+    "drug_name_en": "Omeprazole",
+    "section": "dosage",
+    "content": "성인: 1일 1회 20mg, 아침 식전에 복용합니다. 캡슐을 씹거나 부수지 말고 통째로 삼키세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 44,
+    "drug_name": "오메프라졸",
+    "drug_name_en": "Omeprazole",
+    "section": "precautions",
+    "content": "장기 복용(1년 이상) 시 골절 위험이 증가할 수 있습니다. 마그네슘 수치가 낮아질 수 있으므로 정기 검사를 받으세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 45,
+    "drug_name": "오메프라졸",
+    "drug_name_en": "Omeprazole",
+    "section": "side_effects",
+    "content": "두통, 복통, 설사, 구역, 변비가 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 46,
+    "drug_name": "오메프라졸",
+    "drug_name_en": "Omeprazole",
+    "section": "interactions",
+    "content": "클로피도그렐의 효과를 감소시킬 수 있습니다. 철분제, 칼슘제의 흡수를 저하시킬 수 있으니 복용 시간을 분리하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 47,
+    "drug_name": "오메프라졸",
+    "drug_name_en": "Omeprazole",
+    "section": "storage",
+    "content": "실온(15~25°C)에서 습기를 피해 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 48,
+    "drug_name": "메트포르민",
+    "drug_name_en": "Metformin",
+    "section": "efficacy",
+    "content": "제2형 당뇨병 치료에 사용됩니다. 혈당을 낮추고 인슐린 감수성을 개선합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 49,
+    "drug_name": "메트포르민",
+    "drug_name_en": "Metformin",
+    "section": "dosage",
+    "content": "성인: 초기 1회 500mg, 1일 2회 식사와 함께 복용합니다. 의사의 지시에 따라 서서히 용량을 증가시킵니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 50,
+    "drug_name": "메트포르민",
+    "drug_name_en": "Metformin",
+    "section": "precautions",
+    "content": "신장 기능이 저하된 경우 복용에 주의가 필요합니다. CT 조영제 검사 전후에는 일시적으로 복용을 중단해야 합니다. 과도한 음주를 피하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 51,
+    "drug_name": "메트포르민",
+    "drug_name_en": "Metformin",
+    "section": "side_effects",
+    "content": "복용 초기에 설사, 구역, 복부 팽만감이 나타날 수 있습니다. 드물게 젖산산증이 발생할 수 있으며 이 경우 즉시 의료기관을 방문하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 52,
+    "drug_name": "메트포르민",
+    "drug_name_en": "Metformin",
+    "section": "interactions",
+    "content": "알코올은 젖산산증 위험을 높입니다. 요오드 조영제와 병용 시 신장 기능 저하 위험이 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 53,
+    "drug_name": "메트포르민",
+    "drug_name_en": "Metformin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 54,
+    "drug_name": "암로디핀",
+    "drug_name_en": "Amlodipine",
+    "section": "efficacy",
+    "content": "고혈압 및 협심증 치료에 사용됩니다. 혈관을 이완시켜 혈압을 낮춥니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 55,
+    "drug_name": "암로디핀",
+    "drug_name_en": "Amlodipine",
+    "section": "dosage",
+    "content": "성인: 1일 1회 5mg 복용. 필요시 10mg까지 증량합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 56,
+    "drug_name": "암로디핀",
+    "drug_name_en": "Amlodipine",
+    "section": "precautions",
+    "content": "간 기능이 저하된 경우 저용량(2.5mg)으로 시작하세요. 복용 초기에 어지러울 수 있으므로 갑자기 일어나지 마세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 57,
+    "drug_name": "암로디핀",
+    "drug_name_en": "Amlodipine",
+    "section": "side_effects",
+    "content": "발목 부종, 안면 홍조, 어지러움, 두근거림이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 58,
+    "drug_name": "암로디핀",
+    "drug_name_en": "Amlodipine",
+    "section": "interactions",
+    "content": "자몽 주스와 함께 복용하면 혈중 농도가 증가할 수 있으므로 피하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 59,
+    "drug_name": "암로디핀",
+    "drug_name_en": "Amlodipine",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 빛을 피해 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 60,
+    "drug_name": "아토르바스타틴",
+    "drug_name_en": "Atorvastatin",
+    "section": "efficacy",
+    "content": "고지혈증 치료에 사용됩니다. LDL 콜레스테롤을 낮추고 심혈관 질환을 예방합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 61,
+    "drug_name": "아토르바스타틴",
+    "drug_name_en": "Atorvastatin",
+    "section": "dosage",
+    "content": "성인: 1일 1회 10~20mg, 시간에 관계없이 복용합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 62,
+    "drug_name": "아토르바스타틴",
+    "drug_name_en": "Atorvastatin",
+    "section": "precautions",
+    "content": "간 질환이 있는 경우 복용하지 마세요. 임산부·수유부는 복용하지 마세요. 설명할 수 없는 근육통이 나타나면 즉시 의사에게 알리세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 63,
+    "drug_name": "아토르바스타틴",
+    "drug_name_en": "Atorvastatin",
+    "section": "side_effects",
+    "content": "근육통, 관절통, 소화불량이 나타날 수 있습니다. 드물게 횡문근융해증이 발생할 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 64,
+    "drug_name": "아토르바스타틴",
+    "drug_name_en": "Atorvastatin",
+    "section": "interactions",
+    "content": "자몽 주스와 함께 복용하면 약물 농도가 증가합니다. 에리스로마이신, 클라리스로마이신과 병용 시 근육 부작용 위험이 증가합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 65,
+    "drug_name": "아토르바스타틴",
+    "drug_name_en": "Atorvastatin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 66,
+    "drug_name": "레보플록사신",
+    "drug_name_en": "Levofloxacin",
+    "section": "efficacy",
+    "content": "호흡기 감염, 비뇨기 감염, 피부 감염 등 세균 감염증 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 67,
+    "drug_name": "레보플록사신",
+    "drug_name_en": "Levofloxacin",
+    "section": "dosage",
+    "content": "성인: 1일 1회 500mg, 충분한 물과 함께 복용합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 68,
+    "drug_name": "레보플록사신",
+    "drug_name_en": "Levofloxacin",
+    "section": "precautions",
+    "content": "힘줄 손상(건염, 건 파열) 위험이 있으므로 운동 중 통증이 나타나면 복용을 중단하고 의사와 상담하세요. 18세 미만에게는 원칙적으로 투여하지 않습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 69,
+    "drug_name": "레보플록사신",
+    "drug_name_en": "Levofloxacin",
+    "section": "side_effects",
+    "content": "설사, 구역, 두통, 어지러움이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 70,
+    "drug_name": "레보플록사신",
+    "drug_name_en": "Levofloxacin",
+    "section": "interactions",
+    "content": "철분제, 칼슘제, 제산제와 동시 복용 시 흡수가 저하됩니다. 최소 2시간 간격을 두고 복용하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 71,
+    "drug_name": "레보플록사신",
+    "drug_name_en": "Levofloxacin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 빛을 피해 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 72,
+    "drug_name": "클라리스로마이신",
+    "drug_name_en": "Clarithromycin",
+    "section": "efficacy",
+    "content": "상기도·하기도 감염, 피부 감염, 헬리코박터 제균 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 73,
+    "drug_name": "클라리스로마이신",
+    "drug_name_en": "Clarithromycin",
+    "section": "dosage",
+    "content": "성인: 1회 250~500mg, 1일 2회 복용합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 74,
+    "drug_name": "클라리스로마이신",
+    "drug_name_en": "Clarithromycin",
+    "section": "precautions",
+    "content": "간 또는 신장 기능이 저하된 경우 용량 조절이 필요합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 75,
+    "drug_name": "클라리스로마이신",
+    "drug_name_en": "Clarithromycin",
+    "section": "side_effects",
+    "content": "설사, 구역, 복통, 미각 이상이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 76,
+    "drug_name": "클라리스로마이신",
+    "drug_name_en": "Clarithromycin",
+    "section": "interactions",
+    "content": "스타틴 계열 약물(아토르바스타틴 등)과 병용 시 근육 부작용 위험이 증가합니다. 와파린과 병용 시 출혈 위험이 증가합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 77,
+    "drug_name": "클라리스로마이신",
+    "drug_name_en": "Clarithromycin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 78,
+    "drug_name": "프레드니솔론",
+    "drug_name_en": "Prednisolone",
+    "section": "efficacy",
+    "content": "염증 억제 및 면역 조절에 사용됩니다. 천식, 류마티스 질환, 알레르기 등에 처방됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 79,
+    "drug_name": "프레드니솔론",
+    "drug_name_en": "Prednisolone",
+    "section": "dosage",
+    "content": "용량은 질환에 따라 다릅니다. 의사의 처방에 따라 복용하며, 아침 식후 복용을 권장합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 80,
+    "drug_name": "프레드니솔론",
+    "drug_name_en": "Prednisolone",
+    "section": "precautions",
+    "content": "갑자기 복용을 중단하지 마세요. 의사의 지시에 따라 서서히 줄여야 합니다. 장기 복용 시 감염 위험이 증가합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 81,
+    "drug_name": "프레드니솔론",
+    "drug_name_en": "Prednisolone",
+    "section": "side_effects",
+    "content": "식욕 증가, 체중 증가, 불면, 혈당 상승이 나타날 수 있습니다. 장기 복용 시 골다공증, 백내장 위험이 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 82,
+    "drug_name": "프레드니솔론",
+    "drug_name_en": "Prednisolone",
+    "section": "interactions",
+    "content": "NSAIDs(이부프로펜 등)와 병용 시 위장 출혈 위험이 증가합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 83,
+    "drug_name": "프레드니솔론",
+    "drug_name_en": "Prednisolone",
+    "section": "storage",
+    "content": "실온(15~25°C)에서 빛을 피해 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 84,
+    "drug_name": "와파린",
+    "drug_name_en": "Warfarin",
+    "section": "efficacy",
+    "content": "혈전 형성을 예방합니다. 심방세동, 심부정맥혈전증, 인공판막 환자에게 처방됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 85,
+    "drug_name": "와파린",
+    "drug_name_en": "Warfarin",
+    "section": "dosage",
+    "content": "용량은 INR 수치에 따라 개별 조정됩니다. 매일 같은 시간에 복용하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 86,
+    "drug_name": "와파린",
+    "drug_name_en": "Warfarin",
+    "section": "precautions",
+    "content": "정기적으로 INR 검사를 받으세요. 비타민 K가 풍부한 음식(시금치, 브로콜리 등)의 섭취량을 일정하게 유지하세요. 출혈 징후(잇몸 출혈, 코피, 검은 변)가 나타나면 즉시 의사에게 알리세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 87,
+    "drug_name": "와파린",
+    "drug_name_en": "Warfarin",
+    "section": "side_effects",
+    "content": "출혈이 가장 중요한 부작용입니다. 멍이 잘 드는 것도 출혈 징후입니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 88,
+    "drug_name": "와파린",
+    "drug_name_en": "Warfarin",
+    "section": "interactions",
+    "content": "아스피린, 이부프로펜 등 NSAIDs와 병용 시 출혈 위험이 크게 증가합니다. 항생제, 항진균제 복용 시 INR 변동이 있을 수 있으므로 의사에게 알리세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 89,
+    "drug_name": "와파린",
+    "drug_name_en": "Warfarin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 빛을 피해 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 90,
+    "drug_name": "디곡신",
+    "drug_name_en": "Digoxin",
+    "section": "efficacy",
+    "content": "심부전 및 심방세동의 심박수 조절에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 91,
+    "drug_name": "디곡신",
+    "drug_name_en": "Digoxin",
+    "section": "dosage",
+    "content": "성인: 1일 0.125~0.25mg, 1일 1회 복용합니다. 신장 기능에 따라 조절합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 92,
+    "drug_name": "디곡신",
+    "drug_name_en": "Digoxin",
+    "section": "precautions",
+    "content": "치료 범위가 좁은 약물입니다. 정기적으로 혈중 농도를 확인하세요. 저칼륨혈증 시 독성이 증가하므로 칼륨 수치를 관리하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 93,
+    "drug_name": "디곡신",
+    "drug_name_en": "Digoxin",
+    "section": "side_effects",
+    "content": "구역, 식욕 부진, 시야 변화(황색 시야), 부정맥이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 94,
+    "drug_name": "디곡신",
+    "drug_name_en": "Digoxin",
+    "section": "interactions",
+    "content": "이뇨제(푸로세미드 등)로 인한 저칼륨혈증이 독성을 증가시킵니다. 아미오다론과 병용 시 디곡신 혈중 농도가 증가합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 95,
+    "drug_name": "디곡신",
+    "drug_name_en": "Digoxin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 96,
+    "drug_name": "글리메피리드",
+    "drug_name_en": "Glimepiride",
+    "section": "efficacy",
+    "content": "제2형 당뇨병 치료에 사용됩니다. 췌장에서 인슐린 분비를 촉진합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 97,
+    "drug_name": "글리메피리드",
+    "drug_name_en": "Glimepiride",
+    "section": "dosage",
+    "content": "성인: 1일 1회 1~2mg, 아침 식사 직전 또는 식사와 함께 복용합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 98,
+    "drug_name": "글리메피리드",
+    "drug_name_en": "Glimepiride",
+    "section": "precautions",
+    "content": "저혈당 위험이 있습니다. 식사를 거르지 마세요. 저혈당 증상(식은땀, 떨림, 어지러움)이 나타나면 사탕이나 주스를 섭취하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 99,
+    "drug_name": "글리메피리드",
+    "drug_name_en": "Glimepiride",
+    "section": "side_effects",
+    "content": "저혈당, 체중 증가, 구역이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 100,
+    "drug_name": "글리메피리드",
+    "drug_name_en": "Glimepiride",
+    "section": "interactions",
+    "content": "베타차단제와 병용 시 저혈당 증상이 가려질 수 있습니다. 알코올은 저혈당 위험을 높입니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 101,
+    "drug_name": "글리메피리드",
+    "drug_name_en": "Glimepiride",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 102,
+    "drug_name": "졸피뎀",
+    "drug_name_en": "Zolpidem",
+    "section": "efficacy",
+    "content": "단기간의 불면증 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 103,
+    "drug_name": "졸피뎀",
+    "drug_name_en": "Zolpidem",
+    "section": "dosage",
+    "content": "성인: 취침 직전 5~10mg 복용합니다. 고령자는 5mg부터 시작합니다. 7~10일 이내로 단기 사용을 권장합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 104,
+    "drug_name": "졸피뎀",
+    "drug_name_en": "Zolpidem",
+    "section": "precautions",
+    "content": "복용 후 7~8시간의 수면 시간을 확보하세요. 수면 중 이상 행동(몽유병, 수면 운전 등)이 보고되어 있습니다. 갑자기 중단하면 반동 불면이 나타날 수 있으므로 의사와 상담하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 105,
+    "drug_name": "졸피뎀",
+    "drug_name_en": "Zolpidem",
+    "section": "side_effects",
+    "content": "졸음, 두통, 어지러움, 기억력 저하가 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 106,
+    "drug_name": "졸피뎀",
+    "drug_name_en": "Zolpidem",
+    "section": "interactions",
+    "content": "알코올 및 중추신경 억제제와 병용 시 과도한 진정 작용이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 107,
+    "drug_name": "졸피뎀",
+    "drug_name_en": "Zolpidem",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 108,
+    "drug_name": "트라마돌",
+    "drug_name_en": "Tramadol",
+    "section": "efficacy",
+    "content": "중등도~중증 통증 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 109,
+    "drug_name": "트라마돌",
+    "drug_name_en": "Tramadol",
+    "section": "dosage",
+    "content": "성인: 1회 50~100mg, 4~6시간 간격, 1일 최대 400mg. 서방정은 씹지 말고 통째로 삼키세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 110,
+    "drug_name": "트라마돌",
+    "drug_name_en": "Tramadol",
+    "section": "precautions",
+    "content": "의존성이 생길 수 있으므로 처방된 기간과 용량을 지키세요. 간질 환자는 경련 위험이 증가할 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 111,
+    "drug_name": "트라마돌",
+    "drug_name_en": "Tramadol",
+    "section": "side_effects",
+    "content": "구역, 변비, 졸음, 어지러움이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 112,
+    "drug_name": "트라마돌",
+    "drug_name_en": "Tramadol",
+    "section": "interactions",
+    "content": "SSRI 항우울제와 병용 시 세로토닌 증후군 위험이 있습니다. 알코올과 함께 복용하지 마세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 113,
+    "drug_name": "트라마돌",
+    "drug_name_en": "Tramadol",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 114,
+    "drug_name": "심바스타틴",
+    "drug_name_en": "Simvastatin",
+    "section": "efficacy",
+    "content": "고지혈증 치료 및 심혈관 질환 예방에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 115,
+    "drug_name": "심바스타틴",
+    "drug_name_en": "Simvastatin",
+    "section": "dosage",
+    "content": "성인: 1일 1회 10~40mg, 저녁에 복용합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 116,
+    "drug_name": "심바스타틴",
+    "drug_name_en": "Simvastatin",
+    "section": "precautions",
+    "content": "간 질환이 있는 경우 복용하지 마세요. 설명할 수 없는 근육통이나 근력 약화가 나타나면 즉시 의사에게 알리세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 117,
+    "drug_name": "심바스타틴",
+    "drug_name_en": "Simvastatin",
+    "section": "side_effects",
+    "content": "근육통, 소화불량, 두통이 나타날 수 있습니다. 드물게 횡문근융해증이 발생할 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 118,
+    "drug_name": "심바스타틴",
+    "drug_name_en": "Simvastatin",
+    "section": "interactions",
+    "content": "자몽 주스와 함께 복용하지 마세요. 에리스로마이신, 이트라코나졸과 병용 시 근육 부작용 위험이 크게 증가합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 119,
+    "drug_name": "심바스타틴",
+    "drug_name_en": "Simvastatin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 120,
+    "drug_name": "세팔렉신",
+    "drug_name_en": "Cephalexin",
+    "section": "efficacy",
+    "content": "피부 감염, 호흡기 감염, 비뇨기 감염, 골 감염 등 세균 감염증 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 121,
+    "drug_name": "세팔렉신",
+    "drug_name_en": "Cephalexin",
+    "section": "dosage",
+    "content": "성인: 1회 250~500mg, 1일 4회(6시간 간격) 복용합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 122,
+    "drug_name": "세팔렉신",
+    "drug_name_en": "Cephalexin",
+    "section": "precautions",
+    "content": "세팔로스포린 또는 페니실린 알레르기가 있는 경우 의사에게 알리세요. 처방된 기간 동안 끝까지 복용해야 합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 123,
+    "drug_name": "세팔렉신",
+    "drug_name_en": "Cephalexin",
+    "section": "side_effects",
+    "content": "설사, 구역, 복통이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 124,
+    "drug_name": "세팔렉신",
+    "drug_name_en": "Cephalexin",
+    "section": "interactions",
+    "content": "프로베네시드와 병용 시 세팔렉신의 혈중 농도가 증가할 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 125,
+    "drug_name": "세팔렉신",
+    "drug_name_en": "Cephalexin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 126,
+    "drug_name": "푸로세미드",
+    "drug_name_en": "Furosemide",
+    "section": "efficacy",
+    "content": "부종(심부전, 간경변, 신장 질환) 및 고혈압 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 127,
+    "drug_name": "푸로세미드",
+    "drug_name_en": "Furosemide",
+    "section": "dosage",
+    "content": "성인: 1일 20~80mg, 아침에 복용합니다. 이뇨 작용으로 밤 복용은 피하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 128,
+    "drug_name": "푸로세미드",
+    "drug_name_en": "Furosemide",
+    "section": "precautions",
+    "content": "탈수 및 전해질 불균형(저칼륨, 저나트륨)에 주의하세요. 어지러움이 나타날 수 있으므로 갑자기 일어나지 마세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 129,
+    "drug_name": "푸로세미드",
+    "drug_name_en": "Furosemide",
+    "section": "side_effects",
+    "content": "빈뇨, 어지러움, 근육 경련, 저혈압이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 130,
+    "drug_name": "푸로세미드",
+    "drug_name_en": "Furosemide",
+    "section": "interactions",
+    "content": "디곡신과 병용 시 저칼륨혈증으로 인한 디곡신 독성 위험이 있습니다. 아미노글리코시드 항생제와 병용 시 청력 손상 위험이 증가합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 131,
+    "drug_name": "푸로세미드",
+    "drug_name_en": "Furosemide",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 빛을 피해 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 132,
+    "drug_name": "판토프라졸",
+    "drug_name_en": "Pantoprazole",
+    "section": "efficacy",
+    "content": "위궤양, 십이지장궤양, 역류성 식도염 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 133,
+    "drug_name": "판토프라졸",
+    "drug_name_en": "Pantoprazole",
+    "section": "dosage",
+    "content": "성인: 1일 1회 40mg, 아침 식전에 복용합니다. 정제를 씹거나 부수지 마세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 134,
+    "drug_name": "판토프라졸",
+    "drug_name_en": "Pantoprazole",
+    "section": "precautions",
+    "content": "장기 복용 시 마그네슘 저하, 골절 위험 증가에 주의하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 135,
+    "drug_name": "판토프라졸",
+    "drug_name_en": "Pantoprazole",
+    "section": "side_effects",
+    "content": "두통, 설사, 구역, 복통이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 136,
+    "drug_name": "판토프라졸",
+    "drug_name_en": "Pantoprazole",
+    "section": "interactions",
+    "content": "철분제, 케토코나졸의 흡수를 감소시킬 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 137,
+    "drug_name": "판토프라졸",
+    "drug_name_en": "Pantoprazole",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 138,
+    "drug_name": "독시사이클린",
+    "drug_name_en": "Doxycycline",
+    "section": "efficacy",
+    "content": "여드름, 호흡기 감염, 요로 감염, 라임병 등 세균 감염증 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 139,
+    "drug_name": "독시사이클린",
+    "drug_name_en": "Doxycycline",
+    "section": "dosage",
+    "content": "성인: 1일 1~2회 100mg, 충분한 물과 함께 복용합니다. 눕지 말고 앉은 자세로 복용하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 140,
+    "drug_name": "독시사이클린",
+    "drug_name_en": "Doxycycline",
+    "section": "precautions",
+    "content": "햇빛에 의한 피부 과민 반응이 나타날 수 있으므로 자외선 차단에 주의하세요. 8세 미만 소아는 치아 변색 위험이 있어 복용하지 않습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 141,
+    "drug_name": "독시사이클린",
+    "drug_name_en": "Doxycycline",
+    "section": "side_effects",
+    "content": "구역, 설사, 식도 자극, 광과민성이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 142,
+    "drug_name": "독시사이클린",
+    "drug_name_en": "Doxycycline",
+    "section": "interactions",
+    "content": "제산제, 철분제, 칼슘제와 동시 복용 시 흡수가 크게 저하됩니다. 최소 2시간 간격을 두세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 143,
+    "drug_name": "독시사이클린",
+    "drug_name_en": "Doxycycline",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 빛과 습기를 피해 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 144,
+    "drug_name": "가바펜틴",
+    "drug_name_en": "Gabapentin",
+    "section": "efficacy",
+    "content": "신경병증성 통증 및 뇌전증(간질) 보조 치료에 사용됩니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 145,
+    "drug_name": "가바펜틴",
+    "drug_name_en": "Gabapentin",
+    "section": "dosage",
+    "content": "성인: 초기 1일 300mg, 3일에 걸쳐 1일 900~1200mg까지 증량합니다. 1일 3회 분복합니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 146,
+    "drug_name": "가바펜틴",
+    "drug_name_en": "Gabapentin",
+    "section": "precautions",
+    "content": "갑자기 중단하면 경련이 나타날 수 있으므로 서서히 감량하세요. 졸음과 어지러움이 올 수 있으므로 운전에 주의하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 147,
+    "drug_name": "가바펜틴",
+    "drug_name_en": "Gabapentin",
+    "section": "side_effects",
+    "content": "졸음, 어지러움, 피로, 말초 부종이 나타날 수 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 148,
+    "drug_name": "가바펜틴",
+    "drug_name_en": "Gabapentin",
+    "section": "interactions",
+    "content": "제산제와 동시 복용 시 흡수가 저하됩니다. 2시간 간격을 두세요. 오피오이드와 병용 시 과도한 진정 위험이 있습니다.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  },
+  {
+    "chunk_id": 149,
+    "drug_name": "가바펜틴",
+    "drug_name_en": "Gabapentin",
+    "section": "storage",
+    "content": "실온(15~30°C)에서 보관하세요.",
+    "source": "의약품안전나라",
+    "item_seq": null
+  }
+]

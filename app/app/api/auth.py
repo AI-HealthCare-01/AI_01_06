@@ -1,9 +1,12 @@
 from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, security_scheme
+from app.core.rate_limit import limiter
+from app.core.redis import get_state_redis
 from app.core.response import error_response, success_response
 from app.core.security import (
     create_access_token,
@@ -29,7 +32,8 @@ class RefreshRequest(BaseModel):
 
 
 @router.post("/signup")
-async def signup(req: SignupRequest):
+@limiter.limit("5/hour")
+async def signup(request: Request, req: SignupRequest):
     if not req.terms_of_service or not req.privacy_policy:
         return error_response("필수 약관(이용약관, 개인정보처리방침)에 동의해야 합니다.")
 
@@ -64,7 +68,8 @@ async def signup(req: SignupRequest):
 
 
 @router.post("/login")
-async def login(req: LoginRequest, request: Request):
+@limiter.limit("5/minute")
+async def login(request: Request, req: LoginRequest):
     ip = request.client.host if request.client else "unknown"
     user = await User.filter(email=req.email, deleted_at__isnull=True).first()
 
@@ -103,7 +108,8 @@ async def login(req: LoginRequest, request: Request):
 
 
 @router.post("/refresh")
-async def refresh(req: RefreshRequest):
+@limiter.limit("5/minute")
+async def refresh(request: Request, req: RefreshRequest):
     payload = decode_token(req.refresh_token)
     if payload is None or payload.get("type") != "refresh":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 refresh token입니다.")
@@ -120,5 +126,14 @@ async def refresh(req: RefreshRequest):
 
 
 @router.post("/logout")
-async def logout(user: User = Depends(get_current_user)):
+async def logout(
+    user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
+    payload = decode_token(credentials.credentials)
+    jti = payload.get("jti") if payload else None
+    if jti:
+        redis = await get_state_redis()
+        remaining_ttl = max(1, int(payload["exp"] - datetime.now(UTC).timestamp()))
+        await redis.setex(f"blacklist:{jti}", remaining_ttl, "1")
     return success_response({"message": "로그아웃 되었습니다."})

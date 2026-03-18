@@ -266,7 +266,7 @@ function SignupContent() {
       setToken(res.data.access_token);
       setRefreshToken(res.data.refresh_token);
       await refreshUser();
-      router.push(roleValue === "PATIENT" ? "/onboarding" : "/dashboard");
+      router.push(roleValue === "PATIENT" ? "/onboarding" : "/caregivers");
       return;
     }
 
@@ -289,13 +289,13 @@ function SignupContent() {
       setLoading(false);
       return;
     }
-    const loginError = await login(form.email, form.password);
-    if (loginError) {
-      setError(loginError);
+    const loginResult = await login(form.email, form.password);
+    if (typeof loginResult === "string") {
+      setError(loginResult);
       setLoading(false);
       return;
     }
-    router.push(roleValue === "PATIENT" ? "/onboarding" : "/dashboard");
+    router.push(loginResult.role === "PATIENT" ? "/onboarding" : "/caregivers");
   };
 
   const passwordStrength = form.password ? getPasswordStrength(form.password) : null;

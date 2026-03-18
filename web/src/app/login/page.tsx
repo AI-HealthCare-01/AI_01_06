@@ -1,19 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
-export default function LoginPage() {
+/** returnUrl이 안전한 내부 경로인지 검증 ("/"로 시작 + "//"로 시작하지 않음) */
+function getSafeReturnUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return null;
+}
+
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // 이미 로그인된 사용자는 적절한 페이지로 리다이렉트
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+    if (returnUrl) {
+      router.replace(returnUrl);
+    } else {
+      router.replace(user.role === "GUARDIAN" ? "/caregivers" : "/dashboard");
+    }
+  }, [user, authLoading, router, searchParams]);
 
   const handleKakaoLogin = async () => {
     const res = await api.getKakaoUrl();
@@ -37,12 +56,17 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const err = await login(email, password);
-    if (err) {
-      setError(err);
+    const result = await login(email, password);
+    if (typeof result === "string") {
+      setError(result);
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+      if (returnUrl) {
+        router.push(returnUrl);
+      } else {
+        router.push(result.role === "GUARDIAN" ? "/caregivers" : "/dashboard");
+      }
     }
   };
 
@@ -117,5 +141,19 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-bg)" }}>
+          <p style={{ color: "var(--color-text-muted)" }}>로딩 중...</p>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

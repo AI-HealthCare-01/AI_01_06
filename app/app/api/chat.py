@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from tortoise.functions import Count
 
 from app import config
-from app.core.deps import get_current_user
+from app.core.deps import get_acting_patient
 from app.core.response import success_response
 from app.models.chat import ChatFeedback, ChatMessage, ChatThread
 from app.models.patient_profile import PatientProfile
@@ -38,10 +38,15 @@ def _compute_thread_status(thread: ChatThread) -> str:
 
 
 @router.post("/threads")
-async def create_thread(req: ThreadCreateRequest, user: User = Depends(get_current_user)):
-    kwargs: dict = {"user": user}
+async def create_thread(req: ThreadCreateRequest, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+
+    kwargs: dict = {"user": target_user}
+    if patient:
+        kwargs["acted_by"] = current_user
     if req.prescription_id is not None:
-        prescription = await Prescription.get_or_none(id=req.prescription_id, user=user)
+        prescription = await Prescription.get_or_none(id=req.prescription_id, user=target_user)
         if not prescription:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
         kwargs["prescription"] = prescription
@@ -63,16 +68,23 @@ async def list_threads(
     page: int = 1,
     page_size: int = config.CHAT_DEFAULT_PAGE_SIZE,
     thread_status: str = Query("all", alias="status"),
-    user: User = Depends(get_current_user),
+    actors: tuple[User, User | None] = Depends(get_acting_patient),
 ):
-    threads = await ChatThread.filter(user=user).annotate(message_count=Count("messages")).order_by("-updated_at")
-
+    current_user, patient = actors
+    target_user = patient or current_user
+    threads = (
+        await ChatThread.filter(user=target_user)
+        .annotate(message_count=Count("messages"))
+        .order_by("-updated_at")
+        .prefetch_related("acted_by")
+    )
     # 1. Virtual status 계산 (메시지 0개인 빈 thread 제외)
     all_results = []
     for t in threads:
         if t.message_count == 0:  # type: ignore[attr-defined]
             continue
         computed = _compute_thread_status(t)
+        acted_by_user = t.acted_by if t.acted_by_id else None
         all_results.append(
             {
                 "id": t.id,
@@ -82,6 +94,7 @@ async def list_threads(
                 "status": computed,
                 "created_at": str(t.created_at),
                 "updated_at": str(t.updated_at),
+                "acted_by_name": acted_by_user.name if acted_by_user else None,
             }
         )
 
@@ -113,8 +126,10 @@ async def list_threads(
 
 
 @router.get("/threads/{thread_id}")
-async def get_thread(thread_id: int, user: User = Depends(get_current_user)):
-    thread = await ChatThread.get_or_none(id=thread_id, user=user)
+async def get_thread(thread_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    thread = await ChatThread.get_or_none(id=thread_id, user=target_user)
     if not thread:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
     return success_response(
@@ -131,8 +146,10 @@ async def get_thread(thread_id: int, user: User = Depends(get_current_user)):
 
 
 @router.get("/threads/{thread_id}/messages")
-async def list_messages(thread_id: int, user: User = Depends(get_current_user)):
-    thread = await ChatThread.get_or_none(id=thread_id, user=user)
+async def list_messages(thread_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    thread = await ChatThread.get_or_none(id=thread_id, user=target_user)
     if not thread:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
 
@@ -152,8 +169,10 @@ async def list_messages(thread_id: int, user: User = Depends(get_current_user)):
 
 
 @router.patch("/threads/{thread_id}/end")
-async def end_thread(thread_id: int, user: User = Depends(get_current_user)):
-    thread = await ChatThread.get_or_none(id=thread_id, user=user)
+async def end_thread(thread_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    thread = await ChatThread.get_or_none(id=thread_id, user=target_user)
     if not thread:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
 
@@ -163,8 +182,10 @@ async def end_thread(thread_id: int, user: User = Depends(get_current_user)):
 
 
 @router.patch("/threads/{thread_id}/reactivate")
-async def reactivate_thread(thread_id: int, user: User = Depends(get_current_user)):
-    thread = await ChatThread.get_or_none(id=thread_id, user=user)
+async def reactivate_thread(thread_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    thread = await ChatThread.get_or_none(id=thread_id, user=target_user)
     if not thread:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
 
@@ -343,8 +364,10 @@ async def _validate_thread_for_message(thread: ChatThread | None) -> None:
 
 
 @router.post("/messages")
-async def send_message(req: MessageSendRequest, user: User = Depends(get_current_user)):
-    thread = await ChatThread.get_or_none(id=req.thread_id, user=user)
+async def send_message(req: MessageSendRequest, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
+    thread = await ChatThread.get_or_none(id=req.thread_id, user=target_user)
     await _validate_thread_for_message(thread)
 
     # user 메시지 저장
@@ -401,11 +424,13 @@ async def send_message(req: MessageSendRequest, user: User = Depends(get_current
 
 
 @router.post("/feedback")
-async def send_feedback(req: FeedbackRequest, user: User = Depends(get_current_user)):
+async def send_feedback(req: FeedbackRequest, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    current_user, patient = actors
+    target_user = patient or current_user
     kwargs: dict = {"feedback_type": req.feedback_type}
 
     if req.thread_id:
-        thread = await ChatThread.get_or_none(id=req.thread_id, user=user)
+        thread = await ChatThread.get_or_none(id=req.thread_id, user=target_user)
         if not thread:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
         kwargs["thread"] = thread
@@ -414,7 +439,7 @@ async def send_feedback(req: FeedbackRequest, user: User = Depends(get_current_u
         message = await ChatMessage.get_or_none(id=req.message_id)
         if not message:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="메시지를 찾을 수 없습니다.")
-        msg_thread = await ChatThread.get_or_none(id=message.thread_id, user=user)
+        msg_thread = await ChatThread.get_or_none(id=message.thread_id, user=target_user)
         if not msg_thread:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
         kwargs["message"] = message
