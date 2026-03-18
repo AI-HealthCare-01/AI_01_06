@@ -4,6 +4,8 @@ from tortoise.models import Model
 
 class NotificationSetting(Model):
     user = fields.OneToOneField("models.User", related_name="notification_setting", primary_key=True)
+    medication_enabled = fields.BooleanField(default=True)
+    caregiver_enabled = fields.BooleanField(default=True)
     time_format = fields.CharField(max_length=10, null=True)  # 12H | 24H
     sound_key = fields.CharField(max_length=50, null=True)
     morning_time = fields.CharField(max_length=8, null=True)  # "HH:MM" 형식
