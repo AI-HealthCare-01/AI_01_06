@@ -60,3 +60,9 @@ docs/*
 # RAG generated data
 app/data/faiss/
 app/data/raw_drug_chunks.json
+
+# Deploy script (contains infra credentials)
+deploy.sh
+
+# Nginx prod config (contains server IP)
+infra/nginx/default.prod.conf
