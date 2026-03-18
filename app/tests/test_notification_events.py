@@ -133,7 +133,9 @@ async def test_proxy_guide_creates_notification(client: AsyncClient):
     # 처방전 + OCR 완료 + 약물 데이터 준비
     patient_user = await User.get(id=patient_id)
     prescription = await Prescription.create(user=patient_user, ocr_status="ocr_completed", hospital_name="테스트병원")
-    await Medication.create(prescription=prescription, name="테스트약", dosage="1정", frequency="1일 3회", duration="7일")
+    await Medication.create(
+        prescription=prescription, name="테스트약", dosage="1정", frequency="1일 3회", duration="7일"
+    )
 
     # 보호자가 대리 가이드 생성
     client.headers["Authorization"] = f"Bearer {guardian_token}"
