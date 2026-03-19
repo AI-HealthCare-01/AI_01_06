@@ -138,7 +138,7 @@ export default function GuideDetailPage() {
         <h2 className="text-lg font-bold mb-2">처방 정보</h2>
         <div className="rounded-lg p-4 grid grid-cols-2 gap-3" style={{ background: 'var(--color-surface)' }}>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>병원명</p><p className="font-medium">{prescription_info.hospital_name}</p></div>
-          <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name}</p></div>
+          <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name || "정보 없음"}</p></div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>처방일</p><p className="font-medium">{prescription_info.prescription_date}</p></div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>진단명</p><p className="font-medium">{prescription_info.diagnosis}</p></div>
         </div>

@@ -139,6 +139,51 @@ def test_parse_fields_extracts_multiple_medications():
     assert result["medications"][1]["instructions"] == "아침 저녁 식후"
 
 
+def test_parse_fields_yakbongji_returns_no_doctor_name():
+    """약봉지(조제약 복약안내)에서 약사 이름이 doctor_name으로 매핑되지 않아야 함."""
+    service = NaverOcrService(secret="s", url="u")
+    texts = [
+        "조제약 복약안내",
+        "약국명",
+        "건강약국",
+        "조제 약사",
+        "김도연",
+        "조제 일자",
+        "2026-03-15",
+        "병원정보",
+        "서울대학교병원",
+    ]
+    result = service._parse_fields(texts)
+    assert result["doctor_name"] is None
+
+
+def test_parse_fields_yakbongji_with_pharmacist_marker():
+    """약봉지에서 '약사명' 키워드가 있을 때 doctor_name이 None이어야 함."""
+    service = NaverOcrService(secret="s", url="u")
+    texts = [
+        "복약안내",
+        "약사명",
+        "박약사",
+        "2026-01-10",
+    ]
+    result = service._parse_fields(texts)
+    assert result["doctor_name"] is None
+
+
+def test_parse_fields_prescription_still_extracts_doctor():
+    """처방전에서는 여전히 doctor_name이 정상 추출되어야 함."""
+    service = NaverOcrService(secret="s", url="u")
+    texts = [
+        "요양기관명",
+        "서울대학교병원",
+        "처방의사성명",
+        "김의사",
+        "2026-02-25",
+    ]
+    result = service._parse_fields(texts)
+    assert result["doctor_name"] == "김의사"
+
+
 async def test_call_clova_api_returns_text_list(tmp_path):
     image_file = tmp_path / "test.png"
     image_file.write_bytes(b"fake-image-data")
