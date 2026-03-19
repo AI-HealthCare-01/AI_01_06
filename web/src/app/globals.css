@@ -2,47 +2,72 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 @import "tailwindcss";
 
-/* ── Design Tokens ── */
+/* ══════════════════════════════════════════
+   Design Tokens — Emerald Green System
+   ══════════════════════════════════════════ */
 :root {
-  --color-bg:           #FEFDFB;
-  --color-surface:      #F5F0EB;
-  --color-surface-alt:  #EDE7E0;
-  --color-border:       #D6CEC6;
-  --color-text:         #2D2A26;
-  --color-text-muted:   #7A7470;
-  --color-primary:      #0D7C66;
-  --color-primary-hover:#0A6B58;
-  --color-primary-soft: #E6F5F0;
-  --color-cta:          #D97706;
-  --color-cta-hover:    #B45309;
-  --color-accent:       #E8815A;
-  --color-card-bg:      #FFFFFF;
+  /* ── Core Palette ── */
+  --color-bg:            #F8FAF9;
+  --color-surface:       #F0F4F2;
+  --color-surface-alt:   #E5EBE8;
+  --color-border:        #D1D9D5;
+  --color-text:          #1A2E28;
+  --color-text-muted:    #6B7F77;
 
-  /* ── Semantic Status Colors ── */
-  --color-success:       #0D7C66;
-  --color-success-soft:  #E6F5F0;
-  --color-success-text:  #065F4A;
+  /* ── Primary (Calm Emerald) ── */
+  --color-primary:       #059669;
+  --color-primary-hover: #047857;
+  --color-primary-soft:  #ECFDF5;
+  --color-primary-pale:  #F0FDF9;
+
+  /* ── CTA (→ Primary 통합, 주황 제거) ── */
+  --color-cta:           #059669;
+  --color-cta-hover:     #047857;
+
+  /* ── Accent (→ Primary 통합, 주황 제거) ── */
+  --color-accent:        #059669;
+  --color-accent-soft:   #ECFDF5;
+
+  /* ── Secondary (Muted Lavender — 보조 강조) ── */
+  --color-secondary:       #7E6CB5;
+  --color-secondary-hover: #6D5BA4;
+  --color-secondary-soft:  #F3F0FA;
+  --color-secondary-text:  #5B4D8A;
+
+  /* ── Card ── */
+  --color-card-bg:       #FFFFFF;
+
+  /* ── Semantic Status ── */
+  --color-success:       #059669;
+  --color-success-soft:  #ECFDF5;
+  --color-success-text:  #065F46;
 
   --color-warning:       #D97706;
-  --color-warning-soft:  #FEF3C7;
+  --color-warning-soft:  #FFFBEB;
   --color-warning-text:  #92400E;
 
   --color-danger:        #DC2626;
   --color-danger-soft:   #FEF2F2;
   --color-danger-text:   #991B1B;
 
-  --color-info:          #0D7C66;
-  --color-info-soft:     #E6F5F0;
-  --color-info-text:     #065F4A;
+  --color-info:          #059669;
+  --color-info-soft:     #ECFDF5;
+  --color-info-text:     #065F46;
 
   /* ── Interactive Elements ── */
-  --color-input-border:  #D6CEC6;
-  --color-input-focus:   #0D7C66;
+  --color-input-border:  #D1D9D5;
+  --color-input-focus:   #059669;
   --color-input-bg:      #FFFFFF;
 
   /* ── Social Login (brand colors) ── */
   --color-kakao:         #FEE500;
   --color-kakao-text:    #191919;
+
+  /* ── Shadows ── */
+  --shadow-sm:  0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md:  0 4px 8px rgba(16, 24, 40, 0.06);
+  --shadow-lg:  0 6px 16px rgba(16, 24, 40, 0.08);
+  --shadow-card: 0 1px 4px rgba(16, 24, 40, 0.04);
 }
 
 /* ── Font Size Scale ── */
@@ -115,12 +140,11 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Card hover effect ── */
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .card-hover:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(45, 42, 38, 0.1);
-  border-color: var(--color-primary);
+  box-shadow: var(--shadow-lg);
 }
 
 /* ── CTA button hover ── */
@@ -128,28 +152,31 @@ h1, h2, h3, h4, h5, h6 {
   transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 .cta-hover:hover {
-  transform: scale(1.02);
+  transform: scale(1.01);
 }
+
+/* ══════════════════════════════════════════
+   Component Classes
+   ══════════════════════════════════════════ */
 
 /* ── App Card ── */
 .app-card {
   background: var(--color-card-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(45, 42, 38, 0.06);
-  transition: box-shadow 0.2s ease;
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 .app-card:hover {
-  box-shadow: 0 4px 12px rgba(45, 42, 38, 0.1);
+  box-shadow: var(--shadow-md);
 }
 
 /* ── Primary Button ── */
 .btn-primary {
   background: var(--color-primary);
   color: #fff;
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
   font-weight: 600;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 .btn-primary:hover {
   background: var(--color-primary-hover);
@@ -160,20 +187,37 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Outline Button ── */
 .btn-outline {
-  border: 1px solid var(--color-border);
+  border: 1.5px solid var(--color-border);
   color: var(--color-text);
-  border-radius: 0.75rem;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  border-radius: 0.875rem;
+  background: var(--color-card-bg);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 .btn-outline:hover {
   border-color: var(--color-primary);
-  background: var(--color-primary-soft);
+  background: var(--color-primary-pale);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Danger Outline Button ── */
+.btn-danger-outline {
+  border: 1.5px solid var(--color-danger);
+  color: var(--color-danger);
+  border-radius: 0.875rem;
+  background: var(--color-card-bg);
+  transition: background-color 0.2s ease;
+}
+.btn-danger-outline:hover {
+  background: var(--color-danger-soft);
+}
+.btn-danger-outline:disabled {
+  opacity: 0.5;
 }
 
 /* ── Input Field ── */
 .input-field {
-  border: 1px solid var(--color-input-border);
-  border-radius: 0.5rem;
+  border: 1.5px solid var(--color-input-border);
+  border-radius: 0.75rem;
   background: var(--color-input-bg);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -184,9 +228,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ── Alert Variants ── */
-.alert-success { background: var(--color-success-soft); color: var(--color-success-text); border: 1px solid #A7D7C5; border-radius: 0.5rem; }
-.alert-warning { background: var(--color-warning-soft); color: var(--color-warning-text); border: 1px solid #FCD34D; border-radius: 0.5rem; }
-.alert-danger  { background: var(--color-danger-soft);  color: var(--color-danger-text);  border: 1px solid #FCA5A5; border-radius: 0.5rem; }
+.alert-success {
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+  border-radius: 0.875rem;
+}
+.alert-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+  border-radius: 0.875rem;
+}
+.alert-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+  border-radius: 0.875rem;
+}
 
 /* ── Scrollbar Hide (carousel 등) ── */
 .scrollbar-hide {

@@ -57,18 +57,17 @@ export default function OnboardingPage() {
       <div className="flex items-center justify-center py-10 px-4 pb-24 md:pb-10">
         <form
           onSubmit={handleSubmit}
-          className="p-6 md:p-8 rounded-lg w-full max-w-lg space-y-6"
+          className="p-8 md:p-10 rounded-2xl w-full max-w-lg space-y-6"
           style={{
             background: "var(--color-card-bg)",
-            border: "1px solid var(--color-border)",
-            boxShadow: "0 1px 3px rgba(45,42,38,0.06)",
+            boxShadow: "var(--shadow-lg)",
           }}
         >
           <div
-            className="p-6 rounded-lg text-white"
-            style={{ background: "var(--color-text)" }}
+            className="p-6 rounded-2xl text-white"
+            style={{ background: "var(--color-primary)" }}
           >
-            <h1 className="text-xl font-bold">
+            <h1 className="text-2xl font-bold">
               안녕하세요, {user?.name || "회원"}님!
             </h1>
             <p
@@ -85,7 +84,7 @@ export default function OnboardingPage() {
           )}
           <h2 className="text-lg font-bold">사용자 정보</h2>
           <div
-            className="rounded-lg p-6 space-y-4"
+            className="rounded-2xl p-6 space-y-4"
             style={{ background: "var(--color-surface)" }}
           >
             <div className="grid grid-cols-2 gap-4">

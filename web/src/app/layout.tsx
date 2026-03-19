@@ -5,7 +5,7 @@ import { PatientProvider } from "@/lib/patient-context";
 import { SocialRegistrationProvider } from "@/lib/social-registration-context";
 
 export const metadata: Metadata = {
-  title: "& Sullivan - AI 복약 가이드",
+  title: "Sullivan - AI 복약 가이드",
   description: "처방전 기반 맞춤형 AI 복약 가이드 서비스",
 };
 

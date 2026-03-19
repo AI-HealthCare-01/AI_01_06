@@ -305,14 +305,14 @@ function SignupContent() {
       <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
         <Header />
         <div className="flex items-center justify-center py-10 md:py-20 px-4 pb-24 md:pb-10">
-          <div className="p-6 md:p-8 rounded-lg w-full max-w-md space-y-6 text-center" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
-            <h1 className="text-2xl font-bold">회원가입</h1>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <p className="text-gray-800">계정 유형을 선택해주세요</p>
+          <div className="p-8 md:p-10 rounded-2xl w-full max-w-md space-y-6 text-center" style={{ background: 'var(--color-card-bg)', boxShadow: 'var(--shadow-lg)' }}>
+            <h1 className="text-2xl md:text-3xl font-semibold">회원가입</h1>
+            {error && <p className="text-sm" style={{ color: 'var(--color-danger)' }}>{error}</p>}
+            <p style={{ color: 'var(--color-text)' }}>계정 유형을 선택해주세요</p>
             <div className="space-y-4">
               <button
                 onClick={() => { setRole("patient"); setStep("form"); }}
-                className="w-full border-2 py-4 rounded-lg font-medium transition-colors"
+                className="w-full border-2 py-4 rounded-xl text-base font-semibold transition-colors"
                 style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary-soft)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = ''}
@@ -321,7 +321,7 @@ function SignupContent() {
               </button>
               <button
                 onClick={() => { setRole("caregiver"); setStep("form"); }}
-                className="w-full border-2 py-4 rounded-lg font-medium transition-colors"
+                className="w-full border-2 py-4 rounded-xl text-base font-semibold transition-colors"
                 style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-success-soft)'}
                 onMouseLeave={(e) => e.currentTarget.style.background = ''}
@@ -343,7 +343,7 @@ function SignupContent() {
                 <button
                   type="button"
                   onClick={handleKakaoSignup}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-lg font-medium hover:brightness-95 transition"
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-base font-medium hover:brightness-95 transition"
                   style={{ background: 'var(--color-kakao)', color: 'var(--color-kakao-text)' }}
                 >
                   카카오로 시작하기
@@ -351,7 +351,7 @@ function SignupContent() {
                 <button
                   type="button"
                   onClick={handleGoogleSignup}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-lg font-medium transition"
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-base font-medium transition"
                   style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
@@ -374,8 +374,8 @@ function SignupContent() {
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
       <Header />
       <div className="flex items-center justify-center py-10 px-4 pb-24 md:pb-10">
-        <form onSubmit={handleSubmit} className="p-6 md:p-8 rounded-lg w-full max-w-lg space-y-4" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
-          <h1 className="text-2xl font-bold">회원가입</h1>
+        <form onSubmit={handleSubmit} className="p-8 md:p-10 rounded-2xl w-full max-w-lg space-y-4" style={{ background: 'var(--color-card-bg)', boxShadow: 'var(--shadow-lg)' }}>
+          <h1 className="text-2xl md:text-3xl font-semibold">회원가입</h1>
           <p className="text-sm" style={{ color: 'var(--color-text)' }}>
             계정 유형 : {role === "patient" ? "일반" : "보호자"}
             {socialData?.provider === "KAKAO" && (
@@ -404,9 +404,10 @@ function SignupContent() {
                 onChange={(e) => updateForm("email", e.target.value)}
                 onBlur={() => handleBlur("email", () => validateEmail(form.email))}
                 placeholder={socialData?.provider === "KAKAO" && !socialData.email ? "이메일을 입력해주세요" : ""}
-                className={`w-full border rounded px-3 py-2 ${fieldErrors.email ? "border-red-500" : ""}`}
+                className="w-full px-3 py-2 input-field"
+                style={fieldErrors.email ? { borderColor: 'var(--color-danger)' } : undefined}
               />
-              {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>}
+              {fieldErrors.email && <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.email}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">별명</label>
@@ -415,10 +416,11 @@ function SignupContent() {
                 value={form.nickname}
                 onChange={(e) => updateForm("nickname", e.target.value)}
                 onBlur={() => handleBlur("nickname", () => validateNickname(form.nickname))}
-                className={`w-full border rounded px-3 py-2 ${fieldErrors.nickname ? "border-red-500" : ""}`}
+                className="w-full px-3 py-2 input-field"
+                style={fieldErrors.nickname ? { borderColor: 'var(--color-danger)' } : undefined}
               />
-              {socialData && <p className="text-xs text-gray-400 mt-1">자동 입력됨, 변경 가능</p>}
-              {fieldErrors.nickname && <p className="text-xs text-red-500 mt-1">{fieldErrors.nickname}</p>}
+              {socialData && <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>자동 입력됨, 변경 가능</p>}
+              {fieldErrors.nickname && <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.nickname}</p>}
             </div>
           </div>
 
@@ -432,29 +434,31 @@ function SignupContent() {
                   value={form.password}
                   onChange={(e) => updateForm("password", e.target.value)}
                   onBlur={() => handleBlur("password", () => validatePassword(form.password))}
-                  className={`w-full border rounded px-3 py-2 ${fieldErrors.password ? "border-red-500" : ""}`}
+                  className="w-full px-3 py-2 input-field"
+                  style={fieldErrors.password ? { borderColor: 'var(--color-danger)' } : undefined}
                 />
                 {passwordStrength && (
                   <div className="flex gap-1 mt-1">
                     {(["weak", "fair", "strong"] as const).map((level, i) => {
                       const filled = ["weak", "fair", "strong"].indexOf(passwordStrength) >= i;
-                      const color =
+                      const bgColor =
                         passwordStrength === "strong"
-                          ? "bg-green-500"
+                          ? "var(--color-success)"
                           : passwordStrength === "fair"
-                            ? "bg-yellow-400"
-                            : "bg-red-400";
+                            ? "var(--color-warning)"
+                            : "var(--color-danger)";
                       return (
                         <div
                           key={level}
-                          className={`h-1 flex-1 rounded ${filled ? color : "bg-gray-200"}`}
+                          className="h-1 flex-1 rounded"
+                          style={{ background: filled ? bgColor : 'var(--color-surface-alt)' }}
                         />
                       );
                     })}
                   </div>
                 )}
                 {fieldErrors.password && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.password}</p>
                 )}
               </div>
               <div>
@@ -468,10 +472,11 @@ function SignupContent() {
                       validatePasswordConfirm(form.password, form.passwordConfirm),
                     )
                   }
-                  className={`w-full border rounded px-3 py-2 ${fieldErrors.passwordConfirm ? "border-red-500" : ""}`}
+                  className="w-full px-3 py-2 input-field"
+                  style={fieldErrors.passwordConfirm ? { borderColor: 'var(--color-danger)' } : undefined}
                 />
                 {fieldErrors.passwordConfirm && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.passwordConfirm}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.passwordConfirm}</p>
                 )}
               </div>
             </div>
@@ -485,12 +490,13 @@ function SignupContent() {
                 value={form.name}
                 onChange={(e) => updateForm("name", e.target.value)}
                 onBlur={() => handleBlur("name", () => validateName(form.name))}
-                className={`w-full border rounded px-3 py-2 ${fieldErrors.name ? "border-red-500" : ""}`}
+                className="w-full px-3 py-2 input-field"
+                style={fieldErrors.name ? { borderColor: 'var(--color-danger)' } : undefined}
               />
               {socialData?.provider === "GOOGLE" && socialData.name && (
                 <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>Google 이름 자동 입력, 변경 가능</p>
               )}
-              {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
+              {fieldErrors.name && <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.name}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">생년월일</label>
@@ -501,10 +507,11 @@ function SignupContent() {
                 min={MIN_DATE}
                 onChange={(e) => updateForm("birth_date", e.target.value)}
                 onBlur={() => handleBlur("birth_date", () => validateBirthDate(form.birth_date))}
-                className={`w-full border rounded px-3 py-2 ${fieldErrors.birth_date ? "border-red-500" : ""}`}
+                className="w-full px-3 py-2 input-field"
+                style={fieldErrors.birth_date ? { borderColor: 'var(--color-danger)' } : undefined}
               />
               {fieldErrors.birth_date && (
-                <p className="text-xs text-red-500 mt-1">{fieldErrors.birth_date}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.birth_date}</p>
               )}
             </div>
           </div>
@@ -515,13 +522,14 @@ function SignupContent() {
               value={form.gender}
               onChange={(e) => updateForm("gender", e.target.value)}
               onBlur={() => handleBlur("gender", () => validateGender(form.gender))}
-              className={`w-full border rounded px-3 py-2 ${fieldErrors.gender ? "border-red-500" : ""}`}
+              className="w-full px-3 py-2 input-field"
+              style={fieldErrors.gender ? { borderColor: 'var(--color-danger)' } : undefined}
             >
               <option value="">선택</option>
               <option value="M">남성</option>
               <option value="F">여성</option>
             </select>
-            {fieldErrors.gender && <p className="text-xs text-red-500 mt-1">{fieldErrors.gender}</p>}
+            {fieldErrors.gender && <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.gender}</p>}
           </div>
 
           <div>
@@ -531,7 +539,8 @@ function SignupContent() {
                 ref={prefixSelectRef}
                 value={phoneState.prefix}
                 onChange={(e) => handlePhonePrefixChange(e.target.value)}
-                className={`border rounded px-2 py-2 ${fieldErrors.phonePrefix ? "border-red-500" : ""}`}
+                className="px-2 py-2 input-field"
+                style={fieldErrors.phonePrefix ? { borderColor: 'var(--color-danger)' } : undefined}
               >
                 {PHONE_PREFIXES.map((p) => (
                   <option key={p} value={p}>{p}</option>
@@ -550,10 +559,11 @@ function SignupContent() {
                   }
                   placeholder="앞자리"
                   maxLength={4}
-                  className={`w-20 border rounded px-2 py-2 text-center ${fieldErrors.phonePrefix ? "border-red-500" : ""}`}
+                  className="w-20 px-2 py-2 text-center input-field"
+                  style={fieldErrors.phonePrefix ? { borderColor: 'var(--color-danger)' } : undefined}
                 />
               )}
-              <span className="text-gray-400">-</span>
+              <span style={{ color: 'var(--color-text-muted)' }}>-</span>
               <input
                 ref={middleRef}
                 type="text"
@@ -563,9 +573,10 @@ function SignupContent() {
                 onBlur={() => handleBlur("phoneMiddle", () => validatePhoneMiddle(phoneState.middle))}
                 placeholder="0000"
                 maxLength={4}
-                className={`w-20 border rounded px-2 py-2 text-center ${fieldErrors.phoneMiddle ? "border-red-500" : ""}`}
+                className="w-20 px-2 py-2 text-center input-field"
+                style={fieldErrors.phoneMiddle ? { borderColor: 'var(--color-danger)' } : undefined}
               />
-              <span className="text-gray-400">-</span>
+              <span style={{ color: 'var(--color-text-muted)' }}>-</span>
               <input
                 ref={lastRef}
                 type="text"
@@ -575,17 +586,18 @@ function SignupContent() {
                 onBlur={() => handleBlur("phoneLast", () => validatePhoneLast(phoneState.last))}
                 placeholder="0000"
                 maxLength={4}
-                className={`w-20 border rounded px-2 py-2 text-center ${fieldErrors.phoneLast ? "border-red-500" : ""}`}
+                className="w-20 px-2 py-2 text-center input-field"
+                style={fieldErrors.phoneLast ? { borderColor: 'var(--color-danger)' } : undefined}
               />
             </div>
             {fieldErrors.phonePrefix && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.phonePrefix}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.phonePrefix}</p>
             )}
             {fieldErrors.phoneMiddle && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.phoneMiddle}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.phoneMiddle}</p>
             )}
             {fieldErrors.phoneLast && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.phoneLast}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-danger)' }}>{fieldErrors.phoneLast}</p>
             )}
           </div>
 
@@ -600,7 +612,7 @@ function SignupContent() {
               <span className="text-sm">이용약관에 동의합니다 (필수)</span>
             </label>
             {fieldErrors.terms && (
-              <p className="text-xs text-red-500 ml-6">{fieldErrors.terms}</p>
+              <p className="text-xs ml-6" style={{ color: 'var(--color-danger)' }}>{fieldErrors.terms}</p>
             )}
             <label className="flex items-center gap-2">
               <input
@@ -611,7 +623,7 @@ function SignupContent() {
               <span className="text-sm">개인정보 처리방침에 동의합니다 (필수)</span>
             </label>
             {fieldErrors.privacy && (
-              <p className="text-xs text-red-500 ml-6">{fieldErrors.privacy}</p>
+              <p className="text-xs ml-6" style={{ color: 'var(--color-danger)' }}>{fieldErrors.privacy}</p>
             )}
             <label className="flex items-center gap-2">
               <input
@@ -627,14 +639,14 @@ function SignupContent() {
             <button
               type="button"
               onClick={() => setStep("role")}
-              className="flex-1 border py-2 rounded-lg"
+              className="flex-1 py-2 rounded-lg btn-outline"
             >
               이전
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 py-2 rounded-lg btn-primary"
             >
               {loading ? "가입 중..." : "회원가입"}
             </button>

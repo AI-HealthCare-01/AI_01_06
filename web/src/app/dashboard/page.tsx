@@ -67,25 +67,36 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">안녕하세요, {user?.nickname}님</h1>
+      {/* 인사말 영역 */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold" style={{ color: "var(--color-text)" }}>
+          안녕하세요, {user?.nickname}님
+        </h1>
         {isProxyMode && activePatient ? (
-          <p className="text-sm mt-1" style={{ color: "var(--color-primary)" }}>
+          <div
+            className="inline-flex items-center gap-2 mt-2 px-4 py-2 rounded-xl text-sm font-medium"
+            style={{ background: "var(--color-primary-soft)", color: "var(--color-primary)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
             {activePatient.name}님의 건강 현황입니다
-          </p>
+          </div>
         ) : (
-          <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+          <div
+            className="inline-flex items-center gap-2 mt-2 px-4 py-2 rounded-xl text-sm"
+            style={{ background: "var(--color-surface)", color: "var(--color-text-muted)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
             {today}
-          </p>
+          </div>
         )}
       </div>
 
       <PatientHealthSummary />
 
       {scheduleError && (
-        <p className="text-sm mb-4" style={{ color: "var(--color-danger)" }}>
+        <div className="alert-warning p-4 mb-6 text-sm">
           {scheduleError}
-        </p>
+        </div>
       )}
 
       {loadingSchedules ? (

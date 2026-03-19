@@ -64,7 +64,7 @@ export default function NotificationsPage() {
     <AppLayout>
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-lg font-bold" style={{ color: "var(--color-text)" }}>
+        <h1 className="text-2xl md:text-3xl font-semibold" style={{ color: "var(--color-text)" }}>
           알림센터
         </h1>
         {unreadCount > 0 && (

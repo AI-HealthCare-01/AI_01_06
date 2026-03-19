@@ -64,6 +64,18 @@ export default function GuideDetailPage() {
   const [guide, setGuide] = useState<GuideData | null>(null);
   const [generating, setGenerating] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm("이 복약 가이드를 삭제하시겠습니까?")) return;
+    setDeleting(true);
+    const res = await api.deleteGuide(guideId);
+    if (res.success) {
+      router.push("/guides");
+    } else {
+      setDeleting(false);
+    }
+  };
 
   const handleRegenerate = async () => {
     if (!guide || !confirm("가이드를 재생성하면 기존 가이드가 삭제됩니다. 계속할까요?")) return;
@@ -111,9 +123,9 @@ export default function GuideDetailPage() {
     return (
       <AppLayout>
         <h1 className="text-2xl font-bold mb-2">가이드 생성 실패</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-700 font-medium">가이드 생성 중 오류가 발생했습니다.</p>
-          <p className="text-red-500 text-sm mt-1">처방전 내용을 확인하고 다시 시도해주세요.</p>
+        <div className="alert-danger rounded-lg p-6 text-center">
+          <p className="font-medium">가이드 생성 중 오류가 발생했습니다.</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>처방전 내용을 확인하고 다시 시도해주세요.</p>
         </div>
         <div className="flex gap-4 mt-4">
           <Link href="/guides" className="flex-1 py-3 rounded-lg text-center btn-outline">
@@ -135,7 +147,7 @@ export default function GuideDetailPage() {
 
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold mb-2">AI 복약 가이드</h1>
+      <h1 className="text-2xl md:text-3xl font-semibold mb-2">AI 복약 가이드</h1>
       <p className="mb-1" style={{ color: 'var(--color-text-muted)' }}>맞춤형 복약 지침과 건강 관리 가이드</p>
 
       <div className="alert-success rounded-lg p-4 mb-4">
@@ -164,7 +176,7 @@ export default function GuideDetailPage() {
       {/* Prescription info */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">처방 정보</h2>
-        <div className="rounded-lg p-4 grid grid-cols-2 gap-3" style={{ background: 'var(--color-surface)' }}>
+        <div className="rounded-2xl p-5 grid grid-cols-2 gap-4" style={{ background: 'var(--color-surface)' }}>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>병원명</p><p className="font-medium">{prescription_info.hospital_name}</p></div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name}</p></div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>처방일</p><p className="font-medium">{prescription_info.prescription_date}</p></div>
@@ -200,18 +212,18 @@ export default function GuideDetailPage() {
       {/* Warnings */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">중요 주의사항</h2>
-        <div className="rounded-lg p-4 space-y-3 text-sm" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
+        <div className="app-card p-5 space-y-4 text-sm">
           <div>
             <p className="font-bold">약물 상호작용 :</p>
-            <p className="ml-4" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.drug_interactions}</p>
+            <p className="ml-4 mt-1" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.drug_interactions}</p>
           </div>
           <div>
             <p className="font-bold">부작용 발생 시 :</p>
-            <p className="ml-4" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.side_effects}</p>
+            <p className="ml-4 mt-1" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.side_effects}</p>
           </div>
           <div>
             <p className="font-bold">음주 :</p>
-            <p className="ml-4" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.alcohol}</p>
+            <p className="ml-4 mt-1" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.alcohol}</p>
           </div>
         </div>
       </section>
@@ -219,7 +231,7 @@ export default function GuideDetailPage() {
       {/* Lifestyle */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">생활 습관 권장사항</h2>
-        <div className="rounded-lg p-4 space-y-3 text-sm" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
+        <div className="app-card p-5 space-y-4 text-sm">
           <div>
             <p className="font-bold">식이 관리</p>
             <ul className="list-disc list-inside ml-2" style={{ color: 'var(--color-text-muted)' }}>

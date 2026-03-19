@@ -213,127 +213,156 @@ function ChatContent() {
   return (
     <AppLayout>
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="rounded-t-lg p-4 flex items-center gap-3" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold" style={{ background: 'var(--color-primary)' }}>AI</div>
-          <div className="flex-1">
-            <h1 className="font-bold">AI 복약 상담 챗봇</h1>
-            <p className="text-xs" style={{ color: 'var(--color-success)' }}>온라인</p>
-          </div>
-          <Link
-            href="/chat/history"
-            className="text-sm hover:underline"
-            style={{ color: 'var(--color-primary)' }}
-          >
-            대화 기록
-          </Link>
-          <button
-            onClick={handleEndClick}
-            disabled={isStreaming || !threadId}
-            className="text-sm px-3 py-1 rounded-lg disabled:opacity-50 transition-colors"
-            style={{ border: '1px solid var(--color-danger)', color: 'var(--color-danger)' }}
-          >
-            상담 종료
-          </button>
-        </div>
+        {/* ── Single unified card ── */}
+        <div className="app-card overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100dvh - 8rem)' }}>
 
-        {/* Proxy mode banner */}
-        {isProxyMode && activePatient && (
-          <div
-            className="px-4 py-2 text-sm"
-            style={{
-              backgroundColor: "var(--color-primary-soft)",
-              color: "var(--color-primary)",
-              borderLeft: "1px solid var(--color-border)",
-              borderRight: "1px solid var(--color-border)",
-            }}
-          >
-            이 상담은 <strong>{activePatient.name}</strong>님에 대한 상담입니다.
-            {activePatient.name}님의 건강 정보를 바탕으로 답변합니다.
-          </div>
-        )}
-
-        {/* Init Error */}
-        {initError && (
-          <div className="p-4 text-center" style={{ background: 'var(--color-danger-soft)', borderLeft: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }}>
-            <p className="text-sm mb-2" style={{ color: 'var(--color-danger)' }}>{initError}</p>
-            <button
-              onClick={initThread}
-              className="text-sm hover:underline"
-              style={{ color: 'var(--color-primary)' }}
-            >
-              다시 시도
-            </button>
-          </div>
-        )}
-
-        {/* Messages */}
-        <div className="p-4 min-h-[300px] max-h-[50dvh] md:max-h-[500px] overflow-y-auto space-y-4" style={{ background: 'var(--color-card-bg)', borderLeft: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }}>
-          {messages.map((msg, i) => (
-            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] rounded-lg p-3 whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "text-white text-sm"
-                  : "text-base"
-              }`} style={
-                msg.role === "user"
-                  ? { background: 'var(--color-primary)' }
-                  : msg.status === "failed"
-                    ? { background: 'var(--color-danger-soft)', color: 'var(--color-danger-text)' }
-                    : { background: 'var(--color-surface)', color: 'var(--color-text)' }
-              }>
-                {msg.content || (msg.status === "streaming" ? (
-                  <span className="inline-flex gap-1 py-1">
-                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "300ms" }} />
-                  </span>
-                ) : "")}
+          {/* Header — 모바일 2줄 / 웹 1줄 */}
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'var(--color-primary-soft)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base font-bold leading-snug">AI 복약 상담</h1>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--color-success)' }} />
+                  <p className="text-sm" style={{ color: 'var(--color-success)' }}>온라인</p>
+                </div>
+              </div>
+              {/* 웹: 1줄에 액션 버튼 표시 */}
+              <div className="hidden md:flex items-center gap-3">
+                <Link
+                  href="/chat/history"
+                  className="text-sm px-4 py-2.5 rounded-xl hover:underline"
+                  style={{ color: 'var(--color-primary)' }}
+                >
+                  대화 기록
+                </Link>
+                <button
+                  onClick={handleEndClick}
+                  disabled={isStreaming || !threadId}
+                  className="text-sm px-4 py-2.5 min-h-[44px] rounded-xl disabled:opacity-50 transition-colors btn-danger-outline"
+                >
+                  상담 종료
+                </button>
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Quick actions */}
-        {showQuickActions && (
-          <div className="px-4 pb-2" style={{ background: 'var(--color-card-bg)', borderLeft: '1px solid var(--color-border)', borderRight: '1px solid var(--color-border)' }}>
-            <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>자주 묻는 질문</p>
-            <div className="grid grid-cols-2 gap-2">
-              {quickActions.map((q) => (
-                <button key={q} onClick={() => sendMessage(q)} className="text-sm rounded-lg px-3 py-3 text-left btn-outline">
-                  {q}
-                </button>
-              ))}
+            {/* 모바일: 2행에 액션 버튼 표시 */}
+            <div className="flex md:hidden items-center justify-end gap-3 mt-3">
+              <Link
+                href="/chat/history"
+                className="text-sm px-4 py-2.5 min-h-[44px] flex items-center rounded-xl btn-outline"
+              >
+                대화 기록
+              </Link>
+              <button
+                onClick={handleEndClick}
+                disabled={isStreaming || !threadId}
+                className="text-sm px-4 py-2.5 min-h-[44px] rounded-xl disabled:opacity-50 transition-colors btn-danger-outline"
+              >
+                상담 종료
+              </button>
             </div>
           </div>
-        )}
 
-        {/* Input */}
-        <div className="sticky bottom-16 md:bottom-0 z-10 rounded-b-lg p-4" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
-          <div className="flex gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
-              onFocus={(e) => { setTimeout(() => e.target.scrollIntoView({ block: "center", behavior: "smooth" }), 300); }}
-              placeholder="메시지를 입력하세요..."
-              className="flex-1 px-4 py-3 text-base input-field"
-              disabled={isStreaming}
-            />
-            <button
-              onClick={() => sendMessage(input)}
-              disabled={isStreaming}
-              className="px-4 py-3 rounded-lg btn-primary"
+          {/* Proxy mode banner */}
+          {isProxyMode && activePatient && (
+            <div
+              className="px-5 py-2.5 text-sm"
+              style={{
+                backgroundColor: "var(--color-primary-soft)",
+                color: "var(--color-primary)",
+                borderBottom: "1px solid var(--color-border)",
+              }}
             >
-              전송
-            </button>
+              이 상담은 <strong>{activePatient.name}</strong>님에 대한 상담입니다.
+              {activePatient.name}님의 건강 정보를 바탕으로 답변합니다.
+            </div>
+          )}
+
+          {/* Init Error */}
+          {initError && (
+            <div className="px-5 py-4 text-center" style={{ background: 'var(--color-danger-soft)', borderBottom: '1px solid var(--color-border)' }}>
+              <p className="text-sm mb-2" style={{ color: 'var(--color-danger)' }}>{initError}</p>
+              <button
+                onClick={initThread}
+                className="text-sm hover:underline"
+                style={{ color: 'var(--color-primary)' }}
+              >
+                다시 시도
+              </button>
+            </div>
+          )}
+
+          {/* Messages — scrollable area */}
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '240px' }}>
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[80%] md:max-w-[75%] rounded-2xl px-4 py-3 whitespace-pre-wrap ${
+                  msg.role === "user"
+                    ? "text-white text-sm"
+                    : "text-base"
+                }`} style={
+                  msg.role === "user"
+                    ? { background: 'var(--color-primary)' }
+                    : msg.status === "failed"
+                      ? { background: 'var(--color-danger-soft)', color: 'var(--color-danger-text)' }
+                      : { background: 'var(--color-surface)', color: 'var(--color-text)' }
+                }>
+                  {msg.content || (msg.status === "streaming" ? (
+                    <span className="inline-flex gap-1 py-1">
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "0ms" }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "150ms" }} />
+                      <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "300ms" }} />
+                    </span>
+                  ) : "")}
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-          <p className="text-xs text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>{DISCLAIMER}</p>
-        </div>
+
+          {/* Quick actions */}
+          {showQuickActions && (
+            <div className="px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+              <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>자주 묻는 질문</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {quickActions.map((q) => (
+                  <button key={q} onClick={() => sendMessage(q)} className="text-sm rounded-xl px-4 py-3.5 text-left btn-outline">
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Input — inside card, sticky within the flex column */}
+          <div className="shrink-0 px-5 py-4" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <div className="flex gap-2">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
+                onFocus={(e) => { setTimeout(() => e.target.scrollIntoView({ block: "center", behavior: "smooth" }), 300); }}
+                placeholder="메시지를 입력하세요..."
+                className="flex-1 px-4 py-3 text-base input-field"
+                disabled={isStreaming}
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={isStreaming}
+                className="px-5 py-3 min-h-[44px] rounded-xl btn-primary"
+              >
+                전송
+              </button>
+            </div>
+            <p className="text-sm text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>{DISCLAIMER}</p>
+          </div>
+
+        </div>{/* end single unified card */}
 
         {/* Info box */}
-        <div className="rounded-lg p-4 mt-4 text-sm" style={{ background: 'var(--color-primary-soft)' }}>
+        <div className="rounded-2xl p-5 mt-4 text-sm" style={{ background: 'var(--color-primary-soft)' }}>
           <p className="font-bold mb-1">AI 챗봇 사용 안내</p>
           <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--color-text-muted)' }}>
             <li>복약 방법, 시간, 주의사항 등에 대해 질문할 수 있습니다.</li>
@@ -346,7 +375,7 @@ function ChatContent() {
       {/* Feedback Modal */}
       {showFeedbackModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="rounded-lg p-6 w-full max-w-md mx-4" style={{ background: 'var(--color-card-bg)' }}>
+          <div className="rounded-2xl p-6 w-full max-w-md mx-4" style={{ background: 'var(--color-card-bg)', boxShadow: 'var(--shadow-lg)' }}>
             {feedbackStep === "rating" ? (
               <>
                 <h2 className="text-lg font-bold text-center mb-2">상담이 도움이 되셨나요?</h2>
@@ -357,19 +386,22 @@ function ChatContent() {
                   <button
                     onClick={handlePositiveFeedback}
                     disabled={feedbackSubmitting}
-                    className="flex flex-col items-center gap-2 px-6 py-4 rounded-lg disabled:opacity-50 btn-outline"
+                    className="flex flex-col items-center gap-3 px-8 py-5 rounded-2xl disabled:opacity-50 btn-outline"
                   >
-                    <span className="text-3xl">👍</span>
-                    <span className="text-sm font-medium">도움이 됐어요</span>
+                    <span className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-primary-soft)' }}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M2 20h2V8H2v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L15.17 1 7.59 8.59C7.22 8.95 7 9.45 7 10v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                    </span>
+                    <span className="text-sm font-semibold">도움이 됐어요</span>
                   </button>
                   <button
                     onClick={handleNegativeFeedback}
                     disabled={feedbackSubmitting}
-                    className="flex flex-col items-center gap-2 px-6 py-4 rounded-lg disabled:opacity-50 transition-colors"
-                    style={{ border: '1px solid var(--color-border)' }}
+                    className="flex flex-col items-center gap-3 px-8 py-5 rounded-2xl disabled:opacity-50 btn-outline"
                   >
-                    <span className="text-3xl">👎</span>
-                    <span className="text-sm font-medium">아쉬웠어요</span>
+                    <span className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'var(--color-danger-soft)' }}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="var(--color-danger)"><path d="M22 4h-2v12h2V4zm-4 12V6c0-1.1-.9-2-2-2H7c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L8.83 23l7.58-7.59c.37-.36.59-.86.59-1.41z"/></svg>
+                    </span>
+                    <span className="text-sm font-semibold">아쉬웠어요</span>
                   </button>
                 </div>
                 <div className="flex flex-col gap-2">
@@ -400,7 +432,7 @@ function ChatContent() {
                     <button
                       key={r.value}
                       onClick={() => setSelectedReason(r.value)}
-                      className="w-full text-left text-sm px-4 py-3 rounded-lg transition-colors"
+                      className="w-full text-left text-sm px-4 py-3.5 rounded-xl transition-colors"
                       style={
                         selectedReason === r.value
                           ? { border: '1px solid var(--color-primary)', background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }
