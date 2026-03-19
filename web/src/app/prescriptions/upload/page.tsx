@@ -54,7 +54,7 @@ export default function PrescriptionUploadPage() {
       <div className="flex items-center gap-2 mb-8">
         <div className="px-4 py-2 rounded-full text-sm font-medium text-white" style={{ background: 'var(--color-primary)' }}>처방전 올리기</div>
         <span style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>내용 확인</div>
+        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>내용 재확인 & 수정</div>
         <span style={{ color: 'var(--color-text-muted)' }}>→</span>
         <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
       </div>
