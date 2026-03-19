@@ -34,9 +34,9 @@ export default function PatientHealthSummary() {
   if (!isProxyMode || !activePatient) return null;
   if (loading) {
     return (
-      <div className="app-card p-4 mb-4 md:hidden animate-pulse">
-        <div className="h-4 bg-gray-200 rounded w-1/3 mb-3" />
-        <div className="h-4 bg-gray-200 rounded w-2/3" />
+      <div className="app-card p-5 mb-6 md:hidden animate-pulse">
+        <div className="h-4 rounded w-1/3 mb-3" style={{ background: "var(--color-surface-alt)" }} />
+        <div className="h-4 rounded w-2/3" style={{ background: "var(--color-surface-alt)" }} />
       </div>
     );
   }
@@ -46,9 +46,9 @@ export default function PatientHealthSummary() {
   const hasDisease = p?.has_disease ?? false;
 
   return (
-    <div className="app-card p-4 mb-4 md:hidden">
+    <div className="app-card p-5 mb-6 md:hidden">
       <h3
-        className="text-sm font-bold mb-3"
+        className="text-base font-bold mb-4"
         style={{ color: "var(--color-text)" }}
       >
         {activePatient.name}님의 건강 정보
@@ -57,7 +57,7 @@ export default function PatientHealthSummary() {
       {/* 1행: 키 / 몸무게 */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div
-          className="p-3 rounded-lg"
+          className="p-4 rounded-xl"
           style={{ background: "var(--color-surface)" }}
         >
           <span
@@ -66,12 +66,12 @@ export default function PatientHealthSummary() {
           >
             키
           </span>
-          <p className="text-sm font-bold mt-0.5" style={{ color: "var(--color-text)" }}>
+          <p className="text-base font-bold mt-1" style={{ color: "var(--color-text)" }}>
             {p?.height_cm != null ? `${p.height_cm} cm` : "미입력"}
           </p>
         </div>
         <div
-          className="p-3 rounded-lg"
+          className="p-4 rounded-xl"
           style={{ background: "var(--color-surface)" }}
         >
           <span
@@ -80,7 +80,7 @@ export default function PatientHealthSummary() {
           >
             몸무게
           </span>
-          <p className="text-sm font-bold mt-0.5" style={{ color: "var(--color-text)" }}>
+          <p className="text-base font-bold mt-1" style={{ color: "var(--color-text)" }}>
             {p?.weight_kg != null ? `${p.weight_kg} kg` : "미입력"}
           </p>
         </div>
@@ -89,55 +89,55 @@ export default function PatientHealthSummary() {
       {/* 2행: 알러지 / 기저질환 */}
       <div className="grid grid-cols-2 gap-3">
         <div
-          className="p-3 rounded-lg"
+          className="p-4 rounded-xl"
           style={{ background: "var(--color-surface)" }}
         >
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <span
-              className="w-2 h-2 rounded-full"
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               aria-hidden="true"
               style={{
                 background: hasAllergy
                   ? "var(--color-danger)"
-                  : "var(--color-success, #22c55e)",
+                  : "var(--color-success)",
               }}
             />
             <span
-              className="text-xs font-medium"
+              className="text-sm font-medium"
               style={{ color: "var(--color-text-muted)" }}
             >
               {hasAllergy ? "알러지" : "알러지 없음"}
             </span>
           </div>
           {hasAllergy && p?.allergy_details && (
-            <p className="text-xs mt-1.5" style={{ color: "var(--color-text)" }}>
+            <p className="text-sm mt-2" style={{ color: "var(--color-text)" }}>
               {p.allergy_details}
             </p>
           )}
         </div>
         <div
-          className="p-3 rounded-lg"
+          className="p-4 rounded-xl"
           style={{ background: "var(--color-surface)" }}
         >
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <span
-              className="w-2 h-2 rounded-full"
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               aria-hidden="true"
               style={{
                 background: hasDisease
-                  ? "var(--color-warning, #f59e0b)"
-                  : "var(--color-success, #22c55e)",
+                  ? "var(--color-warning)"
+                  : "var(--color-success)",
               }}
             />
             <span
-              className="text-xs font-medium"
+              className="text-sm font-medium"
               style={{ color: "var(--color-text-muted)" }}
             >
               {hasDisease ? "기저질환" : "기저질환 없음"}
             </span>
           </div>
           {hasDisease && p?.disease_details && (
-            <p className="text-xs mt-1.5" style={{ color: "var(--color-text)" }}>
+            <p className="text-sm mt-2" style={{ color: "var(--color-text)" }}>
               {p.disease_details}
             </p>
           )}

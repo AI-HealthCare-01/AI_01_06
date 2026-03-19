@@ -74,8 +74,8 @@ function LoginContent() {
     <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
       <Header />
       <div className="flex items-center justify-center py-10 md:py-20 px-4 pb-24 md:pb-10">
-        <form onSubmit={handleSubmit} className="p-6 md:p-8 rounded-lg w-full max-w-md space-y-6" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', boxShadow: '0 1px 3px rgba(45,42,38,0.06)' }}>
-          <h1 className="text-2xl font-bold text-center">로그인</h1>
+        <form onSubmit={handleSubmit} className="p-8 md:p-10 rounded-2xl w-full max-w-md space-y-6" style={{ background: 'var(--color-card-bg)', boxShadow: 'var(--shadow-lg)' }}>
+          <h1 className="text-2xl md:text-3xl font-semibold text-center">로그인</h1>
           {error && <p className="text-sm text-center" style={{ color: 'var(--color-danger)' }}>{error}</p>}
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text)' }}>이메일</label>
@@ -84,7 +84,7 @@ function LoginContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 input-field"
+              className="w-full px-4 py-3 text-base input-field"
             />
           </div>
           <div>
@@ -94,13 +94,13 @@ function LoginContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 input-field"
+              className="w-full px-4 py-3 text-base input-field"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 btn-primary"
+            className="w-full py-3 text-base btn-primary"
           >
             {loading ? "로그인 중..." : "로그인"}
           </button>
@@ -115,7 +115,7 @@ function LoginContent() {
           <button
             type="button"
             onClick={handleKakaoLogin}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium hover:brightness-95 transition"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-base font-medium hover:brightness-95 transition"
             style={{ background: 'var(--color-kakao)', color: 'var(--color-kakao-text)' }}
           >
             카카오로 시작하기
@@ -123,7 +123,7 @@ function LoginContent() {
           <button
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg font-medium transition"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-base font-medium transition"
             style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">

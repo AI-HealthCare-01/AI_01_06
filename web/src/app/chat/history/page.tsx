@@ -105,7 +105,7 @@ export default function ChatHistoryPage() {
     <AppLayout>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl md:text-3xl font-semibold">
             {isProxyMode && activePatient
               ? `${activePatient.name}님의 상담 기록`
               : "대화 기록"}
@@ -116,7 +116,7 @@ export default function ChatHistoryPage() {
               : "이전 AI 상담 내역을 확인하세요"}
           </p>
         </div>
-        <Link href="/chat" className="px-4 py-2 rounded-lg btn-primary">
+        <Link href="/chat" className="px-5 py-2.5 rounded-xl btn-primary">
           새 상담 시작
         </Link>
       </div>
@@ -127,7 +127,7 @@ export default function ChatHistoryPage() {
           <button
             key={f.value}
             onClick={() => handleFilterChange(f.value)}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
             style={
               statusFilter === f.value
                 ? { background: "var(--color-primary)", color: "#fff" }
@@ -151,15 +151,15 @@ export default function ChatHistoryPage() {
         <>
           <div className="space-y-4">
             {threads.map((thread) => (
-              <Link key={thread.id} href={`/chat/${thread.id}`} className="block app-card rounded-lg p-4">
+              <Link key={thread.id} href={`/chat/${thread.id}`} className="block app-card p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold truncate">{thread.title || "제목 없음"}</h3>
+                      <h3 className="text-base font-bold truncate">{thread.title || "제목 없음"}</h3>
                       {thread.acted_by_name && (
                         <span
                           className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
-                          style={{ background: "var(--color-warning-soft, #fef3c7)", color: "var(--color-warning-text, #92400e)" }}
+                          style={{ background: "var(--color-secondary-soft)", color: "var(--color-secondary-text)" }}
                         >
                           보호자 대리
                         </span>
@@ -178,8 +178,8 @@ export default function ChatHistoryPage() {
                       <span>{thread.status === "active" ? "진행 중" : "종료됨"}</span>
                     </div>
                   </div>
-                  <span className="text-sm ml-4" style={{ color: "var(--color-text-muted)" }}>
-                    &gt;
+                  <span className="ml-4 flex-shrink-0" style={{ color: "var(--color-text-muted)" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
                   </span>
                 </div>
               </Link>

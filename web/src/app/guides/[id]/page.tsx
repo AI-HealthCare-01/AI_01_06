@@ -6,6 +6,17 @@ import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
 
+function normalizeDosage(dosage: string): string {
+  return dosage
+    .replace(/밀리그람|밀리그램/g, "mg")
+    .replace(/마이크로그람|마이크로그램/g, "mcg")
+    .replace(/그람|그램/g, "g")
+    .replace(/밀리리터/g, "mL")
+    .replace(/리터/g, "L")
+    .replace(/유닛/g, "U")
+    .replace(/국제단위/g, "IU");
+}
+
 interface MedicationGuide {
   name: string;
   dosage: string;
@@ -43,6 +54,7 @@ interface GuideData {
   };
   content: GuideContent | null;
   created_at: string;
+  profile_updated?: boolean;
 }
 
 export default function GuideDetailPage() {
@@ -52,6 +64,18 @@ export default function GuideDetailPage() {
   const [guide, setGuide] = useState<GuideData | null>(null);
   const [generating, setGenerating] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm("이 복약 가이드를 삭제하시겠습니까?")) return;
+    setDeleting(true);
+    const res = await api.deleteGuide(guideId);
+    if (res.success) {
+      router.push("/guides");
+    } else {
+      setDeleting(false);
+    }
+  };
 
   const handleRegenerate = async () => {
     if (!guide || !confirm("가이드를 재생성하면 기존 가이드가 삭제됩니다. 계속할까요?")) return;
@@ -99,9 +123,9 @@ export default function GuideDetailPage() {
     return (
       <AppLayout>
         <h1 className="text-2xl font-bold mb-2">가이드 생성 실패</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-700 font-medium">가이드 생성 중 오류가 발생했습니다.</p>
-          <p className="text-red-500 text-sm mt-1">처방전 내용을 확인하고 다시 시도해주세요.</p>
+        <div className="alert-danger rounded-lg p-6 text-center">
+          <p className="font-medium">가이드 생성 중 오류가 발생했습니다.</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-danger)' }}>처방전 내용을 확인하고 다시 시도해주세요.</p>
         </div>
         <div className="flex gap-4 mt-4">
           <Link href="/guides" className="flex-1 py-3 rounded-lg text-center btn-outline">
@@ -123,20 +147,36 @@ export default function GuideDetailPage() {
 
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold mb-2">AI 복약 가이드</h1>
+      <h1 className="text-2xl md:text-3xl font-semibold mb-2">AI 복약 가이드</h1>
       <p className="mb-1" style={{ color: 'var(--color-text-muted)' }}>맞춤형 복약 지침과 건강 관리 가이드</p>
 
-      <div className="alert-success rounded-lg p-4 mb-6">
+      <div className="alert-success rounded-lg p-4 mb-4">
         <p className="text-sm">
           가이드 생성 완료 - 처방전을 기반으로 맞춤형 복약 가이드가 생성되었습니다.
         </p>
         <p className="text-xs mt-1" style={{ color: 'var(--color-success)' }}>생성일: {guide.created_at.slice(0, 10)}</p>
       </div>
 
+      {guide.profile_updated && (
+        <div className="rounded-lg p-4 mb-6 flex items-center justify-between gap-3" style={{ background: 'var(--color-warning-soft)', border: '1px solid var(--color-warning)' }}>
+          <p className="text-sm font-medium" style={{ color: 'var(--color-warning-text)' }}>
+            ⚠️ 프로필 정보가 변경되었습니다. 최신 정보로 재생성하시겠습니까?
+          </p>
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+            style={{ background: 'var(--color-warning)' }}
+          >
+            {regenerating ? "재생성 중..." : "재생성"}
+          </button>
+        </div>
+      )}
+
       {/* Prescription info */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">처방 정보</h2>
-        <div className="rounded-lg p-4 grid grid-cols-2 gap-3" style={{ background: 'var(--color-surface)' }}>
+        <div className="rounded-2xl p-5 grid grid-cols-2 gap-4" style={{ background: 'var(--color-surface)' }}>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>병원명</p><p className="font-medium">{prescription_info.hospital_name}</p></div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name}</p></div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>처방일</p><p className="font-medium">{prescription_info.prescription_date}</p></div>
@@ -150,11 +190,12 @@ export default function GuideDetailPage() {
         <div className="space-y-4">
           {content.medication_guides.map((med, i) => (
             <div key={i} className="rounded-lg p-4" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-lg">{med.name} {med.dosage}</h3>
-                <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="font-bold text-lg">{med.name}</h3>
+                <span className="text-xs px-3 py-1 rounded-full shrink-0 ml-2" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
               </div>
               <div className="space-y-1 text-sm">
+                {med.dosage && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 용량 :</span> {normalizeDosage(med.dosage)}</p>}
                 {med.timing && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 시간대 :</span> {med.timing}</p>}
                 <p><span style={{ color: 'var(--color-text-muted)' }}>복용 횟수 :</span> {med.frequency}</p>
                 {med.duration && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 기간 :</span> {med.duration}</p>}
@@ -171,18 +212,18 @@ export default function GuideDetailPage() {
       {/* Warnings */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">중요 주의사항</h2>
-        <div className="rounded-lg p-4 space-y-3 text-sm" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
+        <div className="app-card p-5 space-y-4 text-sm">
           <div>
             <p className="font-bold">약물 상호작용 :</p>
-            <p className="ml-4" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.drug_interactions}</p>
+            <p className="ml-4 mt-1" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.drug_interactions}</p>
           </div>
           <div>
             <p className="font-bold">부작용 발생 시 :</p>
-            <p className="ml-4" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.side_effects}</p>
+            <p className="ml-4 mt-1" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.side_effects}</p>
           </div>
           <div>
             <p className="font-bold">음주 :</p>
-            <p className="ml-4" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.alcohol}</p>
+            <p className="ml-4 mt-1" style={{ color: 'var(--color-text-muted)' }}>{content.warnings.alcohol}</p>
           </div>
         </div>
       </section>
@@ -190,7 +231,7 @@ export default function GuideDetailPage() {
       {/* Lifestyle */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">생활 습관 권장사항</h2>
-        <div className="rounded-lg p-4 space-y-3 text-sm" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
+        <div className="app-card p-5 space-y-4 text-sm">
           <div>
             <p className="font-bold">식이 관리</p>
             <ul className="list-disc list-inside ml-2" style={{ color: 'var(--color-text-muted)' }}>
@@ -219,18 +260,11 @@ export default function GuideDetailPage() {
         <Link href={`/prescriptions/${guide.prescription_id}/ocr`} className="flex-1 py-3 rounded-lg text-center btn-outline">
           처방전 확인하기
         </Link>
-        <Link href={`/chat?prescriptionId=${guide.prescription_id}`} className="flex-1 py-3 rounded-lg text-center btn-primary">
-          AI에게 질문하기
-        </Link>
       </div>
       <div className="mt-3">
-        <button
-          onClick={handleRegenerate}
-          disabled={regenerating}
-          className="w-full py-3 rounded-lg text-center btn-outline disabled:opacity-50"
-        >
-          {regenerating ? "재생성 중..." : "프로필 반영하여 재생성"}
-        </button>
+        <Link href={`/chat?prescriptionId=${guide.prescription_id}`} className="block w-full py-3 rounded-lg text-center btn-primary">
+          AI에게 질문하기
+        </Link>
       </div>
     </AppLayout>
   );

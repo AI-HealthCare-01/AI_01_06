@@ -4,83 +4,62 @@ import Link from "next/link";
 import Header from "@/components/Header";
 
 /* ══════════════════════════════════════
-   SVG 아이콘 — 고령층 가독성 최적화
-   stroke 2.5px · 40px 사이즈
+   SVG 아이콘 — filled style · 고령층 가독성 최적화
 ══════════════════════════════════════ */
 function IconUpload() {
   return (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="12" y1="16" x2="12" y2="4" />
-      <polyline points="7 9 12 4 17 9" />
-      <path d="M4 20h16" />
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16zm0-6h3v1.5H8V10z" />
     </svg>
   );
 }
 function IconGuide() {
   return (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <polyline points="9 15 11 17 15 12" />
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-.75L9 9V4zm9 16H6V4h1v9l3-2.25L13 13V4h5v16z" />
     </svg>
   );
 }
 function IconChat() {
   return (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      <line x1="8" y1="10" x2="16" y2="10" />
-      <line x1="8" y1="14" x2="12" y2="14" />
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" />
+      <path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z" />
     </svg>
   );
 }
 function IconDashboard() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="3" width="7" height="7" rx="1" />
-      <rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" />
-      <rect x="14" y="14" width="7" height="7" rx="1" />
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z" />
     </svg>
   );
 }
 function IconFamily() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
     </svg>
   );
 }
 function IconBell() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
     </svg>
   );
 }
 function IconShield() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
     </svg>
   );
 }
 function IconCheck() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polyline points="20 6 9 17 4 12" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
     </svg>
   );
 }
@@ -151,7 +130,7 @@ export default function LandingPage() {
             {/* 서비스 뱃지 */}
             <p
               className="inline-block text-xs font-semibold px-4 py-1.5 rounded-full mb-6"
-              style={{ backgroundColor: "#FDEBD0", color: "var(--color-accent)" }}
+              style={{ backgroundColor: "var(--color-secondary-soft)", color: "var(--color-secondary)" }}
             >
               AI 맞춤형 복약 가이드 서비스
             </p>
@@ -187,12 +166,12 @@ export default function LandingPage() {
               href="/signup"
               className="cta-hover inline-flex items-center justify-center px-8 sm:px-10 py-4 rounded-2xl text-white font-semibold cursor-pointer"
               style={{
-                backgroundColor: "var(--color-cta)",
+                backgroundColor: "var(--color-primary)",
                 fontSize: "1rem",
-                boxShadow: "0 4px 14px rgba(217, 119, 6, 0.3)",
+                boxShadow: "0 4px 14px rgba(5, 150, 105, 0.25)",
               }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--color-cta-hover)")}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "var(--color-cta)")}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--color-primary-hover)")}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "var(--color-primary)")}
             >
               지금 바로 시작하세요
             </Link>
@@ -249,7 +228,7 @@ export default function LandingPage() {
                     <div>
                       <span
                         className="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold mb-2"
-                        style={{ backgroundColor: "var(--color-accent)", color: "#fff" }}
+                        style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}
                       >
                         {s.num}
                       </span>
@@ -377,7 +356,7 @@ export default function LandingPage() {
               className="font-bold text-lg mb-1 text-white"
               style={{ fontFamily: "'Gowun Batang', serif" }}
             >
-              Project &amp; Sullivan
+              Sullivan
             </p>
             <p className="text-sm" style={{ color: "#A8A29E" }}>AI 복약 가이드 서비스</p>
           </div>
@@ -404,7 +383,7 @@ export default function LandingPage() {
           style={{ borderColor: "#3D3A36" }}
         >
           <p className="text-xs" style={{ color: "#78716C" }}>
-            © 2025 Project &amp; Sullivan. All rights reserved.
+            © 2025 Sullivan. All rights reserved.
           </p>
         </div>
       </footer>

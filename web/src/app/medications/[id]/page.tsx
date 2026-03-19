@@ -29,7 +29,7 @@ export default function MedicationDetailPage() {
 
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold mb-6">약품 상세</h1>
+      <h1 className="text-2xl md:text-3xl font-semibold mb-6">약품 상세</h1>
       <div className="rounded-lg p-6 space-y-4" style={{ background: 'var(--color-surface)' }}>
         <div className="grid grid-cols-2 gap-4">
           <div><p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>약물명</p><p className="font-bold text-lg">{med.name}</p></div>
