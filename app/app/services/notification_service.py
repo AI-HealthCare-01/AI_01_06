@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -5,6 +6,8 @@ from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.notification import Notification, NotificationSetting
 from app.models.schedule import AdherenceLog, MedicationSchedule
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 _ALLOWED_TYPES = {"MEDICATION", "CAREGIVER"}
 
@@ -22,25 +25,30 @@ async def create_notification(
 ) -> Notification | None:
     """알림을 생성한다. 해당 유형이 disabled면 None을 반환한다.
 
+    DB 오류 시 None을 반환하며 주요 비즈니스 로직을 차단하지 않는다.
+
     Raises:
         ValueError: 허용되지 않은 notification_type인 경우
     """
     if notification_type not in _ALLOWED_TYPES:
         raise ValueError(f"허용되지 않은 알림 유형: {notification_type}")
 
-    setting_field = _TYPE_SETTING_MAP.get(notification_type)
-    if setting_field:
-        setting = await NotificationSetting.get_or_none(user_id=user_id)
-        if setting and not getattr(setting, setting_field):
-            return None
+    try:
+        setting_field = _TYPE_SETTING_MAP.get(notification_type)
+        if setting_field:
+            setting = await NotificationSetting.get_or_none(user_id=user_id)
+            if setting and not getattr(setting, setting_field):
+                return None
 
-    user = await User.get(id=user_id)
-    return await Notification.create(
-        user=user,
-        notification_type=notification_type,
-        title=title,
-        body=body,
-    )
+        return await Notification.create(
+            user_id=user_id,
+            notification_type=notification_type,
+            title=title,
+            body=body,
+        )
+    except Exception:
+        logger.exception("알림 생성 실패: user_id=%d type=%s", user_id, notification_type)
+        return None
 
 
 KST = ZoneInfo("Asia/Seoul")
