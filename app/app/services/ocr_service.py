@@ -14,29 +14,20 @@ from app import config
 
 logger = logging.getLogger(__name__)
 
-_OCR_SYSTEM_PROMPT = "당신은 한국 의료 문서 OCR 텍스트를 분석하는 전문가입니다. 처방전과 약봉지(조제약 복약안내)를 정확히 구분하고, 정확한 정보 추출만 수행합니다."
+_OCR_SYSTEM_PROMPT = "당신은 한국 처방전 OCR 텍스트를 분석하는 전문가입니다. 정확한 정보 추출만 수행합니다."
 
-_OCR_EXTRACT_PROMPT = """다음은 한국 의료 문서 이미지에서 OCR로 추출한 텍스트 블록들입니다:
+_OCR_EXTRACT_PROMPT = """다음은 한국 처방전 이미지에서 OCR로 추출한 텍스트 블록들입니다:
 
 {ocr_text}
 
-위 텍스트에서 정보를 추출하여 아래 JSON 형식으로만 응답하세요.
-
-## 중요 규칙
-- 먼저 문서 유형을 판별하세요:
-  - "처방전": 병원에서 발행하는 처방전 (처방의사성명, 질병분류기호 등 포함)
-  - "약봉지": 약국에서 발행하는 조제약 복약안내 (조제 약사, 복약안내 등 포함)
-- **"조제 약사"는 의사가 아닙니다. 약사 이름을 doctor_name에 넣지 마세요.**
-- 약봉지에서 병원명은 "병원정보"에서 추출하세요.
-- 처방전이 아닌 경우 doctor_name은 null로 하세요.
-- 추출할 수 없는 항목은 null로 표시하세요.
-- 약품이 여러 개면 medications 배열에 모두 포함하세요.
+위 텍스트에서 처방전 정보를 추출하여 아래 JSON 형식으로만 응답하세요.
+추출할 수 없는 항목은 null로 표시하세요.
+약품이 여러 개면 medications 배열에 모두 포함하세요.
 
 {{
-  "document_type": "처방전 또는 약봉지",
   "hospital_name": "병원/의료기관명 (테이블 헤더나 양식 텍스트가 아닌 실제 기관명)",
-  "doctor_name": "처방 의사 성명 (약사가 아닌 의사만, 없으면 null)",
-  "prescription_date": "처방일 또는 조제일 (YYYY-MM-DD 형식)",
+  "doctor_name": "처방 의사 성명 (사람 이름만, 면허번호 등 제외)",
+  "prescription_date": "처방일 (YYYY-MM-DD 형식)",
   "diagnosis": "질병분류기호 또는 진단명 (예: C92.1, D68.6)",
   "medications": [
     {{
@@ -213,16 +204,8 @@ class NaverOcrService(OcrServiceBase):
         return None
 
     def _extract_doctor_name(self, normalized: list[str], joined: str, block_starts: list[int]) -> str | None:
-        """처방의 성명 파싱. 약봉지(조제약 복약안내)인 경우 None 반환."""
-        _pharmacist_markers = ("조제약사", "조제약복약안내", "복약안내", "약봉지", "약사명")
-        _doctor_keywords = ("처방의사성명", "처방의성명", "의사성명")
-        joined_nospace = joined.replace(" ", "")
-        has_pharmacist = any(m in joined_nospace for m in _pharmacist_markers)
-        has_doctor_kw = any(kw in joined_nospace for kw in _doctor_keywords)
-        if has_pharmacist and not has_doctor_kw:
-            return None
-
-        for kw in _doctor_keywords:
+        """처방의 성명 파싱."""
+        for kw in ("처방의사성명", "처방의성명", "의사성명"):
             pos = joined.find(kw)
             if pos != -1:
                 bi = self._find_block_index(pos, block_starts)
