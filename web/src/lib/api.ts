@@ -19,6 +19,7 @@ export interface TodayScheduleItem {
   medication_name: string;
   dosage: string | null;
   frequency: string | null;
+  instructions: string | null;
   time_of_day: "MORNING" | "NOON" | "EVENING" | "BEDTIME";
   today_status: "TAKEN" | "MISSED" | "SKIPPED" | null;
   today_log_id: number | null;
@@ -312,7 +313,91 @@ export const api = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  // Notifications
+  getNotificationSettings: () =>
+    request("/api/notifications/settings"),
+
+  updateNotificationSettings: (data: Record<string, unknown>) =>
+    request("/api/notifications/settings", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  listNotifications: (isRead?: boolean) => {
+    const params = isRead !== undefined ? `?is_read=${isRead}` : "";
+    return request(`/api/notifications${params}`);
+  },
+
+  getUnreadCount: () =>
+    request<{ count: number }>("/api/notifications/unread-count"),
+
+  markNotificationRead: (id: number) =>
+    request(`/api/notifications/${id}/read`, { method: "PATCH" }),
+
+  readAllNotifications: () =>
+    request("/api/notifications/read-all", { method: "POST" }),
 };
+
+export function subscribeNotifications(
+  onCount: (count: number) => void,
+  onError: (message: string) => void,
+): AbortController {
+  const controller = new AbortController();
+
+  const connect = async () => {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications/stream`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+      });
+
+      if (!res.ok || !res.body) {
+        onError(`SSE 연결 실패 (${res.status})`);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.type === "unread_count") {
+              onCount(event.count);
+            }
+          } catch {
+            // ignore parse errors
+          }
+        }
+      }
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      onError("SSE 연결이 끊어졌습니다.");
+    }
+
+    // 자동 재연결 (5초 후, abort되지 않은 경우만)
+    if (!controller.signal.aborted) {
+      setTimeout(connect, 5000);
+    }
+  };
+
+  connect();
+  return controller;
+}
 
 export async function streamChat(
   threadId: number,

@@ -17,6 +17,7 @@ from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.chat import FeedbackRequest, MessageSendRequest, ThreadCreateRequest
 from app.services.chat_service import SYSTEM_PROMPT, get_chat_service
+from app.services.notification_service import create_notification
 from app.services.retrieval_service import format_retrieved_docs, get_retrieval_service
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,14 @@ async def create_thread(req: ThreadCreateRequest, actors: tuple[User, User | Non
         kwargs["prescription"] = prescription
 
     thread = await ChatThread.create(**kwargs)
+
+    if patient:
+        await create_notification(
+            user_id=patient.id,
+            notification_type="CAREGIVER",
+            title=f"{current_user.name}님이 AI 상담을 진행했습니다.",
+        )
+
     return success_response(
         {
             "id": thread.id,

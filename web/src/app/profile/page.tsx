@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { PatientProfile } from "@/types/profile";
 
-const TABS = ["info", "accessibility"] as const;
+const TABS = ["info", "accessibility", "notification"] as const;
 type Tab = (typeof TABS)[number];
 
 interface ProfileData {
@@ -38,6 +38,18 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const [fontSize, setFontSize] = useState<FontSize>("large");
   const [message, setMessage] = useState("");
+
+  // 알림 설정
+  const [notiSettings, setNotiSettings] = useState({
+    medication_enabled: true,
+    caregiver_enabled: true,
+    morning_time: "08:00",
+    noon_time: "12:00",
+    evening_time: "18:00",
+    bedtime_time: "22:00",
+  });
+  const [notiLoading, setNotiLoading] = useState(false);
+  const [notiMessage, setNotiMessage] = useState("");
 
   useEffect(() => {
     if (authLoading) return;
@@ -86,6 +98,40 @@ export default function ProfilePage() {
       has_disease: profile.has_disease,
       disease_details: profile.disease_details ?? "",
     });
+  };
+
+  const fetchNotificationSettings = async () => {
+    setNotiLoading(true);
+    const res = await api.getNotificationSettings();
+    if (res.success && res.data) {
+      const d = res.data as Record<string, unknown>;
+      setNotiSettings({
+        medication_enabled: (d.medication_enabled as boolean) ?? true,
+        caregiver_enabled: (d.caregiver_enabled as boolean) ?? true,
+        morning_time: (d.morning_time as string) ?? "08:00",
+        noon_time: (d.noon_time as string) ?? "12:00",
+        evening_time: (d.evening_time as string) ?? "18:00",
+        bedtime_time: (d.bedtime_time as string) ?? "22:00",
+      });
+    }
+    // res.data가 null이면 기본값 유지 (신규 유저)
+    setNotiLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === "notification") {
+      fetchNotificationSettings();
+    }
+  }, [activeTab]);
+
+  const handleNotiSave = async (field: string, value: unknown, prev: typeof notiSettings) => {
+    const res = await api.updateNotificationSettings({ [field]: value });
+    if (res.success) {
+      setNotiMessage("저장되었습니다.");
+      setTimeout(() => setNotiMessage(""), 2000);
+    } else {
+      setNotiSettings(prev);
+    }
   };
 
   const handleSave = async () => {
@@ -219,6 +265,7 @@ export default function ProfilePage() {
       {/* 탭 바 */}
       <div
         role="tablist"
+        aria-label="프로필 설정"
         className="flex border-b mt-4"
         style={{ borderColor: "var(--color-border)" }}
       >
@@ -268,6 +315,28 @@ export default function ProfilePage() {
         >
           접근성 설정
         </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === "notification"}
+          tabIndex={activeTab === "notification" ? 0 : -1}
+          id="tab-notification"
+          aria-controls="panel-notification"
+          onClick={() => setActiveTab("notification")}
+          onKeyDown={handleTabKeyDown}
+          className="px-4 py-2 text-sm font-medium transition-colors"
+          style={{
+            color:
+              activeTab === "notification"
+                ? "var(--color-primary)"
+                : "var(--color-text-muted)",
+            borderBottom:
+              activeTab === "notification"
+                ? "2px solid var(--color-primary)"
+                : "2px solid transparent",
+          }}
+        >
+          알림 설정
+        </button>
       </div>
 
       {/* 개인정보 탭 */}
@@ -276,6 +345,7 @@ export default function ProfilePage() {
           role="tabpanel"
           id="panel-info"
           aria-labelledby="tab-info"
+          tabIndex={0}
           className="app-card p-6 mt-4"
         >
           {isPatient ? (
@@ -454,6 +524,7 @@ export default function ProfilePage() {
           role="tabpanel"
           id="panel-accessibility"
           aria-labelledby="tab-accessibility"
+          tabIndex={0}
           className="app-card p-6 mt-4"
         >
           <h3 className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
@@ -486,6 +557,148 @@ export default function ProfilePage() {
           <p className="text-xs mt-2" style={{ color: "var(--color-text-muted)" }}>
             선택한 글자 크기가 로그인 시 기본 설정으로 적용됩니다.
           </p>
+        </div>
+      )}
+
+      {/* 알림 설정 탭 */}
+      {activeTab === "notification" && (
+        <div
+          role="tabpanel"
+          id="panel-notification"
+          aria-labelledby="tab-notification"
+          tabIndex={0}
+          className="space-y-6 mt-4"
+        >
+          {notiLoading ? (
+            <div className="app-card p-6">
+              <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>불러오는 중...</p>
+            </div>
+          ) : (
+            <>
+              {/* 알림 유형 */}
+              <div className="app-card p-6">
+                <h3 className="text-sm font-bold mb-4" style={{ color: "var(--color-text)" }}>
+                  알림 유형
+                </h3>
+
+                {/* 복약 알림 (환자만 — 보호자는 본인 복약이 없으므로 불필요) */}
+                {isPatient && (
+                  <>
+                    <div className="flex items-center justify-between py-3">
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>복약알림</p>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                          약 복용 시간을 알려드립니다.
+                        </p>
+                      </div>
+                      <button
+                        role="switch"
+                        aria-checked={notiSettings.medication_enabled}
+                        aria-label="복약 알림 켜기/끄기"
+                        onClick={() => {
+                          const prev = notiSettings;
+                          const next = !notiSettings.medication_enabled;
+                          setNotiSettings({ ...notiSettings, medication_enabled: next });
+                          handleNotiSave("medication_enabled", next, prev);
+                        }}
+                        className="w-11 h-6 rounded-full transition-colors relative cursor-pointer"
+                        style={{
+                          backgroundColor: notiSettings.medication_enabled
+                            ? "var(--color-primary)"
+                            : "var(--color-border)",
+                        }}
+                      >
+                        <span
+                          className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+                          style={{
+                            transform: notiSettings.medication_enabled ? "translateX(20px)" : "translateX(0)",
+                          }}
+                        />
+                      </button>
+                    </div>
+
+                    <hr style={{ borderColor: "var(--color-border)" }} />
+                  </>
+                )}
+
+                {/* 보호자/돌봄대상 알림 */}
+                <div className="flex items-center justify-between py-3">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+                      {isPatient ? "보호자 알림" : "돌봄대상 알림"}
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                      {isPatient
+                        ? "보호자 활동 및 메시지를 알려드립니다."
+                        : "돌봄대상 활동 및 메시지를 알려드립니다."}
+                    </p>
+                  </div>
+                  <button
+                    role="switch"
+                    aria-checked={notiSettings.caregiver_enabled}
+                    aria-label={isPatient ? "보호자 알림 켜기/끄기" : "돌봄대상 알림 켜기/끄기"}
+                    onClick={() => {
+                      const prev = notiSettings;
+                      const next = !notiSettings.caregiver_enabled;
+                      setNotiSettings({ ...notiSettings, caregiver_enabled: next });
+                      handleNotiSave("caregiver_enabled", next, prev);
+                    }}
+                    className="w-11 h-6 rounded-full transition-colors relative cursor-pointer"
+                    style={{
+                      backgroundColor: notiSettings.caregiver_enabled
+                        ? "var(--color-primary)"
+                        : "var(--color-border)",
+                    }}
+                  >
+                    <span
+                      className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+                      style={{
+                        transform: notiSettings.caregiver_enabled ? "translateX(20px)" : "translateX(0)",
+                      }}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* 시간 설정 — 환자만 (복약 스케줄 연동) */}
+              {isPatient && (
+                <div className="app-card p-6">
+                  <h3 className="text-sm font-bold mb-4" style={{ color: "var(--color-text)" }}>
+                    시간 설정
+                  </h3>
+                  {([
+                    { key: "morning_time", label: "아침" },
+                    { key: "noon_time", label: "점심" },
+                    { key: "evening_time", label: "저녁" },
+                    { key: "bedtime_time", label: "자기전" },
+                  ] as const).map(({ key, label }) => (
+                    <div key={key} className="flex items-center justify-between py-3">
+                      <span className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+                        {label}
+                      </span>
+                      <input
+                        type="time"
+                        value={notiSettings[key] ?? ""}
+                        onChange={(e) => {
+                          setNotiSettings({ ...notiSettings, [key]: e.target.value });
+                        }}
+                        onBlur={(e) => {
+                          handleNotiSave(key, e.target.value, notiSettings);
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-sm input-field"
+                        style={{ width: "120px" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 저장 메시지 */}
+              {notiMessage && (
+                <p className="text-sm" style={{ color: "var(--color-primary)" }}>{notiMessage}</p>
+              )}
+            </>
+          )}
         </div>
       )}
 

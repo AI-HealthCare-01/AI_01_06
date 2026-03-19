@@ -6,6 +6,7 @@ from tortoise import Tortoise
 
 from worker import config
 from worker.tasks.guide_task import guide_task
+from worker.tasks.medication_check_task import medication_check_cron
 from worker.tasks.ocr_task import ocr_task
 from worker.tasks.purge_task import purge_deleted_users
 
@@ -44,6 +45,7 @@ class WorkerSettings:
     functions = [ocr_task, guide_task]
     cron_jobs = [
         cron(purge_deleted_users, hour=4, minute=0),
+        cron(medication_check_cron, minute={0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55}),
     ]
     timezone = KST
     on_startup = startup
