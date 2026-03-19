@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -8,6 +9,8 @@ from app.core.response import success_response
 from app.models.prescription import Medication
 from app.models.schedule import AdherenceLog, MedicationSchedule
 from app.models.user import User
+
+KST = ZoneInfo("Asia/Seoul")
 
 router = APIRouter(prefix="/api/schedules", tags=["schedules"])
 
@@ -58,7 +61,7 @@ async def create_schedules(items: list[ScheduleCreateItem], user: User = Depends
 async def get_today_schedules(actors: tuple = Depends(get_acting_patient)):
     current_user, patient = actors
     target_user = patient or current_user
-    today = date.today()
+    today = datetime.now(KST).date()
     schedules = await MedicationSchedule.filter(
         start_date__lte=today,
         end_date__gte=today,
@@ -79,6 +82,7 @@ async def get_today_schedules(actors: tuple = Depends(get_acting_patient)):
                 "medication_name": s.medication.name,
                 "dosage": s.medication.dosage,
                 "frequency": s.medication.frequency,
+                "instructions": s.medication.instructions,
                 "time_of_day": s.time_of_day,
                 "today_status": today_log.status if today_log else None,
                 "today_log_id": today_log.id if today_log else None,

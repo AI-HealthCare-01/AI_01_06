@@ -9,6 +9,7 @@ from app.core.response import success_response
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.prescription import OcrUpdateRequest
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/api/prescriptions", tags=["prescriptions"])
 
@@ -36,6 +37,13 @@ async def upload_prescription(file: UploadFile, actors: tuple[User, User | None]
     )
 
     await enqueue("ocr_task", prescription.id, filepath)
+
+    if patient:
+        await create_notification(
+            user_id=patient.id,
+            notification_type="CAREGIVER",
+            title=f"{current_user.name}님이 처방전을 등록했습니다.",
+        )
 
     return success_response(
         {

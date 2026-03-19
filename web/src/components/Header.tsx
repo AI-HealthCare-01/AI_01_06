@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api";
+import { api, subscribeNotifications } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -50,10 +50,31 @@ function IconLogout() {
   );
 }
 
+function IconBell() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
 export default function Header() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [fontSize, setFontSize] = useState<FontSize>("large");
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) { setUnreadCount(0); return; }
+
+    const controller = subscribeNotifications(
+      (count) => setUnreadCount(count),
+      () => {},
+    );
+
+    return () => controller.abort();
+  }, [user]);
 
   useEffect(() => {
     const saved = (localStorage.getItem("fontSize") as FontSize) ?? "large";
@@ -102,8 +123,29 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* ── 우측: 폰트토글 + 인증 ── */}
+        {/* ── 우측: 벨 + 폰트토글 + 인증 ── */}
         <div className="flex items-center gap-2">
+
+          {/* 알림 벨 (로그인 시만) */}
+          {user && (
+            <Link
+              href="/notifications"
+              aria-label={unreadCount > 0 ? `읽지 않은 알림 ${unreadCount}건` : "알림센터"}
+              className="relative w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
+              style={{ color: "var(--color-text-muted)" }}
+            >
+              <IconBell />
+              {unreadCount > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold"
+                  style={{ backgroundColor: "var(--color-danger)", color: "#fff" }}
+                  aria-hidden="true"
+                >
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* 글씨 크기 2단계 토글 */}
           <div

@@ -1,7 +1,11 @@
+import asyncio
+import json
+import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, field_validator
 
 from app.core.deps import get_current_user
 from app.core.response import success_response
@@ -11,13 +15,25 @@ from app.models.user import User
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
 
+_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$")
+
+
 class NotificationSettingUpdate(BaseModel):
+    medication_enabled: bool | None = None
+    caregiver_enabled: bool | None = None
     time_format: str | None = None
     sound_key: str | None = None
     morning_time: str | None = None
     noon_time: str | None = None
     evening_time: str | None = None
     bedtime_time: str | None = None
+
+    @field_validator("morning_time", "noon_time", "evening_time", "bedtime_time")
+    @classmethod
+    def validate_time_format(cls, v: str | None) -> str | None:
+        if v is not None and not _TIME_RE.match(v):
+            raise ValueError("시간은 HH:MM 형식이어야 합니다 (00:00~23:59)")
+        return v
 
 
 @router.get("")
@@ -40,6 +56,47 @@ async def list_notifications(is_read: bool | None = None, user: User = Depends(g
     return success_response(result)
 
 
+@router.get("/unread-count")
+async def get_unread_count(user: User = Depends(get_current_user)):
+    count = await Notification.filter(user=user, is_read=False).count()
+    return success_response({"count": count})
+
+
+@router.post("/read-all")
+async def read_all(user: User = Depends(get_current_user)):
+    updated_count = await Notification.filter(user=user, is_read=False).update(is_read=True, read_at=datetime.now(UTC))
+    return success_response({"updated_count": updated_count})
+
+
+@router.get("/stream")
+async def notification_stream(user: User = Depends(get_current_user)):
+    """SSE 스트림: 읽지 않은 알림 카운트를 실시간으로 전송한다.
+
+    서버가 5초마다 DB를 폴링하여 count 변경 시에만 data 이벤트를 전송한다.
+    count 미변경 시에는 keepalive 주석을 전송하여 nginx timeout을 방지한다.
+    """
+
+    async def event_generator():
+        last_count = -1
+        try:
+            while True:
+                count = await Notification.filter(user=user, is_read=False).count()
+                if count != last_count:
+                    last_count = count
+                    yield f"data: {json.dumps({'type': 'unread_count', 'count': count})}\n\n"
+                else:
+                    yield ": keepalive\n\n"
+                await asyncio.sleep(5)
+        except asyncio.CancelledError:
+            pass
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @router.patch("/{notification_id}/read")
 async def mark_as_read(notification_id: int, user: User = Depends(get_current_user)):
     notification = await Notification.get_or_none(id=notification_id, user=user)
@@ -58,6 +115,8 @@ async def get_settings(user: User = Depends(get_current_user)):
         return success_response(None)
     return success_response(
         {
+            "medication_enabled": setting.medication_enabled,
+            "caregiver_enabled": setting.caregiver_enabled,
             "time_format": setting.time_format,
             "sound_key": setting.sound_key,
             "morning_time": str(setting.morning_time) if setting.morning_time else None,
@@ -68,10 +127,43 @@ async def get_settings(user: User = Depends(get_current_user)):
     )
 
 
+_TIME_FIELDS_ORDERED = ["morning_time", "noon_time", "evening_time", "bedtime_time"]
+_TIME_LABELS = {"morning_time": "아침", "noon_time": "점심", "evening_time": "저녁", "bedtime_time": "자기전"}
+_MIN_GAP_MINUTES = 240  # 4시간
+
+
+def _parse_time_minutes(time_str: str) -> int:
+    """'HH:MM' → 분 단위 정수."""
+    h, m = map(int, time_str.split(":")[:2])
+    return h * 60 + m
+
+
 @router.put("/settings")
 async def update_settings(req: NotificationSettingUpdate, user: User = Depends(get_current_user)):
     setting, _ = await NotificationSetting.get_or_create(user=user)
     update_data = req.model_dump(exclude_unset=True)
+
+    # 시간 필드가 포함된 경우 간격 검증
+    time_fields_in_request = [f for f in _TIME_FIELDS_ORDERED if f in update_data]
+    if time_fields_in_request:
+        final_times: dict[str, str | None] = {}
+        for f in _TIME_FIELDS_ORDERED:
+            if f in update_data:
+                final_times[f] = update_data[f]
+            else:
+                final_times[f] = str(getattr(setting, f)) if getattr(setting, f, None) else None
+
+        present = [(f, final_times[f]) for f in _TIME_FIELDS_ORDERED if final_times[f]]
+        for i in range(len(present) - 1):
+            curr_field, curr_val = present[i]
+            next_field, next_val = present[i + 1]
+            gap = _parse_time_minutes(str(next_val)) - _parse_time_minutes(str(curr_val))
+            if gap < _MIN_GAP_MINUTES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"{_TIME_LABELS[curr_field]}과 {_TIME_LABELS[next_field]} 사이 간격은 최소 4시간이어야 합니다.",
+                )
+
     for field, value in update_data.items():
         setattr(setting, field, value)
     await setting.save()

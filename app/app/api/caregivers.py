@@ -10,6 +10,7 @@ from app.core.response import success_response
 from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.user import User
 from app.services.invite_service import consume_invite_token, create_invite_token, get_invite_data
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/api/caregivers", tags=["caregivers"])
 
@@ -85,6 +86,11 @@ async def accept_invite(request: Request, token: str, user: User = Depends(get_c
         existing.status = "APPROVED"
         existing.accepted_at = datetime.now(UTC)
         await existing.save()
+        await create_notification(
+            user_id=inviter.id,
+            notification_type="CAREGIVER",
+            title=f"{user.name}님이 연결을 수락했습니다.",
+        )
         return success_response({"id": existing.id, "status": existing.status})
 
     try:
@@ -97,6 +103,11 @@ async def accept_invite(request: Request, token: str, user: User = Depends(get_c
     except IntegrityError as e:
         # 동시 요청 race condition 안전망
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 연결된 관계입니다.") from e
+    await create_notification(
+        user_id=inviter.id,
+        notification_type="CAREGIVER",
+        title=f"{user.name}님이 연결을 수락했습니다.",
+    )
     return success_response({"id": mapping.id, "status": mapping.status})
 
 
@@ -112,6 +123,17 @@ async def revoke_link(mapping_id: int, user: User = Depends(get_current_user)):
 
     mapping.status = "REVOKED"
     await mapping.save()
+
+    if user.id == mapping.caregiver.id:
+        counterpart = mapping.patient
+    else:
+        counterpart = mapping.caregiver
+
+    await create_notification(
+        user_id=counterpart.id,
+        notification_type="CAREGIVER",
+        title=f"{user.name}님이 연결을 해제했습니다.",
+    )
     return success_response({"message": "연결이 해제되었습니다."})
 
 

@@ -42,6 +42,7 @@ services:
       dockerfile: app/Dockerfile
     env_file: ./infra/env/.local.env
     environment:
+      TZ: 'Asia/Seoul'
       UPLOAD_DIR: /uploads
     volumes:
       - ./app/app:/srv/app/app
@@ -68,6 +69,7 @@ services:
       dockerfile: ai_worker/Dockerfile
     env_file: ./infra/env/.local.env
     environment:
+      TZ: 'Asia/Seoul'
       UPLOAD_DIR: /uploads
     volumes:
       - ./ai_worker/worker:/srv/ai_worker/worker
