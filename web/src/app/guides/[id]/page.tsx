@@ -107,7 +107,7 @@ export default function GuideDetailPage() {
           <Link href="/guides" className="flex-1 py-3 rounded-lg text-center btn-outline">
             가이드 목록으로
           </Link>
-          <Link href={`/prescriptions/${guide.prescription_id}/ocr`} className="flex-1 py-3 rounded-lg text-center btn-primary">
+          <Link href={`/prescriptions/${guide.prescription_id}/ocr?from=guide&guideId=${guide.id}`} className="flex-1 py-3 rounded-lg text-center btn-primary">
             처방전 다시 확인하기
           </Link>
         </div>
@@ -216,8 +216,8 @@ export default function GuideDetailPage() {
         <Link href="/guides" className="flex-1 py-3 rounded-lg text-center btn-outline">
           가이드 목록으로
         </Link>
-        <Link href={`/prescriptions/${guide.prescription_id}/ocr`} className="flex-1 py-3 rounded-lg text-center btn-outline">
-          처방전 확인하기
+        <Link href={`/prescriptions/${guide.prescription_id}/ocr?from=guide&guideId=${guide.id}`} className="flex-1 py-3 rounded-lg text-center btn-outline">
+          처방전 재확인
         </Link>
         <Link href={`/chat?prescriptionId=${guide.prescription_id}`} className="flex-1 py-3 rounded-lg text-center btn-primary">
           AI에게 질문하기
