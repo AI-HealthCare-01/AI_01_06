@@ -83,13 +83,17 @@ export default function OcrReviewPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [processing, setProcessing] = useState(true);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [ocrFailed, setOcrFailed] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [selectedMeds, setSelectedMeds] = useState<Set<number>>(new Set());
 
   const pollOcrStatus = useCallback(async () => {
     const res = await api.getPrescription(prescriptionId);
-    if (!res.success || !res.data) return;
+    if (!res.success || !res.data) {
+      setInitialCheckDone(true);
+      return;
+    }
     const pData = res.data as { ocr_status: string };
     if (pData.ocr_status === "ocr_failed") {
       setProcessing(false);
@@ -99,6 +103,7 @@ export default function OcrReviewPage() {
       const ocrRes = await api.getOcr(prescriptionId);
       if (ocrRes.success && ocrRes.data) setData(ocrRes.data as OcrData);
     }
+    setInitialCheckDone(true);
   }, [prescriptionId]);
 
   useEffect(() => {
@@ -129,7 +134,6 @@ export default function OcrReviewPage() {
 
     const missingFields: string[] = [];
     if (!data.hospital_name) missingFields.push("병원명");
-    if (!data.doctor_name) missingFields.push("담당의");
     if (!data.prescription_date) missingFields.push("처방일");
     if (!data.diagnosis) missingFields.push("진단명");
     data.medications.forEach((med, i) => {
@@ -184,7 +188,7 @@ export default function OcrReviewPage() {
     return `/loading/loading_${idx}.${ext}`;
   });
 
-  if (processing) {
+  if (processing && initialCheckDone) {
     return (
       <div className="fixed inset-0 flex flex-col z-50" style={{ background: 'var(--color-bg)' }}>
         <div className="flex-1 w-full relative">
