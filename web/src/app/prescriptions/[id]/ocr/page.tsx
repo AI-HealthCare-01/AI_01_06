@@ -192,7 +192,9 @@ export default function OcrReviewPage() {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center py-20 text-center gap-6">
-          <p className="text-5xl">😥</p>
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: 'var(--color-danger-soft)' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="var(--color-danger)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          </div>
           <p className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>이미지 분석에 실패했습니다</p>
           <p style={{ color: 'var(--color-text-muted)' }}>처방전이 선명하게 찍혔는지 확인 후 다시 시도해 주세요.</p>
           <button
@@ -234,16 +236,25 @@ export default function OcrReviewPage() {
           저장이 완료되었습니다.
         </div>
       )}
-      <h1 className="text-2xl font-bold mb-2">처방전 내용 확인</h1>
+      <h1 className="text-2xl md:text-3xl font-semibold mb-2">처방전 내용 확인</h1>
       <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>처방전이 성공적으로 인식되었습니다. 내용을 확인하고 필요시 수정해주세요.</p>
 
       {/* Stepper */}
-      <div className="flex items-center gap-2 mb-8">
-        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>처방전 올리기</div>
-        <span style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-4 py-2 rounded-full text-sm font-medium text-white" style={{ background: 'var(--color-primary)' }}>내용 확인</div>
-        <span style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
+      <div className="flex items-center justify-center gap-1.5 md:gap-2 mb-8">
+        <div className="px-3 md:px-4 py-2 rounded-full text-xs md:text-sm text-center leading-tight" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>
+          <span className="hidden md:inline">처방전 올리기</span>
+          <span className="md:hidden">처방전<br/>올리기</span>
+        </div>
+        <span className="text-xs shrink-0" style={{ color: 'var(--color-text-muted)' }}>→</span>
+        <div className="px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-medium text-white text-center leading-tight" style={{ background: 'var(--color-primary)' }}>
+          <span className="hidden md:inline">내용 확인</span>
+          <span className="md:hidden">내용<br/>확인</span>
+        </div>
+        <span className="text-xs shrink-0" style={{ color: 'var(--color-text-muted)' }}>→</span>
+        <div className="px-3 md:px-4 py-2 rounded-full text-xs md:text-sm text-center leading-tight" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>
+          <span className="hidden md:inline">가이드 생성</span>
+          <span className="md:hidden">가이드<br/>생성</span>
+        </div>
       </div>
 
       {/* Basic info */}
@@ -254,7 +265,7 @@ export default function OcrReviewPage() {
             <button onClick={() => setEditing(true)} className="px-5 py-2 rounded-lg text-base font-semibold text-white transition-opacity hover:opacity-80" style={{ background: 'var(--color-primary)' }}>수정하기</button>
           )}
         </div>
-        <div className="rounded-lg p-6 grid grid-cols-2 gap-4" style={{ background: 'var(--color-surface)' }}>
+        <div className="rounded-2xl p-6 grid grid-cols-2 gap-4" style={{ background: 'var(--color-surface)' }}>
           <div>
             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>병원명</p>
             {editing ? (
@@ -294,11 +305,11 @@ export default function OcrReviewPage() {
       {/* Medications */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">처방 약물</h2>
-        <div className="rounded-lg p-4 space-y-4" style={{ background: 'var(--color-surface)' }}>
+        <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)' }}>
           {data.medications.map((med, i) => (
-            <div key={i} className="rounded-lg p-4 relative" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
+            <div key={i} className="app-card p-5 relative">
               {editing && (
-                <button onClick={() => removeMed(i)} className="absolute top-2 right-2 text-sm px-2 py-1 rounded transition-colors" style={{ color: 'var(--color-danger)', background: 'var(--color-surface)' }}>
+                <button onClick={() => removeMed(i)} className="absolute top-3 right-3 text-xs px-2 py-1 rounded-lg transition-colors" style={{ color: 'var(--color-text-muted)' }}>
                   제거
                 </button>
               )}
@@ -361,7 +372,7 @@ export default function OcrReviewPage() {
           이전 단계로
         </button>
         {editing ? (
-          <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-lg text-white disabled:opacity-50" style={{ background: 'var(--color-cta)' }}>
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-lg btn-primary disabled:opacity-50">
             {saving ? "저장 중..." : "수정"}
           </button>
         ) : null}

@@ -8,12 +8,19 @@ import { useState, useEffect } from "react";
 
 type FontSize = "normal" | "large";
 
-/* ── 로고 심볼 ── */
+/* ── 로고 심볼 (&) — rounded modern stroke ── */
 function LogoMark() {
   return (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="#0D7C66" />
-      <path d="M14 8h4v6h6v4h-6v6h-4v-6H8v-4h6V8z" fill="white" />
+      <rect width="32" height="32" rx="8" fill="var(--color-primary)" />
+      <path
+        d="M22 25C19 22 16.5 19 14.5 17C12.5 14.5 13 10 15.5 9.5C18 9 19.5 10.5 19 12.5C18.5 14.5 16 16 14.5 17C13 18 10 21 10 23C10 25 12 26 14.5 26C17 26 20 24.5 22 25"
+        stroke="white"
+        strokeWidth="2.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
     </svg>
   );
 }
@@ -103,8 +110,8 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b"
-      style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-bg)" }}
+      className="sticky top-0 z-50"
+      style={{ backgroundColor: "var(--color-card-bg)", boxShadow: "var(--shadow-sm)" }}
     >
       <div className="h-14 sm:h-16 px-4 sm:px-6 flex items-center justify-between gap-3">
 
@@ -112,14 +119,14 @@ export default function Header() {
         <Link
           href={user ? "/dashboard" : "/"}
           className="flex items-center gap-2.5 shrink-0"
-          aria-label="Project & Sullivan 홈으로"
+          aria-label="Sullivan 홈으로"
         >
           <LogoMark />
           <span
             className="font-bold text-base sm:text-lg leading-none"
             style={{ color: "var(--color-primary)", fontFamily: "'Gowun Batang', serif" }}
           >
-            <span className="hidden sm:inline">Project &amp; </span>Sullivan
+            Sullivan
           </span>
         </Link>
 
@@ -158,7 +165,7 @@ export default function Header() {
               onClick={() => toggleFontSize("normal")}
               aria-pressed={fontSize === "normal"}
               aria-label="작은 글씨로 보기"
-              className="w-9 h-9 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center transition-colors cursor-pointer"
               style={
                 fontSize === "normal"
                   ? { backgroundColor: "var(--color-primary)", color: "#fff" }
@@ -167,12 +174,12 @@ export default function Header() {
             >
               <span style={{ fontSize: "11px", fontWeight: 700, lineHeight: 1 }}>가</span>
             </button>
-            <div className="w-px h-4" style={{ backgroundColor: "var(--color-border)" }} aria-hidden="true" />
+            <div className="w-px h-5" style={{ backgroundColor: "var(--color-border)" }} aria-hidden="true" />
             <button
               onClick={() => toggleFontSize("large")}
               aria-pressed={fontSize === "large"}
               aria-label="큰 글씨로 보기"
-              className="w-9 h-9 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center transition-colors cursor-pointer"
               style={
                 fontSize === "large"
                   ? { backgroundColor: "var(--color-primary)", color: "#fff" }
@@ -186,9 +193,9 @@ export default function Header() {
           {/* ── 인증 버튼 ── */}
           {user ? (
             <div className="flex items-center gap-1.5">
-              {/* 닉네임: md 이상에서만 표시 */}
+              {/* 닉네임: sm 이상 표시, md 이상 넓게 */}
               <span
-                className="hidden md:block text-sm px-2 truncate max-w-[80px]"
+                className="hidden sm:block text-sm px-2 truncate max-w-[72px] md:max-w-[120px] lg:max-w-[160px]"
                 style={{ color: "var(--color-text-muted)" }}
               >
                 {user.nickname}

@@ -96,7 +96,7 @@ export default function GuidesListPage() {
     <AppLayout>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">가이드 기록</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold">가이드 기록</h1>
           <p style={{ color: 'var(--color-text-muted)' }}>이전에 생성된 복약 가이드를 확인하세요</p>
         </div>
         <Link href="/prescriptions/upload" className="px-4 py-2 rounded-lg btn-primary">
@@ -137,7 +137,8 @@ export default function GuidesListPage() {
                   : { background: 'var(--color-surface)', color: 'var(--color-text-muted)' }
               }
             >
-              📅 날짜순 {sort === "date_desc" ? "↓" : sort === "date_asc" ? "↑" : "↓"}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+              날짜순 {sort === "date_desc" ? "↓" : sort === "date_asc" ? "↑" : "↓"}
             </button>
             <button
               onClick={() => setSort(sort === "name_asc" ? "name_desc" : "name_asc")}
@@ -148,38 +149,31 @@ export default function GuidesListPage() {
                   : { background: 'var(--color-surface)', color: 'var(--color-text-muted)' }
               }
             >
-              🔤 이름순 {sort === "name_asc" ? "↓" : sort === "name_desc" ? "↑" : ""}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h9V9zm0 5h-9v3h9v-3zm0-10h-9v3h9V4z"/></svg>
+              이름순 {sort === "name_asc" ? "↓" : sort === "name_desc" ? "↑" : ""}
             </button>
           </div>
 
           <div className="space-y-4">
             {pagedGuides.map((guide) => (
-              <div key={guide.id} className="app-card rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold">{guide.prescription_info.hospital_name || "병원명 미입력"}</h3>
-                    <div className="flex gap-4 text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
+              <Link key={guide.id} href={`/guides/${guide.id}`} className="block app-card p-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--color-primary-soft)' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 4h2v5l-1-.75L9 9V4zm9 16H6V4h1v9l3-2.25L13 13V4h5v16z"/></svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold truncate">{guide.prescription_info.hospital_name || "병원명 미입력"}</h3>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
                       <span>처방일 {guide.prescription_info.prescription_date}</span>
                       <span>담당의 {guide.prescription_info.doctor_name}</span>
                       <span>진단 {guide.prescription_info.diagnosis}</span>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Link href={`/guides/${guide.id}`} className="text-sm px-3 py-1 rounded btn-outline">
-                      가이드 보기
-                    </Link>
-                    {!isProxyMode && (
-                      <button
-                        onClick={() => handleDelete(guide.id)}
-                        disabled={deletingId === guide.id}
-                        className="text-sm border border-red-200 text-red-500 px-3 py-1 rounded hover:bg-red-50 disabled:opacity-50"
-                      >
-                        {deletingId === guide.id ? "삭제 중..." : "삭제"}
-                      </button>
-                    )}
-                  </div>
+                  <span className="flex-shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 

@@ -13,6 +13,21 @@ const TIME_LABEL: Record<TimeSlot, string> = {
   BEDTIME: "자기전",
 };
 
+const TIME_ICON: Record<TimeSlot, React.ReactNode> = {
+  MORNING: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 0 0 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+  ),
+  NOON: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+  ),
+  EVENING: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12 20 8.69zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg>
+  ),
+  BEDTIME: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.01 12c0-3.57 2.2-6.62 5.31-7.87.89-.36.75-1.69-.19-1.9-1.1-.24-2.27-.18-3.37.21C10.07 3.83 7.43 7.21 7.84 11.2c.34 3.29 2.72 6.08 5.93 6.93 1.72.46 3.45.3 4.97-.3.89-.35 1.04-1.58.2-1.99C15.42 14.58 12.01 14.15 12.01 12z"/></svg>
+  ),
+};
+
 interface Props {
   schedules: TodayScheduleItem[];
   onSchedulesChange: (updated: TodayScheduleItem[]) => void;
@@ -100,34 +115,62 @@ export default function TodayMedicationPanel({ schedules, onSchedulesChange, not
   };
 
   return (
-    <div
-      className="app-card rounded-lg mb-6 overflow-hidden"
-      style={{ borderTop: "4px solid var(--color-primary)" }}
-    >
-      {/* 헤더: 오늘의 복약 · {시간대} */}
-      <div className="px-5 pt-4 pb-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold">
-            오늘의 복약{" "}
-            <span className="font-normal text-sm" style={{ color: "var(--color-primary)" }}>
-              · {TIME_LABEL[currentSlot]}
-            </span>
-          </h2>
-          <span className="text-sm font-medium" style={{ color: "var(--color-primary)" }}>
-            {taken} / {total}개 완료
-          </span>
-        </div>
-        <div className="w-full rounded-full h-1.5 mt-2" style={{ background: "var(--color-border)" }}>
-          <div
-            className="h-1.5 rounded-full transition-all duration-500"
-            style={{ width: `${pct}%`, background: "var(--color-primary)" }}
-          />
-        </div>
+    <section className="mb-8">
+      {/* 섹션 헤더 */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold" style={{ color: "var(--color-text)" }}>오늘의 복약</h2>
+        <span
+          className="text-sm font-semibold px-3 py-1 rounded-full"
+          style={{ background: "var(--color-primary-soft)", color: "var(--color-primary)" }}
+        >
+          {taken}/{total} 완료
+        </span>
+      </div>
+
+      {/* 진행률 바 */}
+      <div
+        className="w-full rounded-full h-2 mb-5"
+        style={{ background: "var(--color-surface-alt)" }}
+      >
+        <div
+          className="h-2 rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: "var(--color-primary)" }}
+        />
+      </div>
+
+      {/* 시간대 탭 */}
+      <div className="flex gap-2 mb-4">
+        {TIME_SLOTS.map((slot, i) => {
+          const isActive = currentPage === i;
+          const slotItems = grouped[slot];
+          const slotTaken = slotItems.filter((s) => s.today_status === "TAKEN").length;
+          const slotTotal = slotItems.length;
+          return (
+            <button
+              key={slot}
+              onClick={() => setCurrentPage(i)}
+              className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl text-sm font-medium transition-all"
+              style={
+                isActive
+                  ? { background: "var(--color-primary)", color: "#fff", boxShadow: "var(--shadow-md)" }
+                  : { background: "var(--color-card-bg)", color: "var(--color-text-muted)", boxShadow: "var(--shadow-sm)" }
+              }
+            >
+              <span style={{ color: isActive ? "#fff" : "var(--color-text-muted)" }}>{TIME_ICON[slot]}</span>
+              <span>{TIME_LABEL[slot]}</span>
+              {slotTotal > 0 && (
+                <span className="text-xs" style={{ opacity: 0.8 }}>
+                  {slotTaken}/{slotTotal}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* 캐러셀 영역 */}
       <div
-        className="overflow-hidden"
+        className="app-card overflow-hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -142,136 +185,112 @@ export default function TodayMedicationPanel({ schedules, onSchedulesChange, not
             return (
               <div key={slot} className="w-full flex-shrink-0">
                 {items.length === 0 ? (
-                  <div className="px-5 py-8 text-center">
-                    <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-                      {TIME_LABEL[slot]} 시간대에 복약이 없습니다.
+                  <div className="px-6 py-12 text-center">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--color-border)" className="mx-auto mb-3"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <p className="text-base" style={{ color: "var(--color-text-muted)" }}>
+                      {TIME_LABEL[slot]} 시간대에 복약이 없습니다
                     </p>
                   </div>
                 ) : (
-                  <ul
-                    className="max-h-64 overflow-y-auto divide-y"
-                    style={{ borderColor: "var(--color-border)" }}
-                  >
+                  <div className="divide-y" style={{ borderColor: "var(--color-surface)" }}>
                     {items.map((item) => {
                       const isTaken = item.today_status === "TAKEN";
                       const mealInstr = getMealInstruction(item.instructions ?? null);
-                      const subInfo = [item.frequency, mealInstr].filter(Boolean).join(" ");
 
                       return (
-                        <li key={item.id} className="flex items-center justify-between px-5 py-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <span
-                              className="w-2 h-2 rounded-full flex-shrink-0"
+                        <div key={item.id} className="flex items-center justify-between px-6 py-4">
+                          <div className="flex items-center gap-4 min-w-0 flex-1">
+                            {/* 상태 아이콘 */}
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                               style={{
-                                background: isTaken ? "var(--color-success)" : "var(--color-border)",
+                                background: isTaken ? "var(--color-success-soft)" : "var(--color-surface)",
                               }}
-                            />
+                            >
+                              {isTaken ? (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-success)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                              ) : (
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-text-muted)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/></svg>
+                              )}
+                            </div>
+                            {/* 약 정보 */}
                             <div className="min-w-0">
-                              <p className="font-medium text-sm truncate">
+                              <p className="text-base font-semibold truncate" style={{ color: "var(--color-text)" }}>
                                 {item.medication_name}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5">
                                 {item.dosage && (
-                                  <span
-                                    className="font-normal ml-1"
-                                    style={{ color: "var(--color-text-muted)" }}
-                                  >
+                                  <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>
                                     {item.dosage}
                                   </span>
                                 )}
-                              </p>
-                              {subInfo && (
-                                <p
-                                  className="text-xs mt-0.5 truncate"
-                                  style={{ color: "var(--color-text-muted)" }}
-                                >
-                                  {subInfo}
-                                </p>
-                              )}
+                                {mealInstr && (
+                                  <span
+                                    className="text-xs px-2 py-0.5 rounded-full font-medium"
+                                    style={{ background: "var(--color-warning-soft)", color: "var(--color-warning-text)" }}
+                                  >
+                                    {mealInstr}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
+                          {/* 복약 버튼 */}
                           <button
                             onClick={() => handleCheck(item)}
                             disabled={isTaken || !slotReached}
                             aria-label={`${item.medication_name} ${isTaken ? "복약완료" : slotReached ? "복약하기" : "예정"}`}
                             aria-pressed={isTaken}
-                            className="flex-shrink-0 ml-3 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 whitespace-nowrap"
+                            className="flex-shrink-0 ml-3 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap"
                             style={
                               isTaken
                                 ? { background: "var(--color-success)", color: "#fff", cursor: "default" }
                                 : slotReached
                                   ? {
-                                      border: "1px solid var(--color-border)",
-                                      color: "var(--color-text-muted)",
-                                      background: "transparent",
+                                      background: "var(--color-primary-pale)",
+                                      color: "var(--color-primary)",
+                                      cursor: "pointer",
                                     }
                                   : {
-                                      border: "1px solid var(--color-border)",
-                                      color: "var(--color-text-muted)",
                                       background: "var(--color-surface)",
+                                      color: "var(--color-text-muted)",
                                       opacity: 0.5,
                                       cursor: "not-allowed",
                                     }
                             }
                           >
-                            {isTaken ? "✓ 복약완료" : "예정"}
+                            {isTaken ? "완료" : slotReached ? "복약하기" : "예정"}
                           </button>
-                        </li>
+                        </div>
                       );
                     })}
-                  </ul>
+                  </div>
                 )}
               </div>
             );
           })}
         </div>
-      </div>
 
-      {/* 점 인디케이터 + 웹 전용 화살표 */}
-      <div className="flex items-center justify-center gap-3 py-3">
-        <button
-          onClick={() => setCurrentPage((p) => p - 1)}
-          disabled={currentPage === 0}
-          aria-label="이전 시간대"
-          className="hidden md:flex items-center justify-center w-7 h-7 rounded-full transition-colors"
-          style={{
-            border: "1px solid var(--color-border)",
-            color: currentPage === 0 ? "var(--color-border)" : "var(--color-text-muted)",
-            cursor: currentPage === 0 ? "not-allowed" : "pointer",
-            opacity: currentPage === 0 ? 0.4 : 1,
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-
-        <div className="flex gap-2">
+        {/* 점 인디케이터 (모바일 전용 — 탭이 보이지 않는 경우 대비) */}
+        <div className="flex items-center justify-center gap-3 py-3 md:hidden">
           {TIME_SLOTS.map((slot, i) => (
             <button
               key={slot}
               onClick={() => setCurrentPage(i)}
               aria-label={`${TIME_LABEL[slot]} 페이지`}
               aria-current={currentPage === i ? "true" : undefined}
-              className="w-2 h-2 rounded-full transition-colors"
-              style={{
-                background: currentPage === i ? "var(--color-primary)" : "var(--color-border)",
-              }}
-            />
+              className="flex items-center justify-center w-11 h-11"
+            >
+              <span
+                className="w-2 h-2 rounded-full transition-colors"
+                style={{
+                  background: currentPage === i ? "var(--color-primary)" : "var(--color-border)",
+                }}
+              />
+            </button>
           ))}
         </div>
-
-        <button
-          onClick={() => setCurrentPage((p) => p + 1)}
-          disabled={currentPage === TIME_SLOTS.length - 1}
-          aria-label="다음 시간대"
-          className="hidden md:flex items-center justify-center w-7 h-7 rounded-full transition-colors"
-          style={{
-            border: "1px solid var(--color-border)",
-            color: currentPage === TIME_SLOTS.length - 1 ? "var(--color-border)" : "var(--color-text-muted)",
-            cursor: currentPage === TIME_SLOTS.length - 1 ? "not-allowed" : "pointer",
-            opacity: currentPage === TIME_SLOTS.length - 1 ? 0.4 : 1,
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </button>
       </div>
-    </div>
+    </section>
   );
 }
