@@ -51,21 +51,12 @@ export default function PrescriptionUploadPage() {
       <p className="mb-6" style={{ color: 'var(--color-text-muted)' }}>병원에서 받은 처방전을 넣어주세요</p>
 
       {/* Stepper */}
-      <div className="flex items-center justify-center gap-1.5 md:gap-2 mb-8">
-        <div className="px-3 md:px-4 py-2 rounded-full text-xs md:text-sm font-medium text-white text-center leading-tight" style={{ background: 'var(--color-primary)' }}>
-          <span className="hidden md:inline">처방전 올리기</span>
-          <span className="md:hidden">처방전<br/>올리기</span>
-        </div>
-        <span className="text-xs shrink-0" style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-3 md:px-4 py-2 rounded-full text-xs md:text-sm text-center leading-tight" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>
-          <span className="hidden md:inline">내용 확인</span>
-          <span className="md:hidden">내용<br/>확인</span>
-        </div>
-        <span className="text-xs shrink-0" style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-3 md:px-4 py-2 rounded-full text-xs md:text-sm text-center leading-tight" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>
-          <span className="hidden md:inline">가이드 생성</span>
-          <span className="md:hidden">가이드<br/>생성</span>
-        </div>
+      <div className="flex items-center gap-2 mb-8">
+        <div className="px-4 py-2 rounded-full text-sm font-medium text-white" style={{ background: 'var(--color-primary)' }}>처방전 올리기</div>
+        <span style={{ color: 'var(--color-text-muted)' }}>→</span>
+        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>내용 재확인 & 수정</div>
+        <span style={{ color: 'var(--color-text-muted)' }}>→</span>
+        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
       </div>
 
       {/* Upload area */}

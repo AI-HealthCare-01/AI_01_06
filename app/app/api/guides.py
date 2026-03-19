@@ -4,6 +4,7 @@ from app.core.deps import get_acting_patient
 from app.core.redis import enqueue
 from app.core.response import success_response
 from app.models.guide import Guide
+from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
 from app.schemas.guide import GuideCreateRequest
@@ -142,6 +143,9 @@ async def get_guide(guide_id: int, actors: tuple[User, User | None] = Depends(ge
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="처방전을 찾을 수 없습니다.")
     medications = await Medication.filter(prescription=prescription)
 
+    profile = await PatientProfile.get_or_none(user=target_user)
+    profile_updated = bool(profile and profile.updated_at and profile.updated_at > guide.created_at)
+
     return success_response(
         {
             "id": guide.id,
@@ -165,5 +169,6 @@ async def get_guide(guide_id: int, actors: tuple[User, User | None] = Depends(ge
             ],
             "content": guide.content,
             "created_at": str(guide.created_at),
+            "profile_updated": profile_updated,
         }
     )
