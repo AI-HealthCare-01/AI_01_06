@@ -6,6 +6,7 @@ from httpx import AsyncClient
 from app.models.notification import Notification
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
+from app.services.notification_service import create_notification
 
 _PATIENT = {
     "email": "evt_patient@test.com",
@@ -190,3 +191,19 @@ async def test_own_mode_no_notification(client: AsyncClient):
 
     notifications = await Notification.filter(user_id=patient_id, notification_type="CAREGIVER")
     assert len(notifications) == 0
+
+
+# ──────────────────────────────────────────────
+# create_notification fault-tolerance
+# ──────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_create_notification_returns_none_on_db_error(client: AsyncClient):
+    """create_notification이 DB 에러 시 예외를 전파하지 않고 None을 반환한다."""
+    result = await create_notification(
+        user_id=999999,
+        notification_type="CAREGIVER",
+        title="테스트 알림",
+    )
+    assert result is None
