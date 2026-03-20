@@ -348,7 +348,7 @@ async def test_delete_patient_revokes_caregiver_mappings(client: AsyncClient):
 
     # 환자 탈퇴
     client.headers["Authorization"] = f"Bearer {patient_token}"
-    resp = await client.delete("/api/users/me", json={"password": _PATIENT["password"]})
+    resp = await client.request("DELETE", "/api/users/me", json={"password": _PATIENT["password"]})
     assert resp.json()["success"] is True
 
     # 매핑 상태 확인
@@ -374,7 +374,7 @@ async def test_delete_guardian_revokes_patient_mappings(client: AsyncClient):
 
     # 보호자 탈퇴
     client.headers["Authorization"] = f"Bearer {guardian_token}"
-    resp = await client.delete("/api/users/me", json={"password": _GUARDIAN["password"]})
+    resp = await client.request("DELETE", "/api/users/me", json={"password": _GUARDIAN["password"]})
     assert resp.json()["success"] is True
 
     # 매핑 상태 확인
@@ -400,7 +400,7 @@ async def test_list_patients_excludes_deleted_patient(client: AsyncClient):
 
     # 환자 탈퇴
     client.headers["Authorization"] = f"Bearer {patient_token}"
-    await client.delete("/api/users/me", json={"password": _PATIENT["password"]})
+    await client.request("DELETE", "/api/users/me", json={"password": _PATIENT["password"]})
 
     # 보호자의 목록 조회 → 비어있어야 함
     client.headers["Authorization"] = f"Bearer {guardian_token}"
