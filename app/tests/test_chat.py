@@ -252,3 +252,84 @@ async def test_send_feedback(auth_client: AsyncClient):
         },
     )
     assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_send_message_returns_message_id(auth_client: AsyncClient):
+    """send_message가 SSE가 아닌 JSON {message_id, status} 를 반환한다."""
+    create_resp = await auth_client.post("/api/chat/threads", json={})
+    thread_id = create_resp.json()["data"]["id"]
+
+    resp = await auth_client.post(
+        "/api/chat/messages",
+        json={"thread_id": thread_id, "content": "약을 식전에 먹어야 하나요?"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert "message_id" in body["data"]
+    assert body["data"]["status"] == "pending"
+
+
+@pytest.mark.asyncio
+async def test_message_stream_completed(auth_client: AsyncClient):
+    """완료된 메시지의 stream SSE 조회 시 즉시 done 이벤트를 반환한다."""
+    create_resp = await auth_client.post("/api/chat/threads", json={})
+    thread_id = create_resp.json()["data"]["id"]
+
+    send_resp = await auth_client.post(
+        "/api/chat/messages",
+        json={"thread_id": thread_id, "content": "테스트 질문"},
+    )
+    msg_id = send_resp.json()["data"]["message_id"]
+
+    async with auth_client.stream("GET", f"/api/chat/messages/{msg_id}/stream") as response:
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+        lines = []
+        async for line in response.aiter_lines():
+            lines.append(line)
+
+    data_lines = [line for line in lines if line.startswith("data: ")]
+    assert len(data_lines) == 1
+    event = json.loads(data_lines[0][6:])
+    assert event["type"] == "done"
+    assert event["message_id"] == msg_id
+    assert len(event["content"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_message_stream_wrong_user(auth_client: AsyncClient, client: AsyncClient):
+    """다른 사용자의 메시지 stream 조회 시 403 반환."""
+    create_resp = await auth_client.post("/api/chat/threads", json={})
+    thread_id = create_resp.json()["data"]["id"]
+
+    send_resp = await auth_client.post(
+        "/api/chat/messages",
+        json={"thread_id": thread_id, "content": "테스트"},
+    )
+    msg_id = send_resp.json()["data"]["message_id"]
+
+    await client.post(
+        "/api/auth/signup",
+        json={
+            "email": "stream_other@test.com",
+            "password": "Test1234!",
+            "nickname": "스트림다른유저",
+            "name": "최스트림",
+            "role": "PATIENT",
+            "terms_of_service": True,
+            "privacy_policy": True,
+        },
+    )
+    login_resp = await client.post(
+        "/api/auth/login",
+        json={"email": "stream_other@test.com", "password": "Test1234!"},
+    )
+    other_token = login_resp.json()["data"]["access_token"]
+
+    resp = await client.get(
+        f"/api/chat/messages/{msg_id}/stream",
+        headers={"Authorization": f"Bearer {other_token}"},
+    )
+    assert resp.status_code == 403
