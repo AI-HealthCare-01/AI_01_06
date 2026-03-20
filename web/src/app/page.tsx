@@ -127,14 +127,6 @@ export default function LandingPage() {
         >
           <div className="max-w-2xl mx-auto">
 
-            {/* 서비스 뱃지 */}
-            <p
-              className="inline-block text-xs font-semibold px-4 py-1.5 rounded-full mb-6"
-              style={{ backgroundColor: "var(--color-secondary-soft)", color: "var(--color-secondary)" }}
-            >
-              AI 맞춤형 복약 가이드 서비스
-            </p>
-
             {/* H1 */}
             <h1
               className="font-bold mb-5"
