@@ -3,6 +3,8 @@ from unittest.mock import patch
 import pytest
 from httpx import AsyncClient
 
+from app.models.caregiver_patient import CaregiverPatientMapping
+
 _PATIENT = {
     "email": "patient@test.com",
     "password": "Pass1234!",
@@ -321,3 +323,87 @@ async def test_revoke_then_reconnect_succeeds(client: AsyncClient):
     resp = await client.post(f"/api/caregivers/invite/{invite_token2}/accept")
     assert resp.status_code == 200
     assert resp.json()["data"]["status"] == "APPROVED"
+
+
+# ──────────────────────────────────────────────
+# 회원탈퇴 시 매핑 정합성
+# ──────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_delete_patient_revokes_caregiver_mappings(client: AsyncClient):
+    """환자가 탈퇴하면 APPROVED 상태의 보호자 매핑이 REVOKED로 전환된다."""
+    await client.post("/api/auth/signup", json=_PATIENT)
+    await client.post("/api/auth/signup", json=_GUARDIAN)
+
+    patient_token = await _login(client, _PATIENT["email"], _PATIENT["password"])
+    guardian_token = await _login(client, _GUARDIAN["email"], _GUARDIAN["password"])
+
+    # 연결 생성
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    create_resp = await client.post("/api/caregivers/invite")
+    invite_token = create_resp.json()["data"]["token"]
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    await client.post(f"/api/caregivers/invite/{invite_token}/accept")
+
+    # 환자 탈퇴
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    resp = await client.delete("/api/users/me", json={"password": _PATIENT["password"]})
+    assert resp.json()["success"] is True
+
+    # 매핑 상태 확인
+    mapping = await CaregiverPatientMapping.first()
+    assert mapping.status == "REVOKED"
+
+
+@pytest.mark.asyncio
+async def test_delete_guardian_revokes_patient_mappings(client: AsyncClient):
+    """보호자가 탈퇴하면 APPROVED 상태의 환자 매핑이 REVOKED로 전환된다."""
+    await client.post("/api/auth/signup", json=_PATIENT)
+    await client.post("/api/auth/signup", json=_GUARDIAN)
+
+    patient_token = await _login(client, _PATIENT["email"], _PATIENT["password"])
+    guardian_token = await _login(client, _GUARDIAN["email"], _GUARDIAN["password"])
+
+    # 연결 생성
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    create_resp = await client.post("/api/caregivers/invite")
+    invite_token = create_resp.json()["data"]["token"]
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    await client.post(f"/api/caregivers/invite/{invite_token}/accept")
+
+    # 보호자 탈퇴
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.delete("/api/users/me", json={"password": _GUARDIAN["password"]})
+    assert resp.json()["success"] is True
+
+    # 매핑 상태 확인
+    mapping = await CaregiverPatientMapping.first()
+    assert mapping.status == "REVOKED"
+
+
+@pytest.mark.asyncio
+async def test_list_patients_excludes_deleted_patient(client: AsyncClient):
+    """탈퇴한 환자는 보호자의 돌봄 대상 목록에서 제외된다."""
+    await client.post("/api/auth/signup", json=_PATIENT)
+    await client.post("/api/auth/signup", json=_GUARDIAN)
+
+    patient_token = await _login(client, _PATIENT["email"], _PATIENT["password"])
+    guardian_token = await _login(client, _GUARDIAN["email"], _GUARDIAN["password"])
+
+    # 연결 생성
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    create_resp = await client.post("/api/caregivers/invite")
+    invite_token = create_resp.json()["data"]["token"]
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    await client.post(f"/api/caregivers/invite/{invite_token}/accept")
+
+    # 환자 탈퇴
+    client.headers["Authorization"] = f"Bearer {patient_token}"
+    await client.delete("/api/users/me", json={"password": _PATIENT["password"]})
+
+    # 보호자의 목록 조회 → 비어있어야 함
+    client.headers["Authorization"] = f"Bearer {guardian_token}"
+    resp = await client.get("/api/caregivers/patients")
+    assert resp.status_code == 200
+    assert len(resp.json()["data"]) == 0
