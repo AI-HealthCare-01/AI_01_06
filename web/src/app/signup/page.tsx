@@ -69,6 +69,7 @@ function SignupContent() {
   const prefixCustomRef = useRef<HTMLInputElement>(null);
   const middleRef = useRef<HTMLInputElement>(null);
   const lastRef = useRef<HTMLInputElement>(null);
+  const skipBlurRef = useRef(false);
 
   // source=kakao 또는 source=google 인 경우 소셜 플로우 감지
   const source = searchParams.get("source");
@@ -184,12 +185,15 @@ function SignupContent() {
       }
     }
 
-    // 자동 포커스: prefixCustom 3자리 → middle
+    // 자동 포커스: 완성 시 에러 클리어 + 다음 필드로 이동
+    // skipBlurRef: 자동 포커스로 인한 onBlur에서 stale state 검증 방지 (onBlur에서 리셋)
     if (field === "prefixCustom" && digits.length >= 3) {
+      skipBlurRef.current = true;
       middleRef.current?.focus();
     }
-    // 자동 포커스: middle 4자리 → last
     if (field === "middle" && digits.length === 4) {
+      setFieldError("phoneMiddle", null);
+      skipBlurRef.current = true;
       lastRef.current?.focus();
     }
   };
@@ -571,11 +575,12 @@ function SignupContent() {
                   type="text"
                   value={phoneState.prefixCustom}
                   onChange={(e) => handlePhoneChange("prefixCustom", e.target.value)}
-                  onBlur={() =>
+                  onBlur={() => {
+                    if (skipBlurRef.current) { skipBlurRef.current = false; return; }
                     handleBlur("phonePrefix", () =>
                       validatePhonePrefix(phoneState.prefix, phoneState.prefixCustom),
-                    )
-                  }
+                    );
+                  }}
                   placeholder="앞자리"
                   maxLength={4}
                   className="w-20 px-2 py-2 text-center input-field"
@@ -589,7 +594,10 @@ function SignupContent() {
                 value={phoneState.middle}
                 onChange={(e) => handlePhoneChange("middle", e.target.value)}
                 onKeyDown={(e) => handlePhoneKeyDown("middle", e)}
-                onBlur={() => handleBlur("phoneMiddle", () => validatePhoneMiddle(phoneState.middle))}
+                onBlur={() => {
+                  if (skipBlurRef.current) { skipBlurRef.current = false; return; }
+                  handleBlur("phoneMiddle", () => validatePhoneMiddle(phoneState.middle));
+                }}
                 placeholder="0000"
                 maxLength={4}
                 className="w-20 px-2 py-2 text-center input-field"
@@ -602,7 +610,10 @@ function SignupContent() {
                 value={phoneState.last}
                 onChange={(e) => handlePhoneChange("last", e.target.value)}
                 onKeyDown={(e) => handlePhoneKeyDown("last", e)}
-                onBlur={() => handleBlur("phoneLast", () => validatePhoneLast(phoneState.last))}
+                onBlur={() => {
+                  if (skipBlurRef.current) { skipBlurRef.current = false; return; }
+                  handleBlur("phoneLast", () => validatePhoneLast(phoneState.last));
+                }}
                 placeholder="0000"
                 maxLength={4}
                 className="w-20 px-2 py-2 text-center input-field"
