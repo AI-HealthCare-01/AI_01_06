@@ -357,7 +357,7 @@ function ChatContent() {
         {/* Info box */}
         <div className="rounded-2xl p-5 mt-4 mb-2 text-sm" style={{ background: 'var(--color-primary-soft)' }}>
           <p className="font-bold mb-1">AI 챗봇 사용 안내</p>
-          <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--color-text-muted)' }}>
+          <ul className="list-disc list-outside pl-5 space-y-1" style={{ color: 'var(--color-text-muted)' }}>
             <li>복약 방법, 시간, 주의사항 등에 대해 질문할 수 있습니다.</li>
             <li>약물 상호작용이나 부작용에 대해 문의할 수 있습니다.</li>
             <li>긴급한 상황이나 심각한 증상은 즉시 의료기관에 연락하세요.</li>
