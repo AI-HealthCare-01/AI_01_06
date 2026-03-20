@@ -44,6 +44,7 @@ function ChatContent() {
   const [quickActionsOpen, setQuickActionsOpen] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasInteracted = useRef(false);
 
   // 피드백 모달 상태
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -78,6 +79,7 @@ function ChatContent() {
         if (msgRes.success && msgRes.data) {
           const loaded = (msgRes.data as Array<{ role: "user" | "assistant"; content: string; status?: string }>);
           if (loaded.length > 0) {
+            hasInteracted.current = true;
             setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status })));
             setQuickActionsOpen(false);
           }
@@ -95,6 +97,7 @@ function ChatContent() {
   }, []);
 
   useEffect(() => {
+    if (!hasInteracted.current) return;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -121,6 +124,7 @@ function ChatContent() {
     setInput("");
     setQuickActionsOpen(false);
     setIsStreaming(true);
+    hasInteracted.current = true;
 
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setMessages((prev) => [...prev, { role: "assistant", content: "", status: "streaming" }]);
@@ -325,7 +329,6 @@ function ChatContent() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
-                onFocus={(e) => { setTimeout(() => e.target.scrollIntoView({ block: "center", behavior: "smooth" }), 300); }}
                 placeholder="메시지를 입력하세요..."
                 className="flex-1 px-4 py-3 text-base input-field"
                 disabled={isStreaming}
