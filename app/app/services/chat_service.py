@@ -1,9 +1,16 @@
 import abc
-from collections.abc import AsyncIterator
+import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from openai import AsyncOpenAI
 
 from app import config
+from app.models.chat import ChatMessage, ChatThread
+from app.models.patient_profile import PatientProfile
+from app.models.prescription import Medication, Prescription
+from app.services.retrieval_service import format_retrieved_docs, get_retrieval_service
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
     "당신은 환자의 복약을 돕는 AI 복약 상담 도우미입니다.\n"
@@ -50,6 +57,11 @@ class ChatServiceBase(abc.ABC):
     @abc.abstractmethod
     async def stream_reply(self, messages: list[dict]) -> AsyncIterator[str]: ...
 
+    @abc.abstractmethod
+    async def generate_reply(
+        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+    ) -> str: ...
+
 
 class DummyChatService(ChatServiceBase):
     """테스트용 더미 채팅 서비스. 고정된 응답을 chunk로 반환."""
@@ -58,6 +70,14 @@ class DummyChatService(ChatServiceBase):
         response = "안녕하세요! 복약 관련 질문에 답변드리겠습니다. 궁금하신 점을 말씀해 주세요."
         for char in response:
             yield char
+
+    async def generate_reply(
+        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+    ) -> str:
+        response = "안녕하세요! 복약 관련 질문에 답변드리겠습니다. 궁금하신 점을 말씀해 주세요."
+        if on_progress:
+            await on_progress(response)
+        return response
 
 
 class OpenAIChatService(ChatServiceBase):
@@ -80,8 +100,143 @@ class OpenAIChatService(ChatServiceBase):
         finally:
             await response.close()
 
+    async def generate_reply(
+        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+    ) -> str:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            stream=True,
+        )
+        accumulated = ""
+        chunk_count = 0
+        try:
+            async for chunk in response:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    accumulated += chunk.choices[0].delta.content
+                    chunk_count += 1
+                    if on_progress and chunk_count % 5 == 0:
+                        await on_progress(accumulated)
+        finally:
+            await response.close()
+        if on_progress:
+            await on_progress(accumulated)
+        return accumulated
+
 
 def get_chat_service() -> ChatServiceBase:
     if config.OPENAI_API_KEY:
         return OpenAIChatService(api_key=config.OPENAI_API_KEY, model=config.OPENAI_MODEL)
     return DummyChatService()
+
+
+RAG_INSTRUCTION = (
+    "\n\n[근거 기반 답변 원칙]\n"
+    "- [참고 자료]가 제공된 경우 해당 내용을 근거로 답변하세요.\n"
+    "- 참고 자료에 없는 내용은 솔직히 '해당 정보가 없다'고 안내하세요.\n"
+    "- 약품명, 용량, 횟수 등 수치는 자료에 있는 그대로만 사용하세요."
+)
+
+
+async def build_retrieved_context(thread: ChatThread, medications: list, user_query: str) -> list[dict]:
+    """처방전 약품 기반 RAG 검색 결과를 system message로 반환한다.
+
+    retrieval 실패 시 빈 리스트를 반환하여 기존 채팅 흐름을 유지한다.
+    """
+    try:
+        drug_names = [m.name for m in medications]
+        logger.info("[RAG] drug_names=%s, query=%s", drug_names, user_query[:50])
+        if not drug_names:
+            return []
+
+        retrieval_service = get_retrieval_service()
+        docs = await retrieval_service.retrieve(drug_names, user_query)
+        logger.info("[RAG] retrieved %d docs", len(docs))
+        if not docs:
+            return []
+
+        ref_text = format_retrieved_docs(docs)
+        logger.info("[RAG] context length=%d chars", len(ref_text))
+        if not ref_text:
+            return []
+
+        return [
+            {
+                "role": "system",
+                "content": (
+                    "[참고 자료]\n"
+                    "아래는 처방된 약품의 공식 정보입니다. "
+                    "답변 시 이 정보를 근거로 활용하세요.\n\n" + ref_text
+                ),
+            }
+        ]
+    except Exception:
+        logger.exception("[RAG] retrieval failed")
+        return []
+
+
+async def build_context(thread: ChatThread) -> list[dict]:  # noqa: C901
+    """LLM에 전달할 메시지 컨텍스트를 구성합니다."""
+    system_content = SYSTEM_PROMPT
+    if config.RAG_ENABLED:
+        system_content += RAG_INSTRUCTION
+    messages: list[dict] = [{"role": "system", "content": system_content}]
+
+    # 처방전 요약
+    medications = []
+    if thread.prescription_id:
+        prescription = await Prescription.get(id=thread.prescription_id)
+        medications = await Medication.filter(prescription=prescription)
+
+        summary_parts = []
+        if prescription.hospital_name:
+            summary_parts.append(f"병원: {prescription.hospital_name}")
+        if prescription.diagnosis:
+            summary_parts.append(f"진단: {prescription.diagnosis}")
+        if medications:
+            med_names = ", ".join(m.name for m in medications)
+            summary_parts.append(f"처방 약물: {med_names}")
+
+        profile = await PatientProfile.get_or_none(user_id=thread.user_id)
+        if profile and profile.allergy_details:
+            summary_parts.append(f"알러지: {profile.allergy_details}")
+        if profile and profile.disease_details:
+            summary_parts.append(f"기저질환: {profile.disease_details}")
+
+        if summary_parts:
+            messages.append(
+                {
+                    "role": "system",
+                    "content": "[처방전 요약]\n" + "\n".join(summary_parts),
+                }
+            )
+
+    # 최근 completed 메시지 (현재 사용자 메시지 포함)
+    recent = (
+        await ChatMessage.filter(thread=thread, status="completed")
+        .order_by("-created_at")
+        .limit(config.CHAT_CONTEXT_MESSAGE_COUNT)
+    )
+    recent_list = list(reversed(recent))
+
+    # RAG: 처방전이 연결된 경우에만 검색 수행
+    med_count = len(medications)
+    recent_count = len(recent_list)
+    logger.info("[RAG] enabled=%s, medications=%d, recent=%d", config.RAG_ENABLED, med_count, recent_count)
+
+    if config.RAG_ENABLED and medications and recent_list:
+        # 가장 최근 user 메시지에서 질문 추출
+        user_query = ""
+        for m in reversed(recent_list):
+            if m.role == "user":
+                user_query = m.content
+                break
+
+        if user_query:
+            retrieved = await build_retrieved_context(thread, medications, user_query)
+            messages.extend(retrieved)
+
+    for m in recent_list:
+        messages.append({"role": m.role, "content": m.content})
+
+    return messages

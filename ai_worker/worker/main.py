@@ -5,6 +5,7 @@ from arq.cron import cron
 from tortoise import Tortoise
 
 from worker import config
+from worker.tasks.chat_task import chat_task
 from worker.tasks.guide_task import guide_task
 from worker.tasks.medication_check_task import medication_check_cron
 from worker.tasks.ocr_task import ocr_task
@@ -42,7 +43,7 @@ async def shutdown(ctx: dict) -> None:
 
 class WorkerSettings:
     redis_settings = RedisSettings.from_dsn(config.REDIS_URL)
-    functions = [ocr_task, guide_task]
+    functions = [ocr_task, guide_task, chat_task]
     cron_jobs = [
         cron(purge_deleted_users, hour=4, minute=0),
         cron(medication_check_cron, minute={0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55}),

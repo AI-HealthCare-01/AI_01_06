@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import math
@@ -10,15 +11,13 @@ from tortoise.functions import Count
 
 from app import config
 from app.core.deps import get_acting_patient
+from app.core.redis import CHAT_STREAM_PREFIX, enqueue, subscribe_chat_stream
 from app.core.response import success_response
 from app.models.chat import ChatFeedback, ChatMessage, ChatThread
-from app.models.patient_profile import PatientProfile
-from app.models.prescription import Medication, Prescription
+from app.models.prescription import Prescription
 from app.models.user import User
 from app.schemas.chat import FeedbackRequest, MessageSendRequest, ThreadCreateRequest
-from app.services.chat_service import SYSTEM_PROMPT, get_chat_service
 from app.services.notification_service import create_notification
-from app.services.retrieval_service import format_retrieved_docs, get_retrieval_service
 
 logger = logging.getLogger(__name__)
 
@@ -219,118 +218,6 @@ async def reactivate_thread(thread_id: int, actors: tuple[User, User | None] = D
     )
 
 
-RAG_INSTRUCTION = (
-    "\n\n[근거 기반 답변 원칙]\n"
-    "- [참고 자료]가 제공된 경우 해당 내용을 근거로 답변하세요.\n"
-    "- 참고 자료에 없는 내용은 솔직히 '해당 정보가 없다'고 안내하세요.\n"
-    "- 약품명, 용량, 횟수 등 수치는 자료에 있는 그대로만 사용하세요."
-)
-
-
-async def _build_retrieved_context(thread: ChatThread, medications: list, user_query: str) -> list[dict]:
-    """처방전 약품 기반 RAG 검색 결과를 system message로 반환한다.
-
-    retrieval 실패 시 빈 리스트를 반환하여 기존 채팅 흐름을 유지한다.
-    """
-    try:
-        drug_names = [m.name for m in medications]
-        logger.info("[RAG] drug_names=%s, query=%s", drug_names, user_query[:50])
-        if not drug_names:
-            return []
-
-        retrieval_service = get_retrieval_service()
-        docs = await retrieval_service.retrieve(drug_names, user_query)
-        logger.info("[RAG] retrieved %d docs", len(docs))
-        if not docs:
-            return []
-
-        ref_text = format_retrieved_docs(docs)
-        logger.info("[RAG] context length=%d chars", len(ref_text))
-        if not ref_text:
-            return []
-
-        return [
-            {
-                "role": "system",
-                "content": (
-                    "[참고 자료]\n"
-                    "아래는 처방된 약품의 공식 정보입니다. "
-                    "답변 시 이 정보를 근거로 활용하세요.\n\n" + ref_text
-                ),
-            }
-        ]
-    except Exception:
-        logger.exception("[RAG] retrieval failed")
-        return []
-
-
-async def _build_context(thread: ChatThread) -> list[dict]:  # noqa: C901
-    """LLM에 전달할 메시지 컨텍스트를 구성합니다."""
-    system_content = SYSTEM_PROMPT
-    if config.RAG_ENABLED:
-        system_content += RAG_INSTRUCTION
-    messages: list[dict] = [{"role": "system", "content": system_content}]
-
-    # 처방전 요약
-    medications = []
-    if thread.prescription_id:
-        prescription = await Prescription.get(id=thread.prescription_id)
-        medications = await Medication.filter(prescription=prescription)
-
-        summary_parts = []
-        if prescription.hospital_name:
-            summary_parts.append(f"병원: {prescription.hospital_name}")
-        if prescription.diagnosis:
-            summary_parts.append(f"진단: {prescription.diagnosis}")
-        if medications:
-            med_names = ", ".join(m.name for m in medications)
-            summary_parts.append(f"처방 약물: {med_names}")
-
-        profile = await PatientProfile.get_or_none(user_id=thread.user_id)
-        if profile and profile.allergy_details:
-            summary_parts.append(f"알러지: {profile.allergy_details}")
-        if profile and profile.disease_details:
-            summary_parts.append(f"기저질환: {profile.disease_details}")
-
-        if summary_parts:
-            messages.append(
-                {
-                    "role": "system",
-                    "content": "[처방전 요약]\n" + "\n".join(summary_parts),
-                }
-            )
-
-    # 최근 completed 메시지 (현재 사용자 메시지 포함)
-    recent = (
-        await ChatMessage.filter(thread=thread, status="completed")
-        .order_by("-created_at")
-        .limit(config.CHAT_CONTEXT_MESSAGE_COUNT)
-    )
-    recent_list = list(reversed(recent))
-
-    # RAG: 처방전이 연결된 경우에만 검색 수행
-    med_count = len(medications)
-    recent_count = len(recent_list)
-    logger.info("[RAG] enabled=%s, medications=%d, recent=%d", config.RAG_ENABLED, med_count, recent_count)
-
-    if config.RAG_ENABLED and medications and recent_list:
-        # 가장 최근 user 메시지에서 질문 추출
-        user_query = ""
-        for m in reversed(recent_list):
-            if m.role == "user":
-                user_query = m.content
-                break
-
-        if user_query:
-            retrieved = await _build_retrieved_context(thread, medications, user_query)
-            messages.extend(retrieved)
-
-    for m in recent_list:
-        messages.append({"role": m.role, "content": m.content})
-
-    return messages
-
-
 async def _validate_thread_for_message(thread: ChatThread | None) -> None:
     """메시지 전송 전 스레드 상태 검증 및 stale stream 정리."""
     if not thread:
@@ -347,7 +234,7 @@ async def _validate_thread_for_message(thread: ChatThread | None) -> None:
             detail="장시간 미활동으로 자동 종료된 대화입니다. 대화 이어가기를 이용해주세요.",
         )
 
-    stale = await ChatMessage.filter(thread=thread, status="streaming").first()
+    stale = await ChatMessage.filter(thread=thread, status__in=["streaming", "pending"]).first()
     if stale:
         elapsed = time.time() - stale.created_at.timestamp()
         if elapsed < config.CHAT_STREAMING_TIMEOUT_SECONDS:
@@ -363,57 +250,97 @@ async def send_message(req: MessageSendRequest, actors: tuple[User, User | None]
     thread = await ChatThread.get_or_none(id=req.thread_id, user=target_user)
     await _validate_thread_for_message(thread)
 
-    # user 메시지 저장
     await ChatMessage.create(thread=thread, role="user", content=req.content, status="completed")
 
-    # 첫 메시지면 제목 자동 생성
     if not thread.title:
         thread.title = req.content[:40]
         await thread.save()
 
-    # assistant 메시지 생성 (streaming 상태)
-    assistant_msg = await ChatMessage.create(thread=thread, role="assistant", content="", status="streaming")
+    assistant_msg = await ChatMessage.create(thread=thread, role="assistant", content="", status="pending")
 
-    # 컨텍스트 구성
-    context = await _build_context(thread)
+    await enqueue("chat_task", assistant_msg.id)
 
-    async def sse_generator():
-        chat_service = get_chat_service()
-        accumulated = ""
-        start_time = time.time()
+    return success_response({"message_id": assistant_msg.id, "status": "pending"})
 
-        try:
-            stream = chat_service.stream_reply(context)
-            async for token in stream:
-                # 전체 timeout 체크
-                if time.time() - start_time > config.CHAT_STREAMING_TIMEOUT_SECONDS:
-                    break
 
-                accumulated += token
-                yield f"data: {json.dumps({'type': 'chunk', 'content': token}, ensure_ascii=False)}\n\n"
+def _sse_done(msg: ChatMessage) -> str:
+    return f"data: {json.dumps({'type': 'done', 'content': msg.content, 'message_id': msg.id}, ensure_ascii=False)}\n\n"
 
-            # 정상 완료
-            assistant_msg.content = accumulated
-            assistant_msg.status = "completed"
-            await assistant_msg.save()
-            await thread.save()  # updated_at 갱신
-            yield f"data: {json.dumps({'type': 'done', 'message_id': assistant_msg.id})}\n\n"
 
-        except Exception:
-            assistant_msg.content = accumulated
-            assistant_msg.status = "failed"
-            await assistant_msg.save()
-            await thread.save()  # updated_at 갱신
-            yield f"data: {json.dumps({'type': 'error', 'message': '응답 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
+def _sse_error(message: str = "응답 생성에 실패했습니다.") -> str:
+    return f"data: {json.dumps({'type': 'error', 'message': message}, ensure_ascii=False)}\n\n"
 
-    return StreamingResponse(
-        sse_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
-    )
+
+_SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+
+
+async def _sse_relay(msg: ChatMessage, message_id: int):  # noqa: C901
+    pubsub, sub_redis = await subscribe_chat_stream(message_id)
+    try:
+        deadline = time.time() + config.CHAT_STREAMING_TIMEOUT_SECONDS
+        while time.time() < deadline:
+            raw = await pubsub.get_message(ignore_subscribe_messages=True, timeout=15.0)
+            if raw is None:
+                yield ": keepalive\n\n"
+                await msg.refresh_from_db()
+                if msg.status == "completed":
+                    yield _sse_done(msg)
+                    return
+                if msg.status == "failed":
+                    yield _sse_error()
+                    return
+                continue
+
+            if raw["type"] != "message":
+                continue
+
+            event = json.loads(raw["data"])
+            if event["t"] == "c":
+                yield f"data: {json.dumps({'type': 'chunk', 'content': event['d']}, ensure_ascii=False)}\n\n"
+            elif event["t"] == "done":
+                await msg.refresh_from_db()
+                yield _sse_done(msg)
+                return
+            elif event["t"] == "error":
+                yield _sse_error(event.get("d", "오류 발생"))
+                return
+    except asyncio.CancelledError:
+        pass
+    finally:
+        await pubsub.unsubscribe(f"{CHAT_STREAM_PREFIX}{message_id}")
+        await pubsub.aclose()
+        await sub_redis.aclose()
+
+
+@router.get("/messages/{message_id}/stream")
+async def stream_message(message_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    """Redis Pub/Sub에서 워커의 LLM 응답을 구독하여 SSE로 클라이언트에 relay한다."""
+    current_user, patient = actors
+    target_user = patient or current_user
+
+    msg = await ChatMessage.get_or_none(id=message_id)
+    if not msg:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="메시지를 찾을 수 없습니다.")
+
+    thread = await ChatThread.get_or_none(id=msg.thread_id, user=target_user)
+    if not thread:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
+
+    if msg.status == "completed":
+
+        async def completed_gen():
+            yield _sse_done(msg)
+
+        return StreamingResponse(completed_gen(), media_type="text/event-stream", headers=_SSE_HEADERS)
+
+    if msg.status == "failed":
+
+        async def failed_gen():
+            yield _sse_error()
+
+        return StreamingResponse(failed_gen(), media_type="text/event-stream", headers=_SSE_HEADERS)
+
+    return StreamingResponse(_sse_relay(msg, message_id), media_type="text/event-stream", headers=_SSE_HEADERS)
 
 
 @router.post("/feedback")

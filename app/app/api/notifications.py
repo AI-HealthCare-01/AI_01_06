@@ -1,10 +1,7 @@
-import asyncio
-import json
 import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, field_validator
 
 from app.core.deps import get_current_user
@@ -66,35 +63,6 @@ async def get_unread_count(user: User = Depends(get_current_user)):
 async def read_all(user: User = Depends(get_current_user)):
     updated_count = await Notification.filter(user=user, is_read=False).update(is_read=True, read_at=datetime.now(UTC))
     return success_response({"updated_count": updated_count})
-
-
-@router.get("/stream")
-async def notification_stream(user: User = Depends(get_current_user)):
-    """SSE 스트림: 읽지 않은 알림 카운트를 실시간으로 전송한다.
-
-    서버가 5초마다 DB를 폴링하여 count 변경 시에만 data 이벤트를 전송한다.
-    count 미변경 시에는 keepalive 주석을 전송하여 nginx timeout을 방지한다.
-    """
-
-    async def event_generator():
-        last_count = -1
-        try:
-            while True:
-                count = await Notification.filter(user=user, is_read=False).count()
-                if count != last_count:
-                    last_count = count
-                    yield f"data: {json.dumps({'type': 'unread_count', 'count': count})}\n\n"
-                else:
-                    yield ": keepalive\n\n"
-                await asyncio.sleep(5)
-        except asyncio.CancelledError:
-            pass
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
 
 
 @router.patch("/{notification_id}/read")
