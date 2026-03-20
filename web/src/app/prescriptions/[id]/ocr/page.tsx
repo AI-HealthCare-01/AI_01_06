@@ -255,12 +255,12 @@ export default function OcrReviewPage() {
       <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>처방전이 성공적으로 인식되었습니다. 내용을 확인하고 필요시 수정해주세요.</p>
 
       {/* Stepper */}
-      <div className="flex items-center gap-2 mb-8">
-        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>처방전 올리기</div>
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+        <div className="px-4 py-2 rounded-full text-sm text-center" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>처방전 올리기</div>
         <span style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-4 py-2 rounded-full text-sm font-medium text-white" style={{ background: 'var(--color-primary)' }}>내용 재확인 & 수정</div>
+        <div className="px-4 py-2 rounded-full text-sm text-center font-medium text-white" style={{ background: 'var(--color-primary)' }}>내용 재확인 & 수정</div>
         <span style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
+        <div className="px-4 py-2 rounded-full text-sm text-center" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
       </div>
 
       {/* Basic info */}
