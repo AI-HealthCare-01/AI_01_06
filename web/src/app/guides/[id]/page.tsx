@@ -192,9 +192,9 @@ export default function GuideDetailPage() {
         <div className="space-y-4">
           {content.medication_guides.map((med, i) => (
             <div key={i} className="rounded-lg p-4" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
-              <div className="mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <h3 className="font-bold text-lg">{med.name}</h3>
-                <span className="inline-block text-xs px-3 py-1 rounded-full mt-1" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
+                <span className="text-xs px-3 py-1 rounded-full shrink-0" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
               </div>
               <div className="space-y-1 text-sm">
                 {med.dosage && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 용량 :</span> {normalizeDosage(med.dosage)}</p>}
