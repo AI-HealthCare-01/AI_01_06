@@ -335,7 +335,7 @@ function SignupContent() {
             <p style={{ color: 'var(--color-text)' }}>계정 유형을 선택해주세요</p>
             <div className="space-y-4">
               <button
-                onClick={() => { setRole("patient"); setStep("form"); }}
+                onClick={() => { setError(""); setRole("patient"); setStep("form"); }}
                 className="w-full border-2 py-4 rounded-xl text-base font-semibold transition-colors"
                 style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary-soft)'}
@@ -344,7 +344,7 @@ function SignupContent() {
                 일반 (환자)
               </button>
               <button
-                onClick={() => { setRole("caregiver"); setStep("form"); }}
+                onClick={() => { setError(""); setRole("caregiver"); setStep("form"); }}
                 className="w-full border-2 py-4 rounded-xl text-base font-semibold transition-colors"
                 style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-success-soft)'}
