@@ -437,6 +437,8 @@ export async function streamChat(
   const decoder = new TextDecoder();
   let buffer = "";
 
+  let streamEnded = false;
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -453,14 +455,20 @@ export async function streamChat(
           onChunk(event.content);
         } else if (event.type === "done") {
           onDone(event.message_id);
+          streamEnded = true;
           return;
         } else if (event.type === "error") {
           onError(event.message);
+          streamEnded = true;
           return;
         }
       } catch {
         // ignore parse errors
       }
     }
+  }
+
+  if (!streamEnded) {
+    onError("응답 스트림이 예기치 않게 종료되었습니다.");
   }
 }
