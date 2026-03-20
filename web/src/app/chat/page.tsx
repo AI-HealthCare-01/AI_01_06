@@ -227,7 +227,7 @@ function ChatContent() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-base font-bold leading-snug">AI 복약 상담</h1>
+                <h1 className="text-base font-bold leading-normal">AI 복약 상담</h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--color-success)' }} />
                   <p className="text-sm" style={{ color: 'var(--color-success)' }}>온라인</p>
@@ -269,7 +269,7 @@ function ChatContent() {
           <div className="overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '200px', maxHeight: 'min(50vh, 400px)' }}>
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] md:max-w-[75%] rounded-2xl px-4 py-3 whitespace-pre-wrap ${
+                <div className={`max-w-[80%] md:max-w-[75%] rounded-xl px-4 py-3.5 leading-relaxed whitespace-pre-wrap ${
                   msg.role === "user"
                     ? "text-white text-sm"
                     : "text-base"
@@ -298,7 +298,7 @@ function ChatContent() {
             <button
               type="button"
               onClick={() => setQuickActionsOpen((v) => !v)}
-              className="flex items-center gap-1.5 text-sm cursor-pointer"
+              className="flex items-center gap-1.5 text-sm py-1 cursor-pointer"
               style={{ color: 'var(--color-text-muted)' }}
               aria-expanded={quickActionsOpen}
             >
@@ -341,7 +341,7 @@ function ChatContent() {
                 전송
               </button>
             </div>
-            <p className="text-sm text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>{DISCLAIMER}</p>
+            <p className="text-sm text-center mt-2 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>{DISCLAIMER}</p>
           </div>
 
           {/* Action buttons — bottom of card */}
