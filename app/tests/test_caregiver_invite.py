@@ -352,8 +352,8 @@ async def test_delete_patient_revokes_caregiver_mappings(client: AsyncClient):
     assert resp.json()["success"] is True
 
     # 매핑 상태 확인
-    mapping = await CaregiverPatientMapping.first()
-    assert mapping.status == "REVOKED"
+    mappings = await CaregiverPatientMapping.filter(status="REVOKED")
+    assert len(mappings) == 1
 
 
 @pytest.mark.asyncio
@@ -378,8 +378,8 @@ async def test_delete_guardian_revokes_patient_mappings(client: AsyncClient):
     assert resp.json()["success"] is True
 
     # 매핑 상태 확인
-    mapping = await CaregiverPatientMapping.first()
-    assert mapping.status == "REVOKED"
+    mappings = await CaregiverPatientMapping.filter(status="REVOKED")
+    assert len(mappings) == 1
 
 
 @pytest.mark.asyncio

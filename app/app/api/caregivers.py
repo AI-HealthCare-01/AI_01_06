@@ -143,7 +143,9 @@ async def list_patients(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="보호자만 조회할 수 있습니다.")
 
     mappings = await CaregiverPatientMapping.filter(
-        caregiver=user, status="APPROVED", patient__deleted_at__isnull=True,
+        caregiver=user,
+        status="APPROVED",
+        patient__deleted_at__isnull=True,
     ).prefetch_related("patient")
     result = [
         {"mapping_id": m.id, "id": m.patient.id, "nickname": m.patient.nickname, "name": m.patient.name}
@@ -158,7 +160,9 @@ async def list_my_caregivers(user: User = Depends(get_current_user)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="환자만 조회할 수 있습니다.")
 
     mappings = await CaregiverPatientMapping.filter(
-        patient=user, status="APPROVED", caregiver__deleted_at__isnull=True,
+        patient=user,
+        status="APPROVED",
+        caregiver__deleted_at__isnull=True,
     ).prefetch_related("caregiver")
     result = [
         {"mapping_id": m.id, "id": m.caregiver.id, "nickname": m.caregiver.nickname, "name": m.caregiver.name}
