@@ -41,7 +41,7 @@ function ChatContent() {
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<number | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(true);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +79,7 @@ function ChatContent() {
           const loaded = (msgRes.data as Array<{ role: "user" | "assistant"; content: string; status?: string }>);
           if (loaded.length > 0) {
             setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status })));
-            setShowQuickActions(false);
+            setQuickActionsOpen(false);
           }
         }
         setThreadId(Number(resumeThreadId));
@@ -119,7 +119,7 @@ function ChatContent() {
     }
 
     setInput("");
-    setShowQuickActions(false);
+    setQuickActionsOpen(false);
     setIsStreaming(true);
 
     setMessages((prev) => [...prev, { role: "user", content: text }]);
@@ -322,19 +322,34 @@ function ChatContent() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick actions */}
-          {showQuickActions && (
-            <div className="px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-              <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>자주 묻는 질문</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {/* Quick actions — toggle persists after chat starts */}
+          <div className="shrink-0 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              onClick={() => setQuickActionsOpen((v) => !v)}
+              className="flex items-center gap-1.5 text-sm cursor-pointer"
+              style={{ color: 'var(--color-text-muted)' }}
+              aria-expanded={quickActionsOpen}
+            >
+              <svg
+                width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+                className="transition-transform duration-200"
+                style={{ transform: quickActionsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+              >
+                <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+              </svg>
+              자주 묻는 질문
+            </button>
+            {quickActionsOpen && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                 {quickActions.map((q) => (
                   <button key={q} onClick={() => sendMessage(q)} className="text-sm rounded-xl px-4 py-3.5 text-left btn-outline">
                     {q}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Input — inside card, sticky within the flex column */}
           <div className="shrink-0 px-5 py-4" style={{ borderTop: '1px solid var(--color-border)' }}>
