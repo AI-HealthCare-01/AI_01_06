@@ -68,6 +68,8 @@ async def google_callback(req: GoogleCallbackRequest):
     provider = await AuthProvider.filter(provider="GOOGLE", provider_user_id=google_id).select_related("user").first()
     if provider:
         user = provider.user
+        if user.deleted_at:
+            return error_response("삭제 대기중인 계정입니다.")
         return success_response(
             {
                 "status": "login",

@@ -98,6 +98,7 @@ function SignupContent() {
   const SOCIAL_ERROR_MESSAGES: Record<string, string> = {
     kakao_fail: "카카오 로그인에 실패했습니다.",
     google_fail: "Google 로그인에 실패했습니다.",
+    deleted_account: "삭제 대기중인 계정입니다.",
     deleted_email: "삭제 대기중인 이메일 주소입니다.",
     email_conflict: "이미 가입된 이메일주소입니다.",
   };
