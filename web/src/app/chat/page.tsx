@@ -41,7 +41,7 @@ function ChatContent() {
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<number | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInteracted = useRef(false);
