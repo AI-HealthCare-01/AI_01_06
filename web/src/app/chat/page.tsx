@@ -345,20 +345,20 @@ function ChatContent() {
           </div>
 
           {/* Action buttons — bottom of card */}
-          <div className="shrink-0 flex items-center justify-end gap-3 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-            <Link
-              href="/chat/history"
-              className="text-sm px-4 py-2.5 min-h-[44px] flex items-center rounded-xl btn-outline"
-            >
-              대화 기록
-            </Link>
+          <div className="shrink-0 flex flex-col md:flex-row md:justify-end gap-2 md:gap-3 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
             <button
               onClick={handleEndClick}
               disabled={isStreaming || !threadId}
-              className="text-sm px-4 py-2.5 min-h-[44px] rounded-xl disabled:opacity-50 transition-colors btn-danger-outline"
+              className="text-sm px-4 py-2.5 min-h-[44px] rounded-xl disabled:opacity-50 transition-colors btn-danger-outline md:order-2"
             >
               상담 종료
             </button>
+            <Link
+              href="/chat/history"
+              className="text-sm px-4 py-2.5 min-h-[44px] flex items-center justify-center rounded-xl btn-outline md:order-1"
+            >
+              대화 기록
+            </Link>
           </div>
 
         </div>{/* end single unified card */}
