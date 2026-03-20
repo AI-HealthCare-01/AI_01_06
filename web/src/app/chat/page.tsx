@@ -128,12 +128,12 @@ function ChatContent() {
     await streamChat(
       currentThreadId,
       text,
-      (chunk) => {
+      (content) => {
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last.role === "assistant") {
-            updated[updated.length - 1] = { ...last, content: last.content + chunk };
+            updated[updated.length - 1] = { ...last, content };
           }
           return updated;
         });
