@@ -57,9 +57,7 @@ export default function ProfilePage() {
       router.replace("/login");
       return;
     }
-    if (user.role === "PATIENT") {
-      fetchProfile();
-    }
+    fetchProfile();
   }, [user, authLoading, router]);
 
   // GUARDIAN은 개인정보 탭 불필요 — 접근성 설정만 표시
