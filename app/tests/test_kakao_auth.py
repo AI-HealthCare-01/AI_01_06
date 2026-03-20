@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -317,3 +318,82 @@ async def test_kakao_register_rejects_duplicate_email(client: AsyncClient):
     body = resp.json()
     assert body["success"] is False
     assert "이메일" in body["error"]
+
+
+# ---------------------------------------------------------------------------
+# 소프트삭제 이메일 거부 + 닉네임 sanitization
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_kakao_callback_rejects_soft_deleted_email(client: AsyncClient):
+    """소프트 삭제된 유저의 이메일로 Kakao 콜백 → '삭제 대기중' 에러."""
+    await User.create(
+        email="deleted@test.com", nickname="삭제유저", name="삭제",
+        password_hash="hashed", deleted_at=datetime.now(UTC),
+    )
+
+    mock_redis = AsyncMock()
+    mock_redis.get = AsyncMock(return_value="1")
+    mock_redis.delete = AsyncMock()
+
+    mock_svc = AsyncMock()
+    mock_svc.exchange_code.return_value = {"access_token": "tok"}
+    mock_svc.get_user_info.return_value = {
+        "id": 12345,
+        "kakao_account": {"email": "deleted@test.com", "profile": {"nickname": "신규"}},
+    }
+
+    with (
+        patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis),
+        patch("app.api.kakao_auth.get_kakao_service", return_value=mock_svc),
+    ):
+        resp = await client.post("/api/auth/kakao/callback", json={"code": "code", "state": "state"})
+
+    body = resp.json()
+    assert body["success"] is False
+    assert "삭제" in body["error"]
+
+
+@pytest.mark.asyncio
+async def test_kakao_register_rejects_soft_deleted_email(client: AsyncClient):
+    """소프트 삭제된 유저의 이메일로 register → '삭제 대기중' 에러."""
+    await User.create(
+        email="deleted@reg.com", nickname="삭제닉", name="삭제",
+        password_hash="hashed", deleted_at=datetime.now(UTC),
+    )
+
+    pending = _make_pending(kakao_id="77777", email="deleted@reg.com", nickname="새닉네임")
+    mock_redis = AsyncMock()
+    mock_redis.get = AsyncMock(return_value=pending)
+    mock_redis.delete = AsyncMock()
+
+    with patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis):
+        resp = await client.post(
+            "/api/auth/kakao/register",
+            json={**_REGISTER_BASE, "email": "deleted@reg.com", "nickname": "새닉네임"},
+        )
+
+    body = resp.json()
+    assert body["success"] is False
+    assert "삭제" in body["error"]
+
+
+@pytest.mark.asyncio
+async def test_kakao_register_sanitizes_nickname(client: AsyncClient):
+    """닉네임에 공백/특수문자 포함 → strip + 특수문자 제거 후 저장."""
+    pending = _make_pending(kakao_id="88888", email="sanitize@test.com", nickname="테스트")
+    mock_redis = AsyncMock()
+    mock_redis.get = AsyncMock(return_value=pending)
+    mock_redis.delete = AsyncMock()
+
+    with patch("app.api.kakao_auth.get_state_redis", return_value=mock_redis):
+        resp = await client.post(
+            "/api/auth/kakao/register",
+            json={**_REGISTER_BASE, "email": "sanitize@test.com", "nickname": " 테스트! "},
+        )
+
+    body = resp.json()
+    assert body["success"] is True
+    user = await User.filter(email="sanitize@test.com").first()
+    assert user.nickname == "테스트"
