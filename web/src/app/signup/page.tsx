@@ -93,11 +93,17 @@ function SignupContent() {
     }
   }, [source, setSocialRegistration, setSocialData]);
 
-  // 콜백 에러 시 social_error 파라미터로 인라인 에러 표시
+  // 콜백 에러 시 social_error 코드로 인라인 에러 표시 (allowlist — 피싱 방지)
+  const SOCIAL_ERROR_MESSAGES: Record<string, string> = {
+    kakao_fail: "카카오 로그인에 실패했습니다.",
+    google_fail: "Google 로그인에 실패했습니다.",
+    deleted_email: "삭제 대기중인 이메일 주소입니다.",
+    email_conflict: "이미 가입된 이메일주소입니다.",
+  };
   useEffect(() => {
-    const socialError = searchParams.get("social_error");
-    if (socialError) {
-      setError(socialError);
+    const errorCode = searchParams.get("social_error");
+    if (errorCode && SOCIAL_ERROR_MESSAGES[errorCode]) {
+      setError(SOCIAL_ERROR_MESSAGES[errorCode]);
     }
   }, [searchParams]);
 
