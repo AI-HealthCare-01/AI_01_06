@@ -68,6 +68,8 @@ async def google_callback(req: GoogleCallbackRequest):
     provider = await AuthProvider.filter(provider="GOOGLE", provider_user_id=google_id).select_related("user").first()
     if provider:
         user = provider.user
+        if user.deleted_at:
+            return error_response("삭제 대기중인 계정입니다.")
         return success_response(
             {
                 "status": "login",
@@ -83,8 +85,12 @@ async def google_callback(req: GoogleCallbackRequest):
         return error_response("이메일 인증이 완료되지 않은 Google 계정입니다.")
 
     # 이메일 충돌 확인 (다른 provider로 이미 가입된 경우)
-    if google_email and await User.filter(email=google_email).exists():
-        return error_response("이미 해당 이메일로 가입된 계정이 있습니다. 이메일 로그인을 이용하세요.")
+    if google_email:
+        existing = await User.filter(email=google_email).first()
+        if existing:
+            if existing.deleted_at:
+                return error_response("삭제 대기중인 이메일 주소입니다.")
+            return error_response("이미 가입된 이메일주소입니다.")
 
     # 신규 사용자 — registration_token 발급
     registration_token = secrets.token_urlsafe(32)
@@ -124,17 +130,22 @@ async def google_register(req: GoogleRegisterRequest):
 
     pending = json.loads(raw)
     google_id: str = pending["google_id"]
-    await redis.delete(token_key)  # 일회용
 
     # 이메일 중복 재확인 (register 시점 race condition 방지)
-    if await User.filter(email=req.email).exists():
-        return error_response("이미 사용 중인 이메일입니다.")
+    existing = await User.filter(email=req.email).first()
+    if existing:
+        if existing.deleted_at:
+            return error_response("삭제 대기중인 이메일 주소입니다.")
+        return error_response("이미 가입된 이메일주소입니다.")
 
     # google_id 중복 확인 (동시 요청 방지)
     if await AuthProvider.filter(provider="GOOGLE", provider_user_id=google_id).exists():
         return error_response("이미 구글로 가입된 계정이 있습니다.")
 
-    if await User.filter(nickname=req.nickname).exists():
+    existing_nick = await User.filter(nickname=req.nickname).first()
+    if existing_nick:
+        if existing_nick.deleted_at:
+            return error_response("삭제 대기중인 닉네임입니다.")
         return error_response("이미 사용 중인 닉네임입니다.")
 
     birth = date.fromisoformat(req.birth_date) if req.birth_date else None
@@ -150,6 +161,8 @@ async def google_register(req: GoogleRegisterRequest):
         phone=req.phone,
     )
     await AuthProvider.create(user=user, provider="GOOGLE", provider_user_id=google_id)
+    # 토큰 삭제: 가입 성공 후 소멸 — 검증 실패 시 재시도 허용 (DB unique 제약이 동시 요청 방어)
+    await redis.delete(token_key)
     await TermsConsent.create(
         user=user,
         terms_of_service=req.terms_of_service,

@@ -37,10 +37,16 @@ async def signup(request: Request, req: SignupRequest):
     if not req.terms_of_service or not req.privacy_policy:
         return error_response("필수 약관(이용약관, 개인정보처리방침)에 동의해야 합니다.")
 
-    if await User.filter(email=req.email).exists():
-        return error_response("이미 등록된 이메일입니다.")
+    existing = await User.filter(email=req.email).first()
+    if existing:
+        if existing.deleted_at:
+            return error_response("삭제 대기중인 이메일 주소입니다.")
+        return error_response("이미 가입된 이메일주소입니다.")
 
-    if await User.filter(nickname=req.nickname).exists():
+    existing_nick = await User.filter(nickname=req.nickname).first()
+    if existing_nick:
+        if existing_nick.deleted_at:
+            return error_response("삭제 대기중인 닉네임입니다.")
         return error_response("이미 사용 중인 닉네임입니다.")
 
     birth = date.fromisoformat(req.birth_date) if req.birth_date else None

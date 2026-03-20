@@ -24,6 +24,9 @@ import {
   type PhoneState,
 } from "@/lib/signup-validation";
 
+const sanitizeNickname = (value: string): string =>
+  value.trim().replace(/[^가-힣a-zA-Z0-9]/g, "");
+
 const INITIAL_FORM = {
   email: "", nickname: "", password: "", passwordConfirm: "",
   name: "", birth_date: "", gender: "",
@@ -66,6 +69,7 @@ function SignupContent() {
   const prefixCustomRef = useRef<HTMLInputElement>(null);
   const middleRef = useRef<HTMLInputElement>(null);
   const lastRef = useRef<HTMLInputElement>(null);
+  const skipBlurRef = useRef(false);
 
   // source=kakao 또는 source=google 인 경우 소셜 플로우 감지
   const source = searchParams.get("source");
@@ -90,6 +94,21 @@ function SignupContent() {
     }
   }, [source, setSocialRegistration, setSocialData]);
 
+  // 콜백 에러 시 social_error 코드로 인라인 에러 표시 (allowlist — 피싱 방지)
+  const SOCIAL_ERROR_MESSAGES: Record<string, string> = {
+    kakao_fail: "카카오 로그인에 실패했습니다.",
+    google_fail: "Google 로그인에 실패했습니다.",
+    deleted_account: "삭제 대기중인 계정입니다.",
+    deleted_email: "삭제 대기중인 이메일 주소입니다.",
+    email_conflict: "이미 가입된 이메일주소입니다.",
+  };
+  useEffect(() => {
+    const errorCode = searchParams.get("social_error");
+    if (errorCode && SOCIAL_ERROR_MESSAGES[errorCode]) {
+      setError(SOCIAL_ERROR_MESSAGES[errorCode]);
+    }
+  }, [searchParams]);
+
   // 소셜 모드 감지: Context(인메모리)에서 등록 데이터 읽기
   // !socialData 가드: 이미 읽은 경우 재실행 방지
   useEffect(() => {
@@ -99,7 +118,7 @@ function SignupContent() {
       setForm((f) => ({
         ...f,
         email: socialRegistration.email,
-        nickname: socialRegistration.nickname,
+        nickname: sanitizeNickname(socialRegistration.nickname),
         // Google은 name 제공 → 자동 채우기, Kakao는 undefined → 유지
         ...(socialRegistration.name ? { name: socialRegistration.name } : {}),
       }));
@@ -154,21 +173,28 @@ function SignupContent() {
       field === "prefixCustom" ? "phonePrefix" : field === "middle" ? "phoneMiddle" : "phoneLast";
 
     if (fieldErrors[errorKey] !== undefined) {
-      const msg =
-        field === "prefixCustom"
-          ? validatePhonePrefix(phoneState.prefix, digits)
-          : field === "middle"
-            ? validatePhoneMiddle(digits)
-            : validatePhoneLast(digits);
-      setFieldError(errorKey, msg);
+      if (field === "prefixCustom") {
+        setFieldError(errorKey, validatePhonePrefix(phoneState.prefix, digits));
+      } else {
+        // 중간/끝자리: 입력 중(maxLength 미달)이면 에러 클리어, 완성 시만 검증
+        if (digits.length < 4) {
+          setFieldError(errorKey, null);
+        } else {
+          const validate = field === "middle" ? validatePhoneMiddle : validatePhoneLast;
+          setFieldError(errorKey, validate(digits));
+        }
+      }
     }
 
-    // 자동 포커스: prefixCustom 3자리 → middle
+    // 자동 포커스: 완성 시 에러 클리어 + 다음 필드로 이동
+    // skipBlurRef: 자동 포커스로 인한 onBlur에서 stale state 검증 방지 (onBlur에서 리셋)
     if (field === "prefixCustom" && digits.length >= 3) {
+      skipBlurRef.current = true;
       middleRef.current?.focus();
     }
-    // 자동 포커스: middle 4자리 → last
     if (field === "middle" && digits.length === 4) {
+      setFieldError("phoneMiddle", null);
+      skipBlurRef.current = true;
       lastRef.current?.focus();
     }
   };
@@ -257,10 +283,8 @@ function SignupContent() {
         marketing_consent: agreements.marketing,
       });
       if (!res.success || !res.data) {
-        // 소셜 가입 에러: URL source 제거 → useEffect가 상태 리셋 → Step1 + 소셜 버튼 복원
-        setError(`${providerLabel} 가입에 실패했습니다. 다시 시도해주세요.`);
+        setError(res.error || `${providerLabel} 가입에 실패했습니다. 다시 시도해주세요.`);
         setLoading(false);
-        router.replace("/signup");
         return;
       }
       setToken(res.data.access_token);
@@ -311,7 +335,7 @@ function SignupContent() {
             <p style={{ color: 'var(--color-text)' }}>계정 유형을 선택해주세요</p>
             <div className="space-y-4">
               <button
-                onClick={() => { setRole("patient"); setStep("form"); }}
+                onClick={() => { setError(""); setRole("patient"); setStep("form"); }}
                 className="w-full border-2 py-4 rounded-xl text-base font-semibold transition-colors"
                 style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary-soft)'}
@@ -320,7 +344,7 @@ function SignupContent() {
                 일반 (환자)
               </button>
               <button
-                onClick={() => { setRole("caregiver"); setStep("form"); }}
+                onClick={() => { setError(""); setRole("caregiver"); setStep("form"); }}
                 className="w-full border-2 py-4 rounded-xl text-base font-semibold transition-colors"
                 style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)' }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-success-soft)'}
@@ -552,11 +576,12 @@ function SignupContent() {
                   type="text"
                   value={phoneState.prefixCustom}
                   onChange={(e) => handlePhoneChange("prefixCustom", e.target.value)}
-                  onBlur={() =>
+                  onBlur={() => {
+                    if (skipBlurRef.current) { skipBlurRef.current = false; return; }
                     handleBlur("phonePrefix", () =>
                       validatePhonePrefix(phoneState.prefix, phoneState.prefixCustom),
-                    )
-                  }
+                    );
+                  }}
                   placeholder="앞자리"
                   maxLength={4}
                   className="w-20 px-2 py-2 text-center input-field"
@@ -570,7 +595,10 @@ function SignupContent() {
                 value={phoneState.middle}
                 onChange={(e) => handlePhoneChange("middle", e.target.value)}
                 onKeyDown={(e) => handlePhoneKeyDown("middle", e)}
-                onBlur={() => handleBlur("phoneMiddle", () => validatePhoneMiddle(phoneState.middle))}
+                onBlur={() => {
+                  if (skipBlurRef.current) { skipBlurRef.current = false; return; }
+                  handleBlur("phoneMiddle", () => validatePhoneMiddle(phoneState.middle));
+                }}
                 placeholder="0000"
                 maxLength={4}
                 className="w-20 px-2 py-2 text-center input-field"
@@ -583,7 +611,10 @@ function SignupContent() {
                 value={phoneState.last}
                 onChange={(e) => handlePhoneChange("last", e.target.value)}
                 onKeyDown={(e) => handlePhoneKeyDown("last", e)}
-                onBlur={() => handleBlur("phoneLast", () => validatePhoneLast(phoneState.last))}
+                onBlur={() => {
+                  if (skipBlurRef.current) { skipBlurRef.current = false; return; }
+                  handleBlur("phoneLast", () => validatePhoneLast(phoneState.last));
+                }}
                 placeholder="0000"
                 maxLength={4}
                 className="w-20 px-2 py-2 text-center input-field"
