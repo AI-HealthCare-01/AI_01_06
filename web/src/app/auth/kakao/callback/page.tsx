@@ -31,7 +31,8 @@ function KakaoCallbackContent() {
     (async () => {
       const res = await api.kakaoCallback(code, state);
       if (!res.success || !res.data) {
-        setError(res.error || "카카오 로그인에 실패했습니다.");
+        const errorMsg = res.error || "카카오 로그인에 실패했습니다.";
+        router.replace(`/signup?social_error=${encodeURIComponent(errorMsg)}`);
         return;
       }
 

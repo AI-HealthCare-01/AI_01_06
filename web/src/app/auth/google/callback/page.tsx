@@ -31,7 +31,8 @@ function GoogleCallbackContent() {
     (async () => {
       const res = await api.googleCallback(code, state);
       if (!res.success || !res.data) {
-        setError(res.error || "Google 로그인에 실패했습니다.");
+        const errorMsg = res.error || "Google 로그인에 실패했습니다.";
+        router.replace(`/signup?social_error=${encodeURIComponent(errorMsg)}`);
         return;
       }
 

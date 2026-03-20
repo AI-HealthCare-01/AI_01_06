@@ -76,6 +76,11 @@ class KakaoRegisterRequest(BaseModel):
     privacy_policy: bool = False
     marketing_consent: bool = False
 
+    @field_validator("nickname", mode="before")
+    @classmethod
+    def sanitize_nickname(cls, v: str) -> str:
+        return re.sub(r"[^가-힣a-zA-Z0-9]", "", v.strip()) if isinstance(v, str) else v
+
 
 class GoogleCallbackRequest(BaseModel):
     code: str
@@ -94,3 +99,8 @@ class GoogleRegisterRequest(BaseModel):
     terms_of_service: bool = False
     privacy_policy: bool = False
     marketing_consent: bool = False
+
+    @field_validator("nickname", mode="before")
+    @classmethod
+    def sanitize_nickname(cls, v: str) -> str:
+        return re.sub(r"[^가-힣a-zA-Z0-9]", "", v.strip()) if isinstance(v, str) else v

@@ -24,6 +24,9 @@ import {
   type PhoneState,
 } from "@/lib/signup-validation";
 
+const sanitizeNickname = (value: string): string =>
+  value.trim().replace(/[^가-힣a-zA-Z0-9]/g, "");
+
 const INITIAL_FORM = {
   email: "", nickname: "", password: "", passwordConfirm: "",
   name: "", birth_date: "", gender: "",
@@ -90,6 +93,14 @@ function SignupContent() {
     }
   }, [source, setSocialRegistration, setSocialData]);
 
+  // 콜백 에러 시 social_error 파라미터로 인라인 에러 표시
+  useEffect(() => {
+    const socialError = searchParams.get("social_error");
+    if (socialError) {
+      setError(socialError);
+    }
+  }, [searchParams]);
+
   // 소셜 모드 감지: Context(인메모리)에서 등록 데이터 읽기
   // !socialData 가드: 이미 읽은 경우 재실행 방지
   useEffect(() => {
@@ -99,7 +110,7 @@ function SignupContent() {
       setForm((f) => ({
         ...f,
         email: socialRegistration.email,
-        nickname: socialRegistration.nickname,
+        nickname: sanitizeNickname(socialRegistration.nickname),
         // Google은 name 제공 → 자동 채우기, Kakao는 undefined → 유지
         ...(socialRegistration.name ? { name: socialRegistration.name } : {}),
       }));
@@ -154,13 +165,17 @@ function SignupContent() {
       field === "prefixCustom" ? "phonePrefix" : field === "middle" ? "phoneMiddle" : "phoneLast";
 
     if (fieldErrors[errorKey] !== undefined) {
-      const msg =
-        field === "prefixCustom"
-          ? validatePhonePrefix(phoneState.prefix, digits)
-          : field === "middle"
-            ? validatePhoneMiddle(digits)
-            : validatePhoneLast(digits);
-      setFieldError(errorKey, msg);
+      if (field === "prefixCustom") {
+        setFieldError(errorKey, validatePhonePrefix(phoneState.prefix, digits));
+      } else {
+        // 중간/끝자리: 입력 중(maxLength 미달)이면 에러 클리어, 완성 시만 검증
+        if (digits.length < 4) {
+          setFieldError(errorKey, null);
+        } else {
+          const validate = field === "middle" ? validatePhoneMiddle : validatePhoneLast;
+          setFieldError(errorKey, validate(digits));
+        }
+      }
     }
 
     // 자동 포커스: prefixCustom 3자리 → middle
@@ -257,10 +272,8 @@ function SignupContent() {
         marketing_consent: agreements.marketing,
       });
       if (!res.success || !res.data) {
-        // 소셜 가입 에러: URL source 제거 → useEffect가 상태 리셋 → Step1 + 소셜 버튼 복원
-        setError(`${providerLabel} 가입에 실패했습니다. 다시 시도해주세요.`);
+        setError(res.error || `${providerLabel} 가입에 실패했습니다. 다시 시도해주세요.`);
         setLoading(false);
-        router.replace("/signup");
         return;
       }
       setToken(res.data.access_token);

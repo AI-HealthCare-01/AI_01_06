@@ -313,8 +313,11 @@ async def test_google_register_rejects_duplicate_email(client: AsyncClient):
 async def test_google_callback_rejects_soft_deleted_email(client: AsyncClient):
     """소프트 삭제된 유저의 이메일로 Google 콜백 → '삭제 대기중' 에러."""
     await User.create(
-        email="deleted@test.com", nickname="삭제유저", name="삭제",
-        password_hash="hashed", deleted_at=datetime.now(UTC),
+        email="deleted@test.com",
+        nickname="삭제유저",
+        name="삭제",
+        password_hash="hashed",
+        deleted_at=datetime.now(UTC),
     )
 
     mock_redis = AsyncMock()
@@ -345,8 +348,11 @@ async def test_google_callback_rejects_soft_deleted_email(client: AsyncClient):
 async def test_google_register_rejects_soft_deleted_email(client: AsyncClient):
     """소프트 삭제된 유저의 이메일로 Google register → '삭제 대기중' 에러."""
     await User.create(
-        email="deleted@reg.com", nickname="삭제닉", name="삭제",
-        password_hash="hashed", deleted_at=datetime.now(UTC),
+        email="deleted@reg.com",
+        nickname="삭제닉",
+        name="삭제",
+        password_hash="hashed",
+        deleted_at=datetime.now(UTC),
     )
 
     pending = _make_pending(google_id="google-sub-deleted", email="deleted@reg.com")
