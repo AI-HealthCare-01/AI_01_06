@@ -176,9 +176,11 @@ export default function GuideDetailPage() {
       {/* Prescription info */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">처방 정보</h2>
-        <div className="rounded-2xl p-5 grid grid-cols-2 gap-4" style={{ background: 'var(--color-surface)' }}>
-          <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>병원명</p><p className="font-medium">{prescription_info.hospital_name}</p></div>
-          <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name}</p></div>
+        <div className="rounded-2xl p-5 space-y-3" style={{ background: 'var(--color-surface)' }}>
+          <div className="grid grid-cols-2 gap-4">
+            <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>병원명</p><p className="font-medium">{prescription_info.hospital_name}</p></div>
+            <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name}</p></div>
+          </div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>처방일</p><p className="font-medium">{prescription_info.prescription_date}</p></div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>진단명</p><p className="font-medium">{prescription_info.diagnosis}</p></div>
         </div>
