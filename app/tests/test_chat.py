@@ -6,8 +6,8 @@ import json
 import pytest
 from httpx import AsyncClient
 
-from app.services.chat_service import build_context
 from app.models.chat import ChatMessage, ChatThread
+from app.services.chat_service import build_context
 
 
 @pytest.mark.asyncio
@@ -77,7 +77,6 @@ async def test_end_thread(auth_client: AsyncClient):
     body = resp.json()
     assert body["success"] is True
     assert body["data"]["is_active"] is False
-
 
 
 @pytest.mark.asyncio

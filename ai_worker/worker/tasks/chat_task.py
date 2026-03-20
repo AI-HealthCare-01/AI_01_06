@@ -3,13 +3,12 @@ import logging
 
 import redis.asyncio as aioredis
 
+from app.core.redis import CHAT_STREAM_PREFIX
 from app.models.chat import ChatMessage, ChatThread
 from app.services.chat_service import build_context, get_chat_service
 from worker import config
 
 logger = logging.getLogger(__name__)
-
-CHAT_STREAM_PREFIX = "chat:stream:"
 
 
 async def chat_task(ctx: dict, message_id: int) -> None:
@@ -41,8 +40,6 @@ async def chat_task(ctx: dict, message_id: int) -> None:
         assistant_msg.status = "failed"
         await assistant_msg.save()
         await thread.save()
-        await redis_client.publish(
-            channel, json.dumps({"t": "error", "d": "응답 생성 중 오류가 발생했습니다."})
-        )
+        await redis_client.publish(channel, json.dumps({"t": "error", "d": "응답 생성 중 오류가 발생했습니다."}))
     finally:
         await redis_client.aclose()

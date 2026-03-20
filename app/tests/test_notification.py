@@ -133,7 +133,6 @@ async def test_settings_with_enabled_fields(auth_client: AsyncClient):
     assert data["morning_time"] == "07:30"
 
 
-
 @pytest.mark.asyncio
 async def test_settings_time_gap_validation(auth_client: AsyncClient):
     """인접한 시간대 간격이 4시간 미만이면 400을 반환한다."""

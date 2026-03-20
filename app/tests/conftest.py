@@ -133,7 +133,7 @@ def mock_enqueue():
     with (
         patch("app.api.prescriptions.enqueue", side_effect=_fake_enqueue),
         patch("app.api.guides.enqueue", side_effect=_fake_enqueue),
-        patch("app.api.chat.enqueue", side_effect=_fake_enqueue, create=True),
+        patch("app.api.chat.enqueue", side_effect=_fake_enqueue),
     ):
         yield
 

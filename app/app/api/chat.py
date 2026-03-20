@@ -17,7 +17,6 @@ from app.models.chat import ChatFeedback, ChatMessage, ChatThread
 from app.models.prescription import Prescription
 from app.models.user import User
 from app.schemas.chat import FeedbackRequest, MessageSendRequest, ThreadCreateRequest
-from app.services.chat_service import build_context
 from app.services.notification_service import create_notification
 
 logger = logging.getLogger(__name__)
@@ -219,7 +218,6 @@ async def reactivate_thread(thread_id: int, actors: tuple[User, User | None] = D
     )
 
 
-
 async def _validate_thread_for_message(thread: ChatThread | None) -> None:
     """메시지 전송 전 스레드 상태 검증 및 stale stream 정리."""
     if not thread:
@@ -265,6 +263,55 @@ async def send_message(req: MessageSendRequest, actors: tuple[User, User | None]
     return success_response({"message_id": assistant_msg.id, "status": "pending"})
 
 
+def _sse_done(msg: ChatMessage) -> str:
+    return f"data: {json.dumps({'type': 'done', 'content': msg.content, 'message_id': msg.id}, ensure_ascii=False)}\n\n"
+
+
+def _sse_error(message: str = "응답 생성에 실패했습니다.") -> str:
+    return f"data: {json.dumps({'type': 'error', 'message': message}, ensure_ascii=False)}\n\n"
+
+
+_SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+
+
+async def _sse_relay(msg: ChatMessage, message_id: int):  # noqa: C901
+    pubsub, sub_redis = await subscribe_chat_stream(message_id)
+    try:
+        deadline = time.time() + config.CHAT_STREAMING_TIMEOUT_SECONDS
+        while time.time() < deadline:
+            raw = await pubsub.get_message(ignore_subscribe_messages=True, timeout=15.0)
+            if raw is None:
+                yield ": keepalive\n\n"
+                await msg.refresh_from_db()
+                if msg.status == "completed":
+                    yield _sse_done(msg)
+                    return
+                if msg.status == "failed":
+                    yield _sse_error()
+                    return
+                continue
+
+            if raw["type"] != "message":
+                continue
+
+            event = json.loads(raw["data"])
+            if event["t"] == "c":
+                yield f"data: {json.dumps({'type': 'chunk', 'content': event['d']}, ensure_ascii=False)}\n\n"
+            elif event["t"] == "done":
+                await msg.refresh_from_db()
+                yield _sse_done(msg)
+                return
+            elif event["t"] == "error":
+                yield _sse_error(event.get("d", "오류 발생"))
+                return
+    except asyncio.CancelledError:
+        pass
+    finally:
+        await pubsub.unsubscribe(f"{CHAT_STREAM_PREFIX}{message_id}")
+        await pubsub.aclose()
+        await sub_redis.aclose()
+
+
 @router.get("/messages/{message_id}/stream")
 async def stream_message(message_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
     """Redis Pub/Sub에서 워커의 LLM 응답을 구독하여 SSE로 클라이언트에 relay한다."""
@@ -279,66 +326,21 @@ async def stream_message(message_id: int, actors: tuple[User, User | None] = Dep
     if not thread:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
 
-    sse_headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
-
     if msg.status == "completed":
 
         async def completed_gen():
-            yield (
-                f"data: {json.dumps({'type': 'done', 'content': msg.content, 'message_id': msg.id}, ensure_ascii=False)}\n\n"
-            )
+            yield _sse_done(msg)
 
-        return StreamingResponse(completed_gen(), media_type="text/event-stream", headers=sse_headers)
+        return StreamingResponse(completed_gen(), media_type="text/event-stream", headers=_SSE_HEADERS)
 
     if msg.status == "failed":
 
         async def failed_gen():
-            yield f"data: {json.dumps({'type': 'error', 'message': '응답 생성에 실패했습니다.'}, ensure_ascii=False)}\n\n"
+            yield _sse_error()
 
-        return StreamingResponse(failed_gen(), media_type="text/event-stream", headers=sse_headers)
+        return StreamingResponse(failed_gen(), media_type="text/event-stream", headers=_SSE_HEADERS)
 
-    async def sse_relay():
-        pubsub, sub_redis = await subscribe_chat_stream(message_id)
-        try:
-            deadline = time.time() + config.CHAT_STREAMING_TIMEOUT_SECONDS
-            while time.time() < deadline:
-                raw = await pubsub.get_message(ignore_subscribe_messages=True, timeout=15.0)
-                if raw is None:
-                    yield ": keepalive\n\n"
-                    await msg.refresh_from_db()
-                    if msg.status == "completed":
-                        yield (
-                            f"data: {json.dumps({'type': 'done', 'content': msg.content, 'message_id': msg.id}, ensure_ascii=False)}\n\n"
-                        )
-                        return
-                    if msg.status == "failed":
-                        yield f"data: {json.dumps({'type': 'error', 'message': '응답 생성에 실패했습니다.'}, ensure_ascii=False)}\n\n"
-                        return
-                    continue
-
-                if raw["type"] != "message":
-                    continue
-
-                event = json.loads(raw["data"])
-                if event["t"] == "c":
-                    yield f"data: {json.dumps({'type': 'chunk', 'content': event['d']}, ensure_ascii=False)}\n\n"
-                elif event["t"] == "done":
-                    await msg.refresh_from_db()
-                    yield (
-                        f"data: {json.dumps({'type': 'done', 'content': msg.content, 'message_id': msg.id}, ensure_ascii=False)}\n\n"
-                    )
-                    return
-                elif event["t"] == "error":
-                    yield f"data: {json.dumps({'type': 'error', 'message': event.get('d', '오류 발생')}, ensure_ascii=False)}\n\n"
-                    return
-        except asyncio.CancelledError:
-            pass
-        finally:
-            await pubsub.unsubscribe(f"{CHAT_STREAM_PREFIX}{message_id}")
-            await pubsub.aclose()
-            await sub_redis.aclose()
-
-    return StreamingResponse(sse_relay(), media_type="text/event-stream", headers=sse_headers)
+    return StreamingResponse(_sse_relay(msg, message_id), media_type="text/event-stream", headers=_SSE_HEADERS)
 
 
 @router.post("/feedback")
