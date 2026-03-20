@@ -112,7 +112,6 @@ async def kakao_register(req: KakaoRegisterRequest):
 
     pending = json.loads(raw)
     kakao_id: str = pending["kakao_id"]
-    await redis.delete(token_key)
 
     # 이메일 중복 재확인 (register 시점 race condition 방지)
     existing = await User.filter(email=req.email).first()
@@ -145,6 +144,8 @@ async def kakao_register(req: KakaoRegisterRequest):
         phone=req.phone,
     )
     await AuthProvider.create(user=user, provider="KAKAO", provider_user_id=kakao_id)
+    # 토큰 삭제: 가입 성공 후 소멸 — 검증 실패 시 재시도 허용 (DB unique 제약이 동시 요청 방어)
+    await redis.delete(token_key)
     await TermsConsent.create(
         user=user,
         terms_of_service=req.terms_of_service,

@@ -128,7 +128,6 @@ async def google_register(req: GoogleRegisterRequest):
 
     pending = json.loads(raw)
     google_id: str = pending["google_id"]
-    await redis.delete(token_key)  # 일회용
 
     # 이메일 중복 재확인 (register 시점 race condition 방지)
     existing = await User.filter(email=req.email).first()
@@ -160,6 +159,8 @@ async def google_register(req: GoogleRegisterRequest):
         phone=req.phone,
     )
     await AuthProvider.create(user=user, provider="GOOGLE", provider_user_id=google_id)
+    # 토큰 삭제: 가입 성공 후 소멸 — 검증 실패 시 재시도 허용 (DB unique 제약이 동시 요청 방어)
+    await redis.delete(token_key)
     await TermsConsent.create(
         user=user,
         terms_of_service=req.terms_of_service,
