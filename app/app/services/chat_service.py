@@ -1,6 +1,6 @@
 import abc
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from openai import AsyncOpenAI
 
@@ -57,6 +57,11 @@ class ChatServiceBase(abc.ABC):
     @abc.abstractmethod
     async def stream_reply(self, messages: list[dict]) -> AsyncIterator[str]: ...
 
+    @abc.abstractmethod
+    async def generate_reply(
+        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+    ) -> str: ...
+
 
 class DummyChatService(ChatServiceBase):
     """테스트용 더미 채팅 서비스. 고정된 응답을 chunk로 반환."""
@@ -65,6 +70,14 @@ class DummyChatService(ChatServiceBase):
         response = "안녕하세요! 복약 관련 질문에 답변드리겠습니다. 궁금하신 점을 말씀해 주세요."
         for char in response:
             yield char
+
+    async def generate_reply(
+        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+    ) -> str:
+        response = "안녕하세요! 복약 관련 질문에 답변드리겠습니다. 궁금하신 점을 말씀해 주세요."
+        if on_progress:
+            await on_progress(response)
+        return response
 
 
 class OpenAIChatService(ChatServiceBase):
@@ -86,6 +99,29 @@ class OpenAIChatService(ChatServiceBase):
                     yield chunk.choices[0].delta.content
         finally:
             await response.close()
+
+    async def generate_reply(
+        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+    ) -> str:
+        response = await self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            stream=True,
+        )
+        accumulated = ""
+        chunk_count = 0
+        try:
+            async for chunk in response:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    accumulated += chunk.choices[0].delta.content
+                    chunk_count += 1
+                    if on_progress and chunk_count % 5 == 0:
+                        await on_progress(accumulated)
+        finally:
+            await response.close()
+        if on_progress:
+            await on_progress(accumulated)
+        return accumulated
 
 
 def get_chat_service() -> ChatServiceBase:

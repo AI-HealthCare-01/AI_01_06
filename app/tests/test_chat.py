@@ -79,33 +79,6 @@ async def test_end_thread(auth_client: AsyncClient):
     assert body["data"]["is_active"] is False
 
 
-@pytest.mark.asyncio
-async def test_send_message_sse_streaming(auth_client: AsyncClient):
-    create_resp = await auth_client.post("/api/chat/threads", json={})
-    thread_id = create_resp.json()["data"]["id"]
-
-    resp = await auth_client.post(
-        "/api/chat/messages",
-        json={"thread_id": thread_id, "content": "약을 식전에 먹어야 하나요?"},
-    )
-    assert resp.status_code == 200
-    assert resp.headers["content-type"].startswith("text/event-stream")
-
-    # SSE 이벤트 파싱
-    text = resp.text
-    lines = [line for line in text.strip().split("\n") if line.startswith("data: ")]
-    assert len(lines) >= 2  # chunk들 + done
-
-    # 마지막 이벤트가 done인지 확인
-    last_event = json.loads(lines[-1].removeprefix("data: "))
-    assert last_event["type"] == "done"
-    assert "message_id" in last_event
-
-    # DB에서 assistant 메시지 확인
-    assistant_msg = await ChatMessage.get(id=last_event["message_id"])
-    assert assistant_msg.status == "completed"
-    assert len(assistant_msg.content) > 0
-
 
 @pytest.mark.asyncio
 async def test_send_message_auto_title(auth_client: AsyncClient):

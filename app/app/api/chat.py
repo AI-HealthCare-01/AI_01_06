@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import math
@@ -10,12 +11,13 @@ from tortoise.functions import Count
 
 from app import config
 from app.core.deps import get_acting_patient
+from app.core.redis import CHAT_STREAM_PREFIX, enqueue, subscribe_chat_stream
 from app.core.response import success_response
 from app.models.chat import ChatFeedback, ChatMessage, ChatThread
 from app.models.prescription import Prescription
 from app.models.user import User
 from app.schemas.chat import FeedbackRequest, MessageSendRequest, ThreadCreateRequest
-from app.services.chat_service import build_context, get_chat_service
+from app.services.chat_service import build_context
 from app.services.notification_service import create_notification
 
 logger = logging.getLogger(__name__)
@@ -234,7 +236,7 @@ async def _validate_thread_for_message(thread: ChatThread | None) -> None:
             detail="장시간 미활동으로 자동 종료된 대화입니다. 대화 이어가기를 이용해주세요.",
         )
 
-    stale = await ChatMessage.filter(thread=thread, status="streaming").first()
+    stale = await ChatMessage.filter(thread=thread, status__in=["streaming", "pending"]).first()
     if stale:
         elapsed = time.time() - stale.created_at.timestamp()
         if elapsed < config.CHAT_STREAMING_TIMEOUT_SECONDS:
@@ -250,57 +252,93 @@ async def send_message(req: MessageSendRequest, actors: tuple[User, User | None]
     thread = await ChatThread.get_or_none(id=req.thread_id, user=target_user)
     await _validate_thread_for_message(thread)
 
-    # user 메시지 저장
     await ChatMessage.create(thread=thread, role="user", content=req.content, status="completed")
 
-    # 첫 메시지면 제목 자동 생성
     if not thread.title:
         thread.title = req.content[:40]
         await thread.save()
 
-    # assistant 메시지 생성 (streaming 상태)
-    assistant_msg = await ChatMessage.create(thread=thread, role="assistant", content="", status="streaming")
+    assistant_msg = await ChatMessage.create(thread=thread, role="assistant", content="", status="pending")
 
-    # 컨텍스트 구성
-    context = await build_context(thread)
+    await enqueue("chat_task", assistant_msg.id)
 
-    async def sse_generator():
-        chat_service = get_chat_service()
-        accumulated = ""
-        start_time = time.time()
+    return success_response({"message_id": assistant_msg.id, "status": "pending"})
 
+
+@router.get("/messages/{message_id}/stream")
+async def stream_message(message_id: int, actors: tuple[User, User | None] = Depends(get_acting_patient)):
+    """Redis Pub/Sub에서 워커의 LLM 응답을 구독하여 SSE로 클라이언트에 relay한다."""
+    current_user, patient = actors
+    target_user = patient or current_user
+
+    msg = await ChatMessage.get_or_none(id=message_id)
+    if not msg:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="메시지를 찾을 수 없습니다.")
+
+    thread = await ChatThread.get_or_none(id=msg.thread_id, user=target_user)
+    if not thread:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
+
+    sse_headers = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+
+    if msg.status == "completed":
+
+        async def completed_gen():
+            yield (
+                f"data: {json.dumps({'type': 'done', 'content': msg.content, 'message_id': msg.id}, ensure_ascii=False)}\n\n"
+            )
+
+        return StreamingResponse(completed_gen(), media_type="text/event-stream", headers=sse_headers)
+
+    if msg.status == "failed":
+
+        async def failed_gen():
+            yield f"data: {json.dumps({'type': 'error', 'message': '응답 생성에 실패했습니다.'}, ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(failed_gen(), media_type="text/event-stream", headers=sse_headers)
+
+    async def sse_relay():
+        pubsub, sub_redis = await subscribe_chat_stream(message_id)
         try:
-            stream = chat_service.stream_reply(context)
-            async for token in stream:
-                # 전체 timeout 체크
-                if time.time() - start_time > config.CHAT_STREAMING_TIMEOUT_SECONDS:
-                    break
+            deadline = time.time() + config.CHAT_STREAMING_TIMEOUT_SECONDS
+            while time.time() < deadline:
+                raw = await pubsub.get_message(ignore_subscribe_messages=True, timeout=15.0)
+                if raw is None:
+                    yield ": keepalive\n\n"
+                    await msg.refresh_from_db()
+                    if msg.status == "completed":
+                        yield (
+                            f"data: {json.dumps({'type': 'done', 'content': msg.content, 'message_id': msg.id}, ensure_ascii=False)}\n\n"
+                        )
+                        return
+                    if msg.status == "failed":
+                        yield f"data: {json.dumps({'type': 'error', 'message': '응답 생성에 실패했습니다.'}, ensure_ascii=False)}\n\n"
+                        return
+                    continue
 
-                accumulated += token
-                yield f"data: {json.dumps({'type': 'chunk', 'content': token}, ensure_ascii=False)}\n\n"
+                if raw["type"] != "message":
+                    continue
 
-            # 정상 완료
-            assistant_msg.content = accumulated
-            assistant_msg.status = "completed"
-            await assistant_msg.save()
-            await thread.save()  # updated_at 갱신
-            yield f"data: {json.dumps({'type': 'done', 'message_id': assistant_msg.id})}\n\n"
+                event = json.loads(raw["data"])
+                if event["t"] == "c":
+                    yield f"data: {json.dumps({'type': 'chunk', 'content': event['d']}, ensure_ascii=False)}\n\n"
+                elif event["t"] == "done":
+                    await msg.refresh_from_db()
+                    yield (
+                        f"data: {json.dumps({'type': 'done', 'content': msg.content, 'message_id': msg.id}, ensure_ascii=False)}\n\n"
+                    )
+                    return
+                elif event["t"] == "error":
+                    yield f"data: {json.dumps({'type': 'error', 'message': event.get('d', '오류 발생')}, ensure_ascii=False)}\n\n"
+                    return
+        except asyncio.CancelledError:
+            pass
+        finally:
+            await pubsub.unsubscribe(f"{CHAT_STREAM_PREFIX}{message_id}")
+            await pubsub.aclose()
+            await sub_redis.aclose()
 
-        except Exception:
-            assistant_msg.content = accumulated
-            assistant_msg.status = "failed"
-            await assistant_msg.save()
-            await thread.save()  # updated_at 갱신
-            yield f"data: {json.dumps({'type': 'error', 'message': '응답 생성 중 오류가 발생했습니다.'}, ensure_ascii=False)}\n\n"
-
-    return StreamingResponse(
-        sse_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
-    )
+    return StreamingResponse(sse_relay(), media_type="text/event-stream", headers=sse_headers)
 
 
 @router.post("/feedback")
