@@ -6,7 +6,7 @@ import json
 import pytest
 from httpx import AsyncClient
 
-from app.api.chat import _build_context
+from app.services.chat_service import build_context
 from app.models.chat import ChatMessage, ChatThread
 
 
@@ -209,7 +209,7 @@ async def test_context_excludes_failed_messages(auth_client: AsyncClient):
 
     # 새 user 메시지를 completed로 저장 후 컨텍스트 빌더 확인
     await ChatMessage.create(thread=thread, role="user", content="새 질문", status="completed")
-    context = await _build_context(thread)
+    context = await build_context(thread)
 
     # failed 메시지("미완성")가 컨텍스트에 포함되어서는 안 됨
     contents = [m["content"] for m in context]
