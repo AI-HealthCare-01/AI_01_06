@@ -324,18 +324,30 @@ export default function OcrReviewPage() {
         </div>
         <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)' }}>
           {data.medications.map((med, i) => (
-            <div key={i} className="app-card p-5 relative">
+            <div
+              key={i}
+              className="app-card p-5 flex gap-4 transition-colors"
+              style={
+                editing && selectedMeds.has(i)
+                  ? { borderColor: 'var(--color-danger)', background: 'var(--color-danger-soft)' }
+                  : editing
+                    ? { cursor: 'pointer' }
+                    : undefined
+              }
+              onClick={() => { if (editing) toggleMedSelection(i); }}
+            >
               {editing && (
-                <label className="absolute top-3 right-3 flex items-center gap-1.5 cursor-pointer">
+                <div className="shrink-0 flex items-start pt-1">
                   <input
                     type="checkbox"
                     checked={selectedMeds.has(i)}
                     onChange={() => toggleMedSelection(i)}
+                    onClick={(e) => e.stopPropagation()}
                     className="w-5 h-5 accent-[var(--color-danger)] cursor-pointer"
                   />
-                </label>
+                </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex-1 min-w-0 grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>약품명</p>
                   {editing ? (
