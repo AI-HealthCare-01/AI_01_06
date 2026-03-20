@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
@@ -43,8 +43,6 @@ function ChatContent() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [quickActionsOpen, setQuickActionsOpen] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasInteracted = useRef(false);
 
   // 피드백 모달 상태
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -79,7 +77,6 @@ function ChatContent() {
         if (msgRes.success && msgRes.data) {
           const loaded = (msgRes.data as Array<{ role: "user" | "assistant"; content: string; status?: string }>);
           if (loaded.length > 0) {
-            hasInteracted.current = true;
             setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status })));
             setQuickActionsOpen(false);
           }
@@ -96,10 +93,6 @@ function ChatContent() {
     initThread();
   }, []);
 
-  useEffect(() => {
-    if (!hasInteracted.current) return;
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -124,7 +117,6 @@ function ChatContent() {
     setInput("");
     setQuickActionsOpen(false);
     setIsStreaming(true);
-    hasInteracted.current = true;
 
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setMessages((prev) => [...prev, { role: "assistant", content: "", status: "streaming" }]);
@@ -290,7 +282,6 @@ function ChatContent() {
                 </div>
               </div>
             ))}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Quick actions — toggle persists after chat starts */}
