@@ -218,7 +218,7 @@ function ChatContent() {
     <AppLayout>
       <div className="max-w-3xl mx-auto">
         {/* ── Single unified card ── */}
-        <div className="app-card overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100dvh - 8rem)' }}>
+        <div className="app-card flex flex-col">
 
           {/* Header — 모바일 2줄 / 웹 1줄 */}
           <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -266,7 +266,7 @@ function ChatContent() {
           )}
 
           {/* Messages — scrollable area */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '240px' }}>
+          <div className="overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '200px', maxHeight: 'min(50vh, 400px)' }}>
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[80%] md:max-w-[75%] rounded-2xl px-4 py-3 whitespace-pre-wrap ${
