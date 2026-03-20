@@ -41,7 +41,7 @@ function ChatContent() {
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<number | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [quickActionsOpen, setQuickActionsOpen] = useState(true);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInteracted = useRef(false);
@@ -266,7 +266,7 @@ function ChatContent() {
           )}
 
           {/* Messages — scrollable area */}
-          <div className="overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '200px', maxHeight: 'min(50vh, 400px)' }}>
+          <div className="overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '160px', maxHeight: 'clamp(200px, 40vh, 400px)' }}>
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[80%] md:max-w-[75%] rounded-xl px-4 py-3.5 leading-relaxed whitespace-pre-wrap ${
@@ -364,7 +364,7 @@ function ChatContent() {
         </div>{/* end single unified card */}
 
         {/* Info box */}
-        <div className="rounded-2xl p-5 mt-4 text-sm" style={{ background: 'var(--color-primary-soft)' }}>
+        <div className="rounded-2xl p-5 mt-4 mb-2 text-sm" style={{ background: 'var(--color-primary-soft)' }}>
           <p className="font-bold mb-1">AI 챗봇 사용 안내</p>
           <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--color-text-muted)' }}>
             <li>복약 방법, 시간, 주의사항 등에 대해 질문할 수 있습니다.</li>
