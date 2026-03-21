@@ -83,13 +83,17 @@ export default function OcrReviewPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [processing, setProcessing] = useState(true);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [ocrFailed, setOcrFailed] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [selectedMeds, setSelectedMeds] = useState<Set<number>>(new Set());
 
   const pollOcrStatus = useCallback(async () => {
     const res = await api.getPrescription(prescriptionId);
-    if (!res.success || !res.data) return;
+    if (!res.success || !res.data) {
+      setInitialCheckDone(true);
+      return;
+    }
     const pData = res.data as { ocr_status: string };
     if (pData.ocr_status === "ocr_failed") {
       setProcessing(false);
@@ -97,8 +101,23 @@ export default function OcrReviewPage() {
     } else if (pData.ocr_status === "ocr_completed" || pData.ocr_status === "guide_completed" || pData.ocr_status === "confirmed") {
       setProcessing(false);
       const ocrRes = await api.getOcr(prescriptionId);
-      if (ocrRes.success && ocrRes.data) setData(ocrRes.data as OcrData);
+      if (ocrRes.success && ocrRes.data) {
+        const raw = ocrRes.data as OcrData;
+        const clean = (v: string | null | undefined) => (v && v !== "null" ? v : "");
+        setData({
+          ...raw,
+          hospital_name: clean(raw.hospital_name),
+          doctor_name: clean(raw.doctor_name),
+          prescription_date: clean(raw.prescription_date),
+          diagnosis: clean(raw.diagnosis),
+          medications: raw.medications.map((med) => ({
+            ...med,
+            frequency: med.frequency.replace(/,/g, "·"),
+          })),
+        });
+      }
     }
+    setInitialCheckDone(true);
   }, [prescriptionId]);
 
   useEffect(() => {
@@ -184,7 +203,7 @@ export default function OcrReviewPage() {
     return `/loading/loading_${idx}.${ext}`;
   });
 
-  if (processing) {
+  if (processing && initialCheckDone) {
     return (
       <div className="fixed inset-0 flex flex-col z-50" style={{ background: 'var(--color-bg)' }}>
         <div className="flex-1 w-full relative">

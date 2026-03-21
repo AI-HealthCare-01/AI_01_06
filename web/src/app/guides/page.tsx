@@ -165,7 +165,7 @@ export default function GuidesListPage() {
                     <h3 className="text-base font-bold truncate">{guide.prescription_info.hospital_name || "병원명 미입력"}</h3>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
                       <span>처방일 {guide.prescription_info.prescription_date}</span>
-                      <span>담당의 {guide.prescription_info.doctor_name}</span>
+                      {guide.prescription_info.doctor_name && <span>담당의 {guide.prescription_info.doctor_name}</span>}
                       <span>진단 {guide.prescription_info.diagnosis}</span>
                     </div>
                   </div>

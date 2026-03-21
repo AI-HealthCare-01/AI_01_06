@@ -20,10 +20,10 @@ function normalizeDosage(dosage: string): string {
 interface MedicationGuide {
   name: string;
   dosage: string;
-  frequency: string;
+  frequency?: string;
   timing?: string;
   duration?: string;
-  instructions: string;
+  instructions?: string;
   effect: string;
   precautions: string;
 }
@@ -181,8 +181,10 @@ export default function GuideDetailPage() {
             <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>병원명</p><p className="font-medium">{prescription_info.hospital_name}</p></div>
             <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name}</p></div>
           </div>
-          <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>처방일</p><p className="font-medium">{prescription_info.prescription_date}</p></div>
-          <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>진단명</p><p className="font-medium">{prescription_info.diagnosis}</p></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>처방일</p><p className="font-medium">{prescription_info.prescription_date}</p></div>
+            <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>진단명</p><p className="font-medium">{prescription_info.diagnosis}</p></div>
+          </div>
         </div>
       </section>
 
@@ -197,11 +199,9 @@ export default function GuideDetailPage() {
                 <span className="text-xs px-3 py-1 rounded-full shrink-0" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
               </div>
               <div className="space-y-1 text-sm">
-                {med.dosage && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 용량 :</span> {normalizeDosage(med.dosage)}</p>}
-                {med.timing && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 시간대 :</span> {med.timing}</p>}
-                <p><span style={{ color: 'var(--color-text-muted)' }}>복용 횟수 :</span> {med.frequency}</p>
+                {med.dosage && <p><span style={{ color: 'var(--color-text-muted)' }}>1회 복용량 :</span> {normalizeDosage(med.dosage)}</p>}
                 {med.duration && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 기간 :</span> {med.duration}</p>}
-                <p><span style={{ color: 'var(--color-text-muted)' }}>복용 방법 :</span> {med.instructions}</p>
+                <p><span style={{ color: 'var(--color-text-muted)' }}>복용 방법 :</span> {med.instructions || med.frequency}</p>
                 <p className="px-2 py-1 rounded mt-2" style={{ background: 'var(--color-warning-soft)', color: 'var(--color-warning-text)' }}>
                   <span className="font-medium">주의 사항 :</span> {med.precautions}
                 </p>
