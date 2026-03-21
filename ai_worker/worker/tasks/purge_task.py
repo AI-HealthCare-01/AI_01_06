@@ -11,6 +11,7 @@ from app.models.guide import Guide
 from app.models.notification import Notification, NotificationSetting
 from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
+from app.models.refresh_token import RefreshToken
 from app.models.schedule import AdherenceLog, MedicationSchedule
 from app.models.terms_consent import TermsConsent
 from app.models.user import User
@@ -63,6 +64,11 @@ async def purge_deleted_users(ctx: dict) -> int:
             await AuthProvider.filter(user_id=user.id).delete()
             await PatientProfile.filter(user_id=user.id).delete()
             await TermsConsent.filter(user_id=user.id).delete()
+            await RefreshToken.filter(user_id=user.id).delete()
+            # acted_by FK: 환자 소유 데이터 보존 + 보호자 식별정보 제거 (PIPA §21, GDPR Art.17(3))
+            await Prescription.filter(acted_by_id=user.id).update(acted_by_id=None)
+            await Guide.filter(acted_by_id=user.id).update(acted_by_id=None)
+            await ChatThread.filter(acted_by_id=user.id).update(acted_by_id=None)
             await user.delete()
         count += 1
 
