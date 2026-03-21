@@ -110,6 +110,10 @@ export default function OcrReviewPage() {
           doctor_name: clean(raw.doctor_name),
           prescription_date: clean(raw.prescription_date),
           diagnosis: clean(raw.diagnosis),
+          medications: raw.medications.map((med) => ({
+            ...med,
+            frequency: med.frequency.replace(/,/g, "·"),
+          })),
         });
       }
     }
@@ -144,6 +148,7 @@ export default function OcrReviewPage() {
 
     const missingFields: string[] = [];
     if (!data.hospital_name) missingFields.push("병원명");
+    if (!data.doctor_name) missingFields.push("담당의");
     if (!data.prescription_date) missingFields.push("처방일");
     if (!data.diagnosis) missingFields.push("진단명");
     data.medications.forEach((med, i) => {
