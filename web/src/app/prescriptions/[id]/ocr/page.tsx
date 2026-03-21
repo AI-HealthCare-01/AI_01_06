@@ -85,6 +85,7 @@ export default function OcrReviewPage() {
   const [processing, setProcessing] = useState(true);
   const [ocrFailed, setOcrFailed] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [selectedMeds, setSelectedMeds] = useState<Set<number>>(new Set());
 
   const pollOcrStatus = useCallback(async () => {
     const res = await api.getPrescription(prescriptionId);
@@ -115,6 +116,7 @@ export default function OcrReviewPage() {
     setSaving(false);
     if (saveRes.success) {
       setEditing(false);
+      setSelectedMeds(new Set());
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } else {
@@ -161,9 +163,19 @@ export default function OcrReviewPage() {
     setData({ ...data, medications: meds });
   };
 
-  const removeMed = (index: number) => {
-    if (!data) return;
-    setData({ ...data, medications: data.medications.filter((_, i) => i !== index) });
+  const removeSelectedMeds = () => {
+    if (!data || selectedMeds.size === 0) return;
+    setData({ ...data, medications: data.medications.filter((_, i) => !selectedMeds.has(i)) });
+    setSelectedMeds(new Set());
+  };
+
+  const toggleMedSelection = (index: number) => {
+    setSelectedMeds((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
   };
 
   const [loadingImg] = useState(() => {
@@ -243,12 +255,12 @@ export default function OcrReviewPage() {
       <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>처방전이 성공적으로 인식되었습니다. 내용을 확인하고 필요시 수정해주세요.</p>
 
       {/* Stepper */}
-      <div className="flex items-center gap-2 mb-8">
-        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>처방전 올리기</div>
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+        <div className="px-4 py-2 rounded-full text-sm text-center" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>처방전 올리기</div>
         <span style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-4 py-2 rounded-full text-sm font-medium text-white" style={{ background: 'var(--color-primary)' }}>내용 재확인 & 수정</div>
+        <div className="px-4 py-2 rounded-full text-sm text-center font-medium text-white" style={{ background: 'var(--color-primary)' }}>내용 재확인 & 수정</div>
         <span style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
+        <div className="px-4 py-2 rounded-full text-sm text-center" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
       </div>
 
       {/* Basic info */}
@@ -298,16 +310,44 @@ export default function OcrReviewPage() {
 
       {/* Medications */}
       <section className="mb-6">
-        <h2 className="text-lg font-bold mb-2">처방 약물</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-bold">처방 약물</h2>
+          {editing && selectedMeds.size > 0 && (
+            <button
+              onClick={removeSelectedMeds}
+              className="text-sm px-4 py-2 rounded-lg transition-colors"
+              style={{ color: 'var(--color-danger)', border: '1px solid var(--color-danger)' }}
+            >
+              선택 항목 삭제 ({selectedMeds.size})
+            </button>
+          )}
+        </div>
         <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)' }}>
           {data.medications.map((med, i) => (
-            <div key={i} className="app-card p-5 relative">
+            <div
+              key={i}
+              className="app-card p-5 flex gap-4 transition-colors"
+              style={
+                editing && selectedMeds.has(i)
+                  ? { borderColor: 'var(--color-danger)', background: 'var(--color-danger-soft)' }
+                  : editing
+                    ? { cursor: 'pointer' }
+                    : undefined
+              }
+              onClick={() => { if (editing) toggleMedSelection(i); }}
+            >
               {editing && (
-                <button onClick={() => removeMed(i)} className="absolute top-3 right-3 text-xs px-2 py-1 rounded-lg transition-colors" style={{ color: 'var(--color-text-muted)' }}>
-                  제거
-                </button>
+                <div className="shrink-0 flex items-start pt-1">
+                  <input
+                    type="checkbox"
+                    checked={selectedMeds.has(i)}
+                    onChange={() => toggleMedSelection(i)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-5 h-5 accent-[var(--color-danger)] cursor-pointer"
+                  />
+                </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex-1 min-w-0 grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>약품명</p>
                   {editing ? (

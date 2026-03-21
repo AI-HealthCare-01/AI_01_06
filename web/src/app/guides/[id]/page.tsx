@@ -176,9 +176,11 @@ export default function GuideDetailPage() {
       {/* Prescription info */}
       <section className="mb-6">
         <h2 className="text-lg font-bold mb-2">처방 정보</h2>
-        <div className="rounded-2xl p-5 grid grid-cols-2 gap-4" style={{ background: 'var(--color-surface)' }}>
-          <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>병원명</p><p className="font-medium">{prescription_info.hospital_name}</p></div>
-          <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name}</p></div>
+        <div className="rounded-2xl p-5 space-y-3" style={{ background: 'var(--color-surface)' }}>
+          <div className="grid grid-cols-2 gap-4">
+            <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>병원명</p><p className="font-medium">{prescription_info.hospital_name}</p></div>
+            <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>담당의</p><p className="font-medium">{prescription_info.doctor_name}</p></div>
+          </div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>처방일</p><p className="font-medium">{prescription_info.prescription_date}</p></div>
           <div><p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>진단명</p><p className="font-medium">{prescription_info.diagnosis}</p></div>
         </div>
@@ -190,9 +192,9 @@ export default function GuideDetailPage() {
         <div className="space-y-4">
           {content.medication_guides.map((med, i) => (
             <div key={i} className="rounded-lg p-4" style={{ background: 'var(--color-card-bg)', border: '1px solid var(--color-border)' }}>
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <h3 className="font-bold text-lg">{med.name}</h3>
-                <span className="text-xs px-3 py-1 rounded-full shrink-0 ml-2" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
+                <span className="text-xs px-3 py-1 rounded-full shrink-0" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{med.effect}</span>
               </div>
               <div className="space-y-1 text-sm">
                 {med.dosage && <p><span style={{ color: 'var(--color-text-muted)' }}>복용 용량 :</span> {normalizeDosage(med.dosage)}</p>}
