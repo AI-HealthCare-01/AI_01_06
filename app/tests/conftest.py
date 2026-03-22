@@ -121,6 +121,7 @@ async def setup_db():
                 "app.models.audit",
                 "app.models.guide",
                 "app.models.chat",
+                "app.models.refresh_token",
             ]
         },
     )
@@ -207,6 +208,7 @@ def mock_deps_redis(fake_redis_cleanup):
     with (
         patch("app.core.deps.get_state_redis", side_effect=_get_fake),
         patch("app.api.auth.get_state_redis", side_effect=_get_fake),
+        patch("app.api.users.get_state_redis", side_effect=_get_fake),
     ):
         yield
 

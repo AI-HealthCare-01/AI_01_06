@@ -74,7 +74,7 @@ async def kakao_callback(req: KakaoCallbackRequest):
             {
                 "status": "login",
                 "access_token": create_access_token(user.id, user.role),
-                "refresh_token": create_refresh_token(user.id),
+                "refresh_token": await create_refresh_token(user.id),
                 "token_type": "bearer",
             }
         )
@@ -160,7 +160,7 @@ async def kakao_register(req: KakaoRegisterRequest):
     return success_response(
         {
             "access_token": create_access_token(user.id, user.role),
-            "refresh_token": create_refresh_token(user.id),
+            "refresh_token": await create_refresh_token(user.id),
             "token_type": "bearer",
         }
     )
