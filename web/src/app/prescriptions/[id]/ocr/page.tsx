@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import { api } from "@/lib/api";
 
@@ -73,10 +73,7 @@ interface OcrData {
 export default function OcrReviewPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const prescriptionId = Number(params.id);
-  const fromGuide = searchParams.get("from") === "guide";
-  const fromGuideId = searchParams.get("guideId");
   const [data, setData] = useState<OcrData | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -270,16 +267,16 @@ export default function OcrReviewPage() {
           저장이 완료되었습니다.
         </div>
       )}
-      <h1 className="text-2xl font-bold mb-2 text-center">처방전 내용 재확인 & 수정</h1>
-      <p className="mb-4 text-center" style={{ color: 'var(--color-text-muted)' }}>처방전이 성공적으로 인식되었습니다. 내용을 확인하고 필요시 수정해주세요.</p>
+      <h1 className="text-2xl font-bold mb-2">처방전 내용 확인</h1>
+      <p className="mb-4" style={{ color: 'var(--color-text-muted)' }}>처방전이 성공적으로 인식되었습니다. 내용을 확인하고 필요시 수정해주세요.</p>
 
       {/* Stepper */}
-      <div className="flex items-center justify-center gap-1 sm:gap-2 mb-8">
-        <div className="flex-1 min-w-0 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm text-center" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>처방전 올리기</div>
-        <span className="shrink-0 text-xs sm:text-sm" style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="flex-1 min-w-0 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm text-center font-medium text-white" style={{ background: 'var(--color-primary)' }}>내용 재확인 & 수정</div>
-        <span className="shrink-0 text-xs sm:text-sm" style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="flex-1 min-w-0 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm text-center" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
+      <div className="flex items-center gap-2 mb-8">
+        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>처방전 올리기</div>
+        <span style={{ color: 'var(--color-text-muted)' }}>→</span>
+        <div className="px-4 py-2 rounded-full text-sm font-medium text-white" style={{ background: 'var(--color-primary)' }}>내용 확인</div>
+        <span style={{ color: 'var(--color-text-muted)' }}>→</span>
+        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
       </div>
 
       {/* Basic info */}
@@ -421,11 +418,8 @@ export default function OcrReviewPage() {
 
       {/* Buttons */}
       <div className="flex gap-4">
-        <button
-          onClick={() => router.push(fromGuide && fromGuideId ? `/guides/${fromGuideId}` : "/prescriptions/upload")}
-          className="flex-1 py-3 rounded-lg btn-outline"
-        >
-          {fromGuide ? "가이드로 돌아가기" : "이전 단계로"}
+        <button onClick={() => router.push("/prescriptions/upload")} className="flex-1 py-3 rounded-lg btn-outline">
+          이전 단계로
         </button>
         {editing ? (
           <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-lg btn-primary disabled:opacity-50">
@@ -437,7 +431,7 @@ export default function OcrReviewPage() {
           disabled={generating || editing}
           className="flex-1 py-3 btn-primary"
         >
-          {generating ? "생성 중..." : fromGuide ? "수정된 가이드 생성 →" : "가이드 생성 →"}
+          {generating ? "생성 중..." : "가이드 생성 →"}
         </button>
       </div>
     </AppLayout>

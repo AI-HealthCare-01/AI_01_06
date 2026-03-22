@@ -51,12 +51,12 @@ export default function PrescriptionUploadPage() {
       <p className="mb-6 text-center" style={{ color: 'var(--color-text-muted)' }}>병원에서 받은 처방전을 넣어주세요</p>
 
       {/* Stepper */}
-      <div className="flex items-center justify-center gap-1 sm:gap-2 mb-8">
-        <div className="flex-1 min-w-0 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm text-center font-medium text-white" style={{ background: 'var(--color-primary)' }}>처방전 올리기</div>
-        <span className="shrink-0 text-xs sm:text-sm" style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="flex-1 min-w-0 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm text-center" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>내용 재확인 & 수정</div>
-        <span className="shrink-0 text-xs sm:text-sm" style={{ color: 'var(--color-text-muted)' }}>→</span>
-        <div className="flex-1 min-w-0 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm text-center" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
+      <div className="flex items-center gap-2 mb-8">
+        <div className="px-4 py-2 rounded-full text-sm font-medium text-white" style={{ background: 'var(--color-primary)' }}>처방전 올리기</div>
+        <span style={{ color: 'var(--color-text-muted)' }}>→</span>
+        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>내용 확인</div>
+        <span style={{ color: 'var(--color-text-muted)' }}>→</span>
+        <div className="px-4 py-2 rounded-full text-sm" style={{ background: 'var(--color-surface)', color: 'var(--color-text-muted)' }}>가이드 생성</div>
       </div>
 
       {/* Upload area */}
