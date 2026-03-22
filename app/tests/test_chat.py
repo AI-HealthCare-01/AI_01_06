@@ -2,12 +2,13 @@
 
 import io
 import json
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import AsyncClient
 
-from app.api.chat import _build_context
 from app.models.chat import ChatMessage, ChatThread
+from app.services.chat_service import DummyChatService, build_context
 
 
 @pytest.mark.asyncio
@@ -77,34 +78,6 @@ async def test_end_thread(auth_client: AsyncClient):
     body = resp.json()
     assert body["success"] is True
     assert body["data"]["is_active"] is False
-
-
-@pytest.mark.asyncio
-async def test_send_message_sse_streaming(auth_client: AsyncClient):
-    create_resp = await auth_client.post("/api/chat/threads", json={})
-    thread_id = create_resp.json()["data"]["id"]
-
-    resp = await auth_client.post(
-        "/api/chat/messages",
-        json={"thread_id": thread_id, "content": "약을 식전에 먹어야 하나요?"},
-    )
-    assert resp.status_code == 200
-    assert resp.headers["content-type"].startswith("text/event-stream")
-
-    # SSE 이벤트 파싱
-    text = resp.text
-    lines = [line for line in text.strip().split("\n") if line.startswith("data: ")]
-    assert len(lines) >= 2  # chunk들 + done
-
-    # 마지막 이벤트가 done인지 확인
-    last_event = json.loads(lines[-1].removeprefix("data: "))
-    assert last_event["type"] == "done"
-    assert "message_id" in last_event
-
-    # DB에서 assistant 메시지 확인
-    assistant_msg = await ChatMessage.get(id=last_event["message_id"])
-    assert assistant_msg.status == "completed"
-    assert len(assistant_msg.content) > 0
 
 
 @pytest.mark.asyncio
@@ -209,7 +182,7 @@ async def test_context_excludes_failed_messages(auth_client: AsyncClient):
 
     # 새 user 메시지를 completed로 저장 후 컨텍스트 빌더 확인
     await ChatMessage.create(thread=thread, role="user", content="새 질문", status="completed")
-    context = await _build_context(thread)
+    context = await build_context(thread)
 
     # failed 메시지("미완성")가 컨텍스트에 포함되어서는 안 됨
     contents = [m["content"] for m in context]
@@ -252,3 +225,115 @@ async def test_send_feedback(auth_client: AsyncClient):
         },
     )
     assert resp.json()["success"] is True
+
+
+@pytest.mark.asyncio
+async def test_send_message_returns_message_id(auth_client: AsyncClient):
+    """send_message가 SSE가 아닌 JSON {message_id, status} 를 반환한다."""
+    create_resp = await auth_client.post("/api/chat/threads", json={})
+    thread_id = create_resp.json()["data"]["id"]
+
+    resp = await auth_client.post(
+        "/api/chat/messages",
+        json={"thread_id": thread_id, "content": "약을 식전에 먹어야 하나요?"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert "message_id" in body["data"]
+    assert body["data"]["status"] == "pending"
+
+
+@pytest.mark.asyncio
+async def test_message_stream_completed(auth_client: AsyncClient):
+    """완료된 메시지의 stream SSE 조회 시 즉시 done 이벤트를 반환한다."""
+    create_resp = await auth_client.post("/api/chat/threads", json={})
+    thread_id = create_resp.json()["data"]["id"]
+
+    send_resp = await auth_client.post(
+        "/api/chat/messages",
+        json={"thread_id": thread_id, "content": "테스트 질문"},
+    )
+    msg_id = send_resp.json()["data"]["message_id"]
+
+    async with auth_client.stream("GET", f"/api/chat/messages/{msg_id}/stream") as response:
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+        lines = []
+        async for line in response.aiter_lines():
+            lines.append(line)
+
+    data_lines = [line for line in lines if line.startswith("data: ")]
+    assert len(data_lines) == 1
+    event = json.loads(data_lines[0][6:])
+    assert event["type"] == "done"
+    assert event["message_id"] == msg_id
+    assert len(event["content"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_message_stream_wrong_user(auth_client: AsyncClient, client: AsyncClient):
+    """다른 사용자의 메시지 stream 조회 시 403 반환."""
+    create_resp = await auth_client.post("/api/chat/threads", json={})
+    thread_id = create_resp.json()["data"]["id"]
+
+    send_resp = await auth_client.post(
+        "/api/chat/messages",
+        json={"thread_id": thread_id, "content": "테스트"},
+    )
+    msg_id = send_resp.json()["data"]["message_id"]
+
+    await client.post(
+        "/api/auth/signup",
+        json={
+            "email": "stream_other@test.com",
+            "password": "Test1234!",
+            "nickname": "스트림다른유저",
+            "name": "최스트림",
+            "role": "PATIENT",
+            "terms_of_service": True,
+            "privacy_policy": True,
+        },
+    )
+    login_resp = await client.post(
+        "/api/auth/login",
+        json={"email": "stream_other@test.com", "password": "Test1234!"},
+    )
+    other_token = login_resp.json()["data"]["access_token"]
+
+    resp = await client.get(
+        f"/api/chat/messages/{msg_id}/stream",
+        headers={"Authorization": f"Bearer {other_token}"},
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_generate_reply_calls_progress_every_chunk(auth_client: AsyncClient):
+    """generate_reply가 매 청크마다 on_progress를 호출한다 (5개 단위 아님)."""
+    service = DummyChatService()
+    progress_mock = AsyncMock()
+    await service.generate_reply(
+        [{"role": "user", "content": "테스트"}],
+        on_progress=progress_mock,
+    )
+    # DummyChatService는 고정 응답 1회 → 최소 1회 호출
+    assert progress_mock.call_count >= 1
+
+
+@pytest.mark.asyncio
+async def test_build_context_includes_first_user_message(auth_client: AsyncClient):
+    """첫 메시지에서도 user 질문이 컨텍스트에 포함된다."""
+    create_resp = await auth_client.post("/api/chat/threads", json={})
+    thread_id = create_resp.json()["data"]["id"]
+
+    await auth_client.post(
+        "/api/chat/messages",
+        json={"thread_id": thread_id, "content": "이 약 부작용 알려줘"},
+    )
+
+    thread = await ChatThread.get(id=thread_id)
+    context = await build_context(thread)
+
+    user_contents = [m["content"] for m in context if m["role"] == "user"]
+    assert any("부작용" in c for c in user_contents)

@@ -337,78 +337,78 @@ export const api = {
 
   readAllNotifications: () =>
     request("/api/notifications/read-all", { method: "POST" }),
+
+  checkMissed: (signal?: AbortSignal) =>
+    request<{ created_count: number }>("/api/notifications/check-missed", {
+      method: "POST",
+      signal,
+    }),
+
+  // Chat - send message (returns message_id for SSE streaming)
+  sendMessage: (threadId: number, content: string) =>
+    request<{ message_id: number; status: string }>("/api/chat/messages", {
+      method: "POST",
+      body: JSON.stringify({ thread_id: threadId, content }),
+    }),
 };
 
-export function subscribeNotifications(
+export function pollNotificationCount(
   onCount: (count: number) => void,
-  onError: (message: string) => void,
+  intervalMs = 30000,
 ): AbortController {
   const controller = new AbortController();
 
-  const connect = async () => {
-    const token = getToken();
-    if (!token) return;
-
-    try {
-      const res = await fetch(`${API_BASE}/api/notifications/stream`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: controller.signal,
-      });
-
-      if (!res.ok || !res.body) {
-        onError(`SSE 연결 실패 (${res.status})`);
+  const poll = async () => {
+    while (!controller.signal.aborted) {
+      try {
+        const res = await api.getUnreadCount();
+        if (res.success && res.data) {
+          onCount(res.data.count);
+        }
+      } catch {
+        // 네트워크 에러 무시, 다음 polling에서 재시도
+      }
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(resolve, intervalMs);
+          controller.signal.addEventListener(
+            "abort",
+            () => {
+              clearTimeout(timeout);
+              reject(new DOMException("Aborted", "AbortError"));
+            },
+            { once: true },
+          );
+        });
+      } catch {
         return;
       }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          try {
-            const event = JSON.parse(line.slice(6));
-            if (event.type === "unread_count") {
-              onCount(event.count);
-            }
-          } catch {
-            // ignore parse errors
-          }
-        }
-      }
-    } catch (err: unknown) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-      onError("SSE 연결이 끊어졌습니다.");
-    }
-
-    // 자동 재연결 (5초 후, abort되지 않은 경우만)
-    if (!controller.signal.aborted) {
-      setTimeout(connect, 5000);
     }
   };
 
-  connect();
+  poll();
   return controller;
 }
 
 export async function streamChat(
   threadId: number,
   content: string,
-  onChunk: (text: string) => void,
+  onChunk: (content: string) => void,
   onDone: (messageId: number) => void,
   onError: (message: string) => void,
+  signal?: AbortSignal,
 ) {
+  // Step 1: POST → JSON (메시지 등록 + worker에 enqueue)
+  const result = await api.sendMessage(threadId, content);
+  if (!result.success || !result.data) {
+    onError(result.error || "메시지 전송에 실패했습니다.");
+    return;
+  }
+  const messageId = result.data.message_id;
+
+  // Step 2: GET → SSE (worker의 Redis Pub/Sub를 relay)
   const token = getToken();
   const streamHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
   if (typeof window !== "undefined") {
@@ -422,14 +422,21 @@ export async function streamChat(
       // sessionStorage 손상 시 무시
     }
   }
-  const res = await fetch(`${API_BASE}/api/chat/messages`, {
-    method: "POST",
-    headers: streamHeaders,
-    body: JSON.stringify({ thread_id: threadId, content }),
-  });
+
+  let res: Response;
+  try {
+    res = await fetch(
+      `${API_BASE}/api/chat/messages/${messageId}/stream`,
+      { headers: streamHeaders, signal },
+    );
+  } catch (err) {
+    if (signal?.aborted) return;
+    onError("스트림 연결에 실패했습니다.");
+    return;
+  }
 
   if (!res.ok || !res.body) {
-    let errorMsg = `서버 연결에 실패했습니다. (${res.status})`;
+    let errorMsg = `스트림 연결에 실패했습니다. (${res.status})`;
     try {
       const body = await res.json();
       errorMsg = body.detail || body.error || errorMsg;
@@ -444,29 +451,48 @@ export async function streamChat(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  let streamEnded = false;
+  let accumulated = "";
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const jsonStr = line.slice(6);
-      try {
-        const event = JSON.parse(jsonStr);
-        if (event.type === "chunk") {
-          onChunk(event.content);
-        } else if (event.type === "done") {
-          onDone(event.message_id);
-        } else if (event.type === "error") {
-          onError(event.message);
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          if (event.type === "chunk") {
+            accumulated += event.content;
+            onChunk(accumulated);
+          } else if (event.type === "done") {
+            onDone(event.message_id);
+            streamEnded = true;
+            return;
+          } else if (event.type === "error") {
+            onError(event.message);
+            streamEnded = true;
+            return;
+          }
+        } catch {
+          // ignore parse errors
         }
-      } catch {
-        // ignore parse errors
       }
     }
+  } catch {
+    if (signal?.aborted) return;
+    if (!streamEnded) {
+      onError("응답 스트림이 예기치 않게 종료되었습니다.");
+    }
+    return;
+  }
+
+  if (!streamEnded) {
+    onError("응답 스트림이 예기치 않게 종료되었습니다.");
   }
 }

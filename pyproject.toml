@@ -40,6 +40,7 @@ ignore = ["UP046", "E501"]
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "app/db/migrations/*" = ["ALL"]
+"app/migrations/*" = ["ALL"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "worker"]

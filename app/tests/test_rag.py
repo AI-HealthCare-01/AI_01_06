@@ -5,9 +5,9 @@ from unittest.mock import patch
 import pytest
 from tortoise import Tortoise
 
-from app.api.chat import _build_context
 from app.models.chat import ChatThread
 from app.models.drug_document import DrugDocument
+from app.services.chat_service import build_context as _build_context
 from app.services.retrieval_service import (
     KeywordRetrievalService,
     _normalize_drug_names,

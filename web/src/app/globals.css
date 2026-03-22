@@ -257,3 +257,151 @@ h1, h2, h3, h4, h5, h6 {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ── Chat card viewport fit ── */
+.chat-card-fit {
+  max-height: calc(100dvh - 10rem);
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  .chat-card-fit {
+    max-height: calc(100dvh - 6rem);
+  }
+}
+
+/* ══════════════════════════════════════════
+   Landing — Hero
+   ══════════════════════════════════════════ */
+.hero-section {
+  position: relative;
+}
+
+.hero-wave-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 140%;
+  height: auto;
+}
+
+.hero-wave-1 { animation: waveFloat 14s ease-in-out infinite; }
+.hero-wave-2 { animation: waveFloat 18s ease-in-out infinite reverse; }
+.hero-wave-3 { animation: waveFloat 22s ease-in-out infinite 2s; }
+
+@keyframes waveFloat {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(-12%); }
+}
+
+/* Staggered fade-up for hero elements */
+.hero-fade-up {
+  opacity: 0;
+  animation: heroFadeUp 0.7s ease-out forwards;
+}
+
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hero CTA hover */
+.hero-cta {
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.hero-cta:hover {
+  background-color: var(--color-primary-hover) !important;
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.3);
+}
+
+/* ══════════════════════════════════════════
+   Landing — Flow (timeline)
+   ══════════════════════════════════════════ */
+
+.flow-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (hover: hover) {
+  .flow-card:hover {
+    transform: translateX(6px);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* ══════════════════════════════════════════
+   Landing — Demo Carousel
+   ══════════════════════════════════════════ */
+
+.demo-card {
+  transition: box-shadow 0.3s ease;
+}
+@media (hover: hover) {
+  .demo-card:hover {
+    box-shadow: 0 12px 36px rgba(5, 150, 105, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.demo-nav-btn {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+@media (hover: hover) {
+  .demo-nav-btn:hover {
+    border-color: var(--color-primary) !important;
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.demo-image-fade {
+  animation: demoFadeIn 0.35s ease-out;
+}
+
+@keyframes demoFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── CTA Section ── */
+.cta-section {
+  background: linear-gradient(
+    160deg,
+    var(--color-surface-alt) 0%,
+    #E8F5F0 30%,
+    #F0EDFA 70%,
+    var(--color-surface) 100%
+  );
+}
+
+.cta-glow {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
+}
+.cta-glow-1 {
+  width: 300px;
+  height: 300px;
+  background: rgba(5, 150, 105, 0.08);
+  top: -60px;
+  right: -40px;
+}
+.cta-glow-2 {
+  width: 250px;
+  height: 250px;
+  background: rgba(126, 108, 181, 0.07);
+  bottom: -40px;
+  left: -30px;
+}

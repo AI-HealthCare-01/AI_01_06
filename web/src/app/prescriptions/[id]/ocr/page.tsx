@@ -80,12 +80,17 @@ export default function OcrReviewPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [processing, setProcessing] = useState(true);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [ocrFailed, setOcrFailed] = useState(false);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [selectedMeds, setSelectedMeds] = useState<Set<number>>(new Set());
 
   const pollOcrStatus = useCallback(async () => {
     const res = await api.getPrescription(prescriptionId);
-    if (!res.success || !res.data) return;
+    if (!res.success || !res.data) {
+      setInitialCheckDone(true);
+      return;
+    }
     const pData = res.data as { ocr_status: string };
     if (pData.ocr_status === "ocr_failed") {
       setProcessing(false);
@@ -93,8 +98,23 @@ export default function OcrReviewPage() {
     } else if (pData.ocr_status === "ocr_completed" || pData.ocr_status === "guide_completed" || pData.ocr_status === "confirmed") {
       setProcessing(false);
       const ocrRes = await api.getOcr(prescriptionId);
-      if (ocrRes.success && ocrRes.data) setData(ocrRes.data as OcrData);
+      if (ocrRes.success && ocrRes.data) {
+        const raw = ocrRes.data as OcrData;
+        const clean = (v: string | null | undefined) => (v && v !== "null" ? v : "");
+        setData({
+          ...raw,
+          hospital_name: clean(raw.hospital_name),
+          doctor_name: clean(raw.doctor_name),
+          prescription_date: clean(raw.prescription_date),
+          diagnosis: clean(raw.diagnosis),
+          medications: raw.medications.map((med) => ({
+            ...med,
+            frequency: med.frequency.replace(/,/g, "·"),
+          })),
+        });
+      }
     }
+    setInitialCheckDone(true);
   }, [prescriptionId]);
 
   useEffect(() => {
@@ -112,6 +132,7 @@ export default function OcrReviewPage() {
     setSaving(false);
     if (saveRes.success) {
       setEditing(false);
+      setSelectedMeds(new Set());
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } else {
@@ -158,9 +179,19 @@ export default function OcrReviewPage() {
     setData({ ...data, medications: meds });
   };
 
-  const removeMed = (index: number) => {
-    if (!data) return;
-    setData({ ...data, medications: data.medications.filter((_, i) => i !== index) });
+  const removeSelectedMeds = () => {
+    if (!data || selectedMeds.size === 0) return;
+    setData({ ...data, medications: data.medications.filter((_, i) => !selectedMeds.has(i)) });
+    setSelectedMeds(new Set());
+  };
+
+  const toggleMedSelection = (index: number) => {
+    setSelectedMeds((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
   };
 
   const [loadingImg] = useState(() => {
@@ -169,7 +200,7 @@ export default function OcrReviewPage() {
     return `/loading/loading_${idx}.${ext}`;
   });
 
-  if (processing) {
+  if (processing && initialCheckDone) {
     return (
       <div className="fixed inset-0 flex flex-col z-50" style={{ background: 'var(--color-bg)' }}>
         <div className="flex-1 w-full relative">
@@ -295,16 +326,44 @@ export default function OcrReviewPage() {
 
       {/* Medications */}
       <section className="mb-6">
-        <h2 className="text-lg font-bold mb-2">처방 약물</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-bold">처방 약물</h2>
+          {editing && selectedMeds.size > 0 && (
+            <button
+              onClick={removeSelectedMeds}
+              className="text-sm px-4 py-2 rounded-lg transition-colors"
+              style={{ color: 'var(--color-danger)', border: '1px solid var(--color-danger)' }}
+            >
+              선택 항목 삭제 ({selectedMeds.size})
+            </button>
+          )}
+        </div>
         <div className="rounded-2xl p-5 space-y-4" style={{ background: 'var(--color-surface)' }}>
           {data.medications.map((med, i) => (
-            <div key={i} className="app-card p-5 relative">
+            <div
+              key={i}
+              className="app-card p-5 flex gap-4 transition-colors"
+              style={
+                editing && selectedMeds.has(i)
+                  ? { borderColor: 'var(--color-danger)', background: 'var(--color-danger-soft)' }
+                  : editing
+                    ? { cursor: 'pointer' }
+                    : undefined
+              }
+              onClick={() => { if (editing) toggleMedSelection(i); }}
+            >
               {editing && (
-                <button onClick={() => removeMed(i)} className="absolute top-3 right-3 text-xs px-2 py-1 rounded-lg transition-colors" style={{ color: 'var(--color-text-muted)' }}>
-                  제거
-                </button>
+                <div className="shrink-0 flex items-start pt-1">
+                  <input
+                    type="checkbox"
+                    checked={selectedMeds.has(i)}
+                    onChange={() => toggleMedSelection(i)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-5 h-5 accent-[var(--color-danger)] cursor-pointer"
+                  />
+                </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex-1 min-w-0 grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>약품명</p>
                   {editing ? (

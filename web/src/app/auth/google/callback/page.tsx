@@ -31,7 +31,10 @@ function GoogleCallbackContent() {
     (async () => {
       const res = await api.googleCallback(code, state);
       if (!res.success || !res.data) {
-        setError(res.error || "Google 로그인에 실패했습니다.");
+        const errorCode = res.error?.includes("계정") ? "deleted_account"
+          : res.error?.includes("삭제") ? "deleted_email"
+          : res.error?.includes("이메일") ? "email_conflict" : "google_fail";
+        router.replace(`/signup?social_error=${errorCode}`);
         return;
       }
 

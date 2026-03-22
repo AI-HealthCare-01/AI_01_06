@@ -4,6 +4,7 @@ import pytest
 
 from app.models.auth_provider import AuthProvider
 from app.models.patient_profile import PatientProfile
+from app.models.prescription import Prescription
 from app.models.user import User
 from worker.tasks.purge_task import purge_deleted_users
 
@@ -57,3 +58,36 @@ async def test_purge_cascades_related_data():
     assert await User.get_or_none(id=user.id) is None
     assert await AuthProvider.filter(user_id=user.id).count() == 0
     assert await PatientProfile.filter(user_id=user.id).count() == 0
+
+
+@pytest.mark.asyncio
+async def test_purge_guardian_preserves_patient_proxy_data():
+    """보호자 물리 삭제 시 대리 업로드한 환자의 처방전은 보존된다."""
+    patient = await User.create(
+        email="patient@test.com",
+        password_hash="hashed",
+        nickname="환자",
+        name="환자",
+        role="PATIENT",
+    )
+    guardian = await User.create(
+        email="guardian@test.com",
+        password_hash="hashed",
+        nickname="보호자",
+        name="보호자",
+        role="GUARDIAN",
+        deleted_at=datetime.now(UTC) - timedelta(days=31),
+    )
+    prescription = await Prescription.create(
+        user=patient,
+        acted_by=guardian,
+        image_path="/tmp/test.jpg",
+        ocr_status="ocr_completed",
+    )
+
+    await purge_deleted_users({})
+
+    assert await User.get_or_none(id=guardian.id) is None
+    preserved = await Prescription.get_or_none(id=prescription.id)
+    assert preserved is not None
+    assert preserved.acted_by_id is None

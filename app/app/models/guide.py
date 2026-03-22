@@ -10,6 +10,7 @@ class Guide(Model):
     content = fields.JSONField(null=True)  # structured guide content from LLM
     status = fields.CharField(max_length=20, default="generating")
     created_at = fields.DatetimeField(auto_now_add=True)
+    profile_snapshot_at = fields.DatetimeField(null=True)
 
     class Meta:
         table = "guides"

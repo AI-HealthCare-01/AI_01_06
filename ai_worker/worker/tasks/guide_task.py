@@ -44,5 +44,6 @@ async def guide_task(ctx: dict, guide_id: int, user_id: int) -> None:
         guide.status = "failed"
         raise
     finally:
+        guide.profile_snapshot_at = profile.updated_at if profile else None
         await guide.save()
         await prescription.save()

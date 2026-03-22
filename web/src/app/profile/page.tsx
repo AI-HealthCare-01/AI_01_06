@@ -57,9 +57,7 @@ export default function ProfilePage() {
       router.replace("/login");
       return;
     }
-    if (user.role === "PATIENT") {
-      fetchProfile();
-    }
+    fetchProfile();
   }, [user, authLoading, router]);
 
   // GUARDIAN은 개인정보 탭 불필요 — 접근성 설정만 표시
@@ -685,8 +683,8 @@ export default function ProfilePage() {
                         onBlur={(e) => {
                           handleNotiSave(key, e.target.value, notiSettings);
                         }}
-                        className="px-3 py-1.5 rounded-lg text-sm input-field"
-                        style={{ width: "120px" }}
+                        className="px-4 py-2 rounded-lg text-sm input-field"
+                        style={{ minWidth: "148px", width: "auto" }}
                       />
                     </div>
                   ))}

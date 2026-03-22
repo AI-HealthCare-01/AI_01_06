@@ -20,6 +20,7 @@ async def setup_db():
                 "app.models.audit",
                 "app.models.notification",
                 "app.models.caregiver_patient",
+                "app.models.refresh_token",
                 "app.models.schedule",
             ]
         },

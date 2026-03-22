@@ -47,8 +47,8 @@ export default function PrescriptionUploadPage() {
 
   return (
     <AppLayout>
-      <h1 className="text-2xl md:text-3xl font-semibold mb-2">처방전 올리기</h1>
-      <p className="mb-6" style={{ color: 'var(--color-text-muted)' }}>병원에서 받은 처방전을 넣어주세요</p>
+      <h1 className="text-2xl md:text-3xl font-semibold mb-2 text-center">처방전 올리기</h1>
+      <p className="mb-6 text-center" style={{ color: 'var(--color-text-muted)' }}>병원에서 받은 처방전을 넣어주세요</p>
 
       {/* Stepper */}
       <div className="flex items-center gap-2 mb-8">

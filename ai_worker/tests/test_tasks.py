@@ -105,7 +105,7 @@ async def test_guide_task_generates_content(user, patient_profile, prescription)
 
 async def test_guide_task_uses_patient_profile(user, patient_profile, prescription):
     """guide_task가 PatientProfile의 키/몸무게/알레르기/기저질환을 user_info에 포함한다."""
-    await ocr_task({"redis": AsyncMock()}, prescription.id)
+    await ocr_task({"redis": AsyncMock()}, prescription.id, "dummy.png")
 
     guide = await Guide.filter(prescription=prescription).first()
     await guide_task({}, guide.id, user.id)
@@ -113,3 +113,26 @@ async def test_guide_task_uses_patient_profile(user, patient_profile, prescripti
     updated = await Guide.get(id=guide.id)
     assert updated.status == "completed"
     assert updated.content is not None
+
+
+async def test_guide_task_stores_profile_snapshot(user, patient_profile, prescription):
+    """guide_task 완료 시 guide.profile_snapshot_at이 profile.updated_at과 동일해야 한다."""
+    await ocr_task({"redis": AsyncMock()}, prescription.id, "dummy.png")
+    guide = await Guide.create(user=user, prescription=prescription, status="generating")
+
+    await guide_task({}, guide.id, user.id)
+
+    updated_guide = await Guide.get(id=guide.id)
+    profile = await PatientProfile.get(user=user)
+    assert updated_guide.profile_snapshot_at == profile.updated_at
+
+
+async def test_guide_task_stores_null_snapshot_without_profile(user, prescription):
+    """프로필이 없는 사용자의 guide_task에서 profile_snapshot_at은 None이어야 한다."""
+    await ocr_task({"redis": AsyncMock()}, prescription.id, "dummy.png")
+    guide = await Guide.create(user=user, prescription=prescription, status="generating")
+
+    await guide_task({}, guide.id, user.id)
+
+    updated_guide = await Guide.get(id=guide.id)
+    assert updated_guide.profile_snapshot_at is None

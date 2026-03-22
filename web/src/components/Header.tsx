@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { api, subscribeNotifications } from "@/lib/api";
+import { api, pollNotificationCount } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -75,12 +75,23 @@ export default function Header() {
   useEffect(() => {
     if (!user) { setUnreadCount(0); return; }
 
-    const controller = subscribeNotifications(
-      (count) => setUnreadCount(count),
-      () => {},
-    );
+    const abortCtrl = new AbortController();
+    let pollCtrl: AbortController | undefined;
 
-    return () => controller.abort();
+    api.checkMissed(abortCtrl.signal)
+      .catch(() => {})
+      .then(() => {
+        if (abortCtrl.signal.aborted) return;
+        pollCtrl = pollNotificationCount(
+          (count) => setUnreadCount(count),
+          30000,
+        );
+      });
+
+    return () => {
+      abortCtrl.abort();
+      pollCtrl?.abort();
+    };
   }, [user]);
 
   useEffect(() => {

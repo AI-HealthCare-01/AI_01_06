@@ -1,6 +1,3 @@
-import asyncio
-import json
-
 import pytest
 from httpx import AsyncClient
 
@@ -134,41 +131,6 @@ async def test_settings_with_enabled_fields(auth_client: AsyncClient):
     assert data["medication_enabled"] is False
     assert data["caregiver_enabled"] is True
     assert data["morning_time"] == "07:30"
-
-
-@pytest.mark.asyncio
-async def test_sse_stream_requires_auth(client: AsyncClient):
-    """미인증 SSE 접근 시 401 반환."""
-    res = await client.get("/api/notifications/stream")
-    assert res.status_code == 401
-
-
-@pytest.mark.asyncio
-async def test_sse_stream_sends_initial_count(auth_client: AsyncClient):
-    """SSE 연결 시 즉시 현재 unread_count를 전송한다."""
-    user_resp = await auth_client.get("/api/users/me")
-    user_id = user_resp.json()["data"]["id"]
-    user = await User.get(id=user_id)
-    await Notification.create(user=user, notification_type="MEDICATION", title="test1", is_read=False)
-    await Notification.create(user=user, notification_type="MEDICATION", title="test2", is_read=True)
-
-    # SSE 스트림의 첫 이벤트 확인 — sleep을 CancelledError로 대체하여 1회만 실행
-    async def one_shot_sleep(_seconds):
-        raise asyncio.CancelledError
-
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(asyncio, "sleep", one_shot_sleep)
-        async with auth_client.stream("GET", "/api/notifications/stream") as response:
-            assert response.status_code == 200
-            lines = []
-            async for line in response.aiter_lines():
-                lines.append(line)
-
-    data_lines = [line for line in lines if line.startswith("data: ")]
-    assert len(data_lines) == 1
-    event = json.loads(data_lines[0][6:])
-    assert event["type"] == "unread_count"
-    assert event["count"] == 1
 
 
 @pytest.mark.asyncio

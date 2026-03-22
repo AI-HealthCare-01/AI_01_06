@@ -76,6 +76,16 @@ class KakaoRegisterRequest(BaseModel):
     privacy_policy: bool = False
     marketing_consent: bool = False
 
+    @field_validator("nickname", mode="before")
+    @classmethod
+    def sanitize_nickname(cls, v: str) -> str:
+        if not isinstance(v, str):
+            return v
+        sanitized = re.sub(r"[^가-힣a-zA-Z0-9]", "", v.strip())
+        if not sanitized:
+            raise ValueError("닉네임에 사용 가능한 문자(한글, 영문, 숫자)가 없습니다.")
+        return sanitized
+
 
 class GoogleCallbackRequest(BaseModel):
     code: str
@@ -94,3 +104,13 @@ class GoogleRegisterRequest(BaseModel):
     terms_of_service: bool = False
     privacy_policy: bool = False
     marketing_consent: bool = False
+
+    @field_validator("nickname", mode="before")
+    @classmethod
+    def sanitize_nickname(cls, v: str) -> str:
+        if not isinstance(v, str):
+            return v
+        sanitized = re.sub(r"[^가-힣a-zA-Z0-9]", "", v.strip())
+        if not sanitized:
+            raise ValueError("닉네임에 사용 가능한 문자(한글, 영문, 숫자)가 없습니다.")
+        return sanitized

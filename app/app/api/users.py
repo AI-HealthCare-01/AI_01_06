@@ -1,14 +1,17 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request
+from tortoise.expressions import Q
 
 from app.core.deps import get_acting_patient, get_current_user
 from app.core.rate_limit import limiter
 from app.core.response import error_response, success_response
 from app.core.security import verify_password
+from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.patient_profile import PatientProfile
 from app.models.user import User
 from app.schemas.user import DeleteAccountRequest, UserUpdateRequest
+from app.services.notification_service import create_notification
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -98,6 +101,22 @@ async def delete_me(
     else:
         if not req.confirm_email or req.confirm_email != user.email:
             return error_response("이메일이 일치하지 않습니다.")
+
+    # 활성 보호자-환자 매핑을 REVOKED로 전환하고 상대방에게 알림 발송
+    active_mappings = await CaregiverPatientMapping.filter(
+        Q(caregiver=user) | Q(patient=user),
+        status="APPROVED",
+    ).prefetch_related("caregiver", "patient")
+
+    for mapping in active_mappings:
+        mapping.status = "REVOKED"
+        await mapping.save()
+        counterpart = mapping.patient if mapping.caregiver_id == user.id else mapping.caregiver
+        await create_notification(
+            user_id=counterpart.id,
+            notification_type="CAREGIVER",
+            title=f"{user.name}님이 탈퇴하여 연결이 해제되었습니다.",
+        )
 
     user.deleted_at = datetime.now(UTC)
     await user.save()

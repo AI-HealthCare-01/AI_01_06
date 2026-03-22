@@ -7,10 +7,12 @@ from tortoise import Tortoise
 
 from app.core.rate_limit import limiter
 from app.main import app
+from app.models.chat import ChatMessage, ChatThread
 from app.models.guide import Guide
 from app.models.patient_profile import PatientProfile
 from app.models.prescription import Medication, Prescription
 from app.models.user import User
+from app.services.chat_service import build_context, get_chat_service
 from app.services.guide_service import get_guide_service
 from app.services.icd_service import resolve_diagnosis
 from app.services.ocr_service import get_ocr_service
@@ -50,6 +52,17 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
                 os.remove(filepath)
             except OSError:
                 pass
+    elif task_name == "chat_task":
+        message_id = args[0]
+        assistant_msg = await ChatMessage.get(id=message_id)
+        thread = await ChatThread.get(id=assistant_msg.thread_id)
+        context = await build_context(thread)
+        chat_service = get_chat_service()
+        content = await chat_service.generate_reply(context)
+        assistant_msg.content = content
+        assistant_msg.status = "completed"
+        await assistant_msg.save()
+        await thread.save()
     elif task_name == "guide_task":
         guide_id = args[0]
         user_id = args[1]
@@ -84,6 +97,7 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
         guide.content = content
         guide.status = "completed"
         prescription.ocr_status = "guide_completed"
+        guide.profile_snapshot_at = profile.updated_at if profile else None
         await guide.save()
         await prescription.save()
 
@@ -120,6 +134,7 @@ def mock_enqueue():
     with (
         patch("app.api.prescriptions.enqueue", side_effect=_fake_enqueue),
         patch("app.api.guides.enqueue", side_effect=_fake_enqueue),
+        patch("app.api.chat.enqueue", side_effect=_fake_enqueue),
     ):
         yield
 
