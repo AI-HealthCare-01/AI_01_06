@@ -108,6 +108,19 @@ class OpenAIChatService(ChatServiceBase):
         finally:
             await response.close()
 
+    @staticmethod
+    def _accumulate_tool_call(tool_calls_data: list[dict], tc) -> None:
+        """스트리밍 청크에서 tool_call 데이터를 누적한다."""
+        while len(tool_calls_data) <= tc.index:
+            tool_calls_data.append({"id": "", "name": "", "arguments": ""})
+        entry = tool_calls_data[tc.index]
+        if tc.id:
+            entry["id"] = tc.id
+        if tc.function and tc.function.name:
+            entry["name"] = tc.function.name
+        if tc.function and tc.function.arguments:
+            entry["arguments"] += tc.function.arguments
+
     async def generate_reply(
         self,
         messages: list[dict],
@@ -137,38 +150,38 @@ class OpenAIChatService(ChatServiceBase):
 
                 if choice.delta.tool_calls:
                     for tc in choice.delta.tool_calls:
-                        while len(tool_calls_data) <= tc.index:
-                            tool_calls_data.append({"id": "", "name": "", "arguments": ""})
-                        entry = tool_calls_data[tc.index]
-                        if tc.id:
-                            entry["id"] = tc.id
-                        if tc.function and tc.function.name:
-                            entry["name"] = tc.function.name
-                        if tc.function and tc.function.arguments:
-                            entry["arguments"] += tc.function.arguments
+                        self._accumulate_tool_call(tool_calls_data, tc)
         finally:
             await response.close()
 
         if tool_calls_data and tool_executor:
-            assistant_msg = {
-                "role": "assistant",
-                "content": accumulated or None,
-                "tool_calls": [
-                    {"id": tc["id"], "type": "function", "function": {"name": tc["name"], "arguments": tc["arguments"]}}
-                    for tc in tool_calls_data
-                ],
-            }
-            messages.append(assistant_msg)
-
-            for tc in tool_calls_data:
-                result = await tool_executor(tc["name"], tc["arguments"])
-                messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
-
+            await self._execute_tool_calls(messages, accumulated, tool_calls_data, tool_executor)
             return await self.generate_reply(messages, on_progress=on_progress)
 
         if on_progress:
             await on_progress(accumulated)
         return accumulated
+
+    @staticmethod
+    async def _execute_tool_calls(
+        messages: list[dict],
+        accumulated: str,
+        tool_calls_data: list[dict],
+        tool_executor: Callable[[str, str], Awaitable[str]],
+    ) -> None:
+        """tool_call 결과를 messages에 추가한다."""
+        assistant_msg = {
+            "role": "assistant",
+            "content": accumulated or None,
+            "tool_calls": [
+                {"id": tc["id"], "type": "function", "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                for tc in tool_calls_data
+            ],
+        }
+        messages.append(assistant_msg)
+        for tc in tool_calls_data:
+            result = await tool_executor(tc["name"], tc["arguments"])
+            messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
 
 
 def get_chat_service() -> ChatServiceBase:

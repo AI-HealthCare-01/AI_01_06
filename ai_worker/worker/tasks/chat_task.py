@@ -1,5 +1,4 @@
 import json
-import json as _json
 import logging
 
 import redis.asyncio as aioredis
@@ -15,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 async def _execute_tool(name: str, arguments: str) -> str:
     """tool_call을 실행하고 결과 문자열을 반환한다."""
-    args = _json.loads(arguments)
+    args = json.loads(arguments)
     if name == "get_weather":
         weather_api_key = getattr(config, "WEATHER_API_KEY", "")
         if not weather_api_key:

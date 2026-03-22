@@ -26,7 +26,7 @@ const negativeReasons = [
 interface Message {
   role: "user" | "assistant";
   content: string;
-  status?: string;
+  status?: "pending" | "streaming" | "completed" | "failed";
   statusText?: string;
 }
 
@@ -81,7 +81,7 @@ function ChatContent() {
         if (msgRes.success && msgRes.data) {
           const loaded = (msgRes.data as Array<{ role: "user" | "assistant"; content: string; status?: string }>);
           if (loaded.length > 0) {
-            setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status })));
+            setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status as Message["status"] })));
             setQuickActionsOpen(false);
           }
         }

@@ -234,6 +234,7 @@ WEATHER_TOOL_SCHEMA: dict = {
                 }
             },
             "required": ["city"],
+            "additionalProperties": False,
         },
     },
 }
