@@ -338,6 +338,12 @@ export const api = {
   readAllNotifications: () =>
     request("/api/notifications/read-all", { method: "POST" }),
 
+  checkMissed: (signal?: AbortSignal) =>
+    request<{ created_count: number }>("/api/notifications/check-missed", {
+      method: "POST",
+      signal,
+    }),
+
   // Chat - send message (returns message_id for SSE streaming)
   sendMessage: (threadId: number, content: string) =>
     request<{ message_id: number; status: string }>("/api/chat/messages", {

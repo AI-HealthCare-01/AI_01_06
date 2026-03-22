@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import UTC, datetime
 
@@ -5,9 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 
 from app.core.deps import get_current_user
-from app.core.response import success_response
+from app.core.response import error_response, success_response
 from app.models.notification import Notification, NotificationSetting
 from app.models.user import User
+from app.services.notification_service import check_missed_for_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
@@ -57,6 +61,17 @@ async def list_notifications(is_read: bool | None = None, user: User = Depends(g
 async def get_unread_count(user: User = Depends(get_current_user)):
     count = await Notification.filter(user=user, is_read=False).count()
     return success_response({"count": count})
+
+
+@router.post("/check-missed")
+async def check_missed(user: User = Depends(get_current_user)):
+    """로그인 직후 호출 — 현재 사용자의 미복약 알림을 즉시 생성한다."""
+    try:
+        created = await check_missed_for_user(user.id)
+    except Exception:
+        logger.exception("check_missed 실패: user_id=%d", user.id)
+        return error_response("알림 확인 중 오류가 발생했습니다.", status_code=500)
+    return success_response({"created_count": created})
 
 
 @router.post("/read-all")

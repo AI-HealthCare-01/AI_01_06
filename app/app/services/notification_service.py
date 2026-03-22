@@ -101,7 +101,6 @@ def _build_missed_notifications(
     caregiver_settings_map: dict[int, NotificationSetting],
 ) -> list[Notification]:
     """한 사용자의 한 시간대에 대한 미복약 알림 객체 목록을 생성한다."""
-    tag = f"missed:{tod}"
     label = TIME_OF_DAY_LABEL.get(tod, tod)
 
     if len(missed) == 1:
@@ -113,13 +112,13 @@ def _build_missed_notifications(
         caregiver_title = f"{user_name}님 {label} 미복용"
 
     result: list[Notification] = [
-        Notification(user_id=user_id, notification_type="MEDICATION", title=patient_title, body=tag)
+        Notification(user_id=user_id, notification_type="MEDICATION", title=patient_title, body=None)
     ]
     for cid in caregiver_ids:
         c_setting = caregiver_settings_map.get(cid)
         if c_setting and not c_setting.caregiver_enabled:
             continue
-        result.append(Notification(user_id=cid, notification_type="CAREGIVER", title=caregiver_title, body=tag))
+        result.append(Notification(user_id=cid, notification_type="CAREGIVER", title=caregiver_title, body=None))
     return result
 
 
@@ -145,10 +144,12 @@ async def _load_batch_data(
         notification_type="MEDICATION",
         created_at__gte=today_dt,
     )
-    sent_tags: set[tuple[int, str]] = set()
+    sent_tods: set[tuple[int, str]] = set()
     for n in today_med_notifications:
-        if n.body and n.body.startswith("missed:"):
-            sent_tags.add((n.user_id, n.body))
+        if n.title and "미복용" in n.title:
+            for tod_key, tod_label in TIME_OF_DAY_LABEL.items():
+                if tod_label in n.title:
+                    sent_tods.add((n.user_id, tod_key))
 
     settings_map: dict[int, NotificationSetting] = {
         s.user_id: s for s in await NotificationSetting.filter(user_id__in=user_ids)
@@ -167,7 +168,7 @@ async def _load_batch_data(
 
     user_map: dict[int, User] = {u.id: u for u in await User.filter(id__in=user_ids)}
 
-    return logged_schedule_ids, settings_map, patient_caregivers, caregiver_settings_map, user_map, sent_tags
+    return logged_schedule_ids, settings_map, patient_caregivers, caregiver_settings_map, user_map, sent_tods
 
 
 async def check_missed_medications() -> None:
@@ -188,7 +189,7 @@ async def check_missed_medications() -> None:
     if not active_schedules:
         return
 
-    logged_ids, settings_map, patient_caregivers, cg_settings, user_map, sent_tags = await _load_batch_data(
+    logged_ids, settings_map, patient_caregivers, cg_settings, user_map, sent_tods = await _load_batch_data(
         active_schedules,
         today,
         today_dt,
@@ -211,7 +212,7 @@ async def check_missed_medications() -> None:
             if now < _get_deadline(setting, tod, today_dt):
                 continue
             missed = [s for s in tod_schedules if s.id not in logged_ids]
-            if not missed or (user_id, f"missed:{tod}") in sent_tags:
+            if not missed or (user_id, tod) in sent_tods:
                 continue
 
             user_obj = user_map.get(user_id)
@@ -228,3 +229,61 @@ async def check_missed_medications() -> None:
 
     if notifications_to_create:
         await Notification.bulk_create(notifications_to_create)
+
+
+async def check_missed_for_user(user_id: int) -> int:
+    """특정 사용자의 미복약 스케줄을 감지하고 알림을 생성한다.
+
+    Returns:
+        생성된 알림 수
+    """
+    now = _now_kst()
+    today = now.date()
+    today_dt = datetime(today.year, today.month, today.day, tzinfo=KST)
+
+    active_schedules = await MedicationSchedule.filter(
+        medication__prescription__user_id=user_id,
+        start_date__lte=today,
+        end_date__gte=today,
+    ).prefetch_related("medication__prescription__user")
+
+    if not active_schedules:
+        return 0
+
+    logged_ids, settings_map, patient_caregivers, cg_settings, user_map, sent_tods = await _load_batch_data(
+        active_schedules,
+        today,
+        today_dt,
+    )
+
+    setting = settings_map.get(user_id)
+    if setting and not setting.medication_enabled:
+        return 0
+
+    by_tod: dict[str, list[MedicationSchedule]] = {}
+    for s in active_schedules:
+        by_tod.setdefault(s.time_of_day, []).append(s)
+
+    notifications_to_create: list[Notification] = []
+    for tod, tod_schedules in by_tod.items():
+        if now < _get_deadline(setting, tod, today_dt):
+            continue
+        missed = [s for s in tod_schedules if s.id not in logged_ids]
+        if not missed or (user_id, tod) in sent_tods:
+            continue
+
+        user_obj = user_map.get(user_id)
+        notifications_to_create.extend(
+            _build_missed_notifications(
+                user_id=user_id,
+                user_name=user_obj.name if user_obj else "",
+                tod=tod,
+                missed=missed,
+                caregiver_ids=patient_caregivers.get(user_id, []),
+                caregiver_settings_map=cg_settings,
+            )
+        )
+
+    if notifications_to_create:
+        await Notification.bulk_create(notifications_to_create)
+    return len(notifications_to_create)
