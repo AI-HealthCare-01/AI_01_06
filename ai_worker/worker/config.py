@@ -14,3 +14,5 @@ OPENAI_MODEL: str = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
 NAVER_OCR_SECRET: str = os.environ.get("NAVER_OCR_SECRET", "")
 NAVER_OCR_URL: str = os.environ.get("NAVER_OCR_URL", "")
+
+WEATHER_API_KEY: str = os.environ.get("WEATHER_API_KEY", "")
