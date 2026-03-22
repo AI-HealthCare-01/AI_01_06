@@ -44,6 +44,7 @@ services:
       UPLOAD_DIR: /uploads
     volumes:
       - ./app/app:/srv/app/app
+      - ./app/migrations:/srv/app/migrations
       - uploads_data:/uploads
     ports:
       - "8000:8000"
