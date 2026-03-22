@@ -18,4 +18,4 @@ RUN uv sync --frozen --no-dev --package sullivan-backend
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "cd app && (uv run --package sullivan-backend aerich upgrade || uv run --package sullivan-backend aerich init-db) && cd /srv && uv run --package sullivan-backend uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "cd app && uv run --package sullivan-backend aerich upgrade && cd /srv && uv run --package sullivan-backend uvicorn app.main:app --host 0.0.0.0 --port 8000"]
