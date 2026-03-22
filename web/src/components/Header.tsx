@@ -78,13 +78,15 @@ export default function Header() {
     const abortCtrl = new AbortController();
     let pollCtrl: AbortController | undefined;
 
-    api.checkMissed(abortCtrl.signal).finally(() => {
-      if (abortCtrl.signal.aborted) return;
-      pollCtrl = pollNotificationCount(
-        (count) => setUnreadCount(count),
-        30000,
-      );
-    });
+    api.checkMissed(abortCtrl.signal)
+      .catch(() => {})
+      .then(() => {
+        if (abortCtrl.signal.aborted) return;
+        pollCtrl = pollNotificationCount(
+          (count) => setUnreadCount(count),
+          30000,
+        );
+      });
 
     return () => {
       abortCtrl.abort();
