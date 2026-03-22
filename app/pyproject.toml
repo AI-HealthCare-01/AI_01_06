@@ -45,4 +45,4 @@ dev = [
 [tool.aerich]
 tortoise_orm = "app.core.database.TORTOISE_ORM"
 location = "./migrations"
-src_folder = "./."
+src_folder = "."
