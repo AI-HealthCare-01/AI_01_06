@@ -119,3 +119,41 @@ async def test_get_guide(auth_client: AsyncClient):
     assert body["success"] is True
     assert body["data"]["prescription_info"]["hospital_name"] == "서울대학교병원"
     assert "disclaimer" in body["data"]["content"]
+
+
+@pytest.mark.asyncio
+async def test_get_guide_profile_not_updated_when_unchanged(auth_client: AsyncClient):
+    """프로필을 변경하지 않았으면 profile_updated는 False여야 한다."""
+    fake_image = io.BytesIO(b"fake image content")
+    upload_resp = await auth_client.post(
+        "/api/prescriptions",
+        files={"file": ("test.png", fake_image, "image/png")},
+    )
+    pid = upload_resp.json()["data"]["id"]
+
+    create_resp = await auth_client.post("/api/guides", json={"prescription_id": pid})
+    guide_id = create_resp.json()["data"]["id"]
+
+    resp = await auth_client.get(f"/api/guides/{guide_id}")
+    body = resp.json()
+    assert body["data"]["profile_updated"] is False
+
+
+@pytest.mark.asyncio
+async def test_get_guide_profile_updated_when_changed(auth_client: AsyncClient):
+    """프로필 변경 후 기존 가이드 조회 시 profile_updated는 True여야 한다."""
+    fake_image = io.BytesIO(b"fake image content")
+    upload_resp = await auth_client.post(
+        "/api/prescriptions",
+        files={"file": ("test.png", fake_image, "image/png")},
+    )
+    pid = upload_resp.json()["data"]["id"]
+
+    create_resp = await auth_client.post("/api/guides", json={"prescription_id": pid})
+    guide_id = create_resp.json()["data"]["id"]
+
+    await auth_client.patch("/api/users/me", json={"height_cm": 180.0})
+
+    resp = await auth_client.get(f"/api/guides/{guide_id}")
+    body = resp.json()
+    assert body["data"]["profile_updated"] is True

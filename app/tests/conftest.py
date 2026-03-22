@@ -97,6 +97,7 @@ async def _fake_enqueue(task_name: str, *args, **kwargs) -> str:
         guide.content = content
         guide.status = "completed"
         prescription.ocr_status = "guide_completed"
+        guide.profile_snapshot_at = profile.updated_at if profile else None
         await guide.save()
         await prescription.save()
 
