@@ -51,6 +51,8 @@ function ChatContent() {
   const [reasonText, setReasonText] = useState("");
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const streamAbortRef = useRef<AbortController | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
 
   const initThread = async () => {
     setInitError(null);
@@ -99,6 +101,12 @@ function ChatContent() {
       streamAbortRef.current?.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (!userScrolledUp) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages, userScrolledUp]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -287,7 +295,15 @@ function ChatContent() {
           )}
 
           {/* Messages — scrollable area */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '80px' }}>
+          <div
+            className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4"
+            style={{ minHeight: '80px' }}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+              setUserScrolledUp(!atBottom);
+            }}
+          >
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[80%] md:max-w-[75%] rounded-xl px-4 py-3.5 leading-relaxed whitespace-pre-wrap ${
@@ -311,6 +327,7 @@ function ChatContent() {
                 </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Quick actions — toggle persists after chat starts */}
