@@ -1,14 +1,17 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials
 from tortoise.expressions import Q
 
-from app.core.deps import get_acting_patient, get_current_user
+from app.core.deps import get_acting_patient, get_current_user, security_scheme
 from app.core.rate_limit import limiter
+from app.core.redis import get_state_redis
 from app.core.response import error_response, success_response
-from app.core.security import verify_password
+from app.core.security import decode_token, verify_password
 from app.models.caregiver_patient import CaregiverPatientMapping
 from app.models.patient_profile import PatientProfile
+from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.schemas.user import DeleteAccountRequest, UserUpdateRequest
 from app.services.notification_service import create_notification
@@ -94,6 +97,7 @@ async def delete_me(
     request: Request,
     req: DeleteAccountRequest,
     user: User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     if user.password_hash:
         if not req.password or not verify_password(req.password, user.password_hash):
@@ -117,6 +121,15 @@ async def delete_me(
             notification_type="CAREGIVER",
             title=f"{user.name}님이 탈퇴하여 연결이 해제되었습니다.",
         )
+
+    # 현재 access token blacklist + 모든 refresh token revoke
+    payload = decode_token(credentials.credentials)
+    jti = payload.get("jti") if payload else None
+    if jti:
+        redis = await get_state_redis()
+        remaining_ttl = max(1, int(payload["exp"] - datetime.now(UTC).timestamp()))
+        await redis.setex(f"blacklist:{jti}", remaining_ttl, "1")
+    await RefreshToken.filter(user_id=user.id, revoked=False).update(revoked=True)
 
     user.deleted_at = datetime.now(UTC)
     await user.save()

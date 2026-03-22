@@ -17,6 +17,7 @@ from app.core.security import (
 )
 from app.models.auth_provider import AuthProvider
 from app.models.patient_profile import PatientProfile
+from app.models.refresh_token import RefreshToken
 from app.models.terms_consent import TermsConsent
 from app.models.user import User
 from app.schemas.auth import LoginRequest, SignupRequest
@@ -29,6 +30,10 @@ _MAX_LOGIN_ATTEMPTS = 5
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str | None = None
 
 
 @router.post("/signup")
@@ -107,7 +112,7 @@ async def login(request: Request, req: LoginRequest):
     return success_response(
         {
             "access_token": create_access_token(user.id, user.role),
-            "refresh_token": create_refresh_token(user.id),
+            "refresh_token": await create_refresh_token(user.id),
             "token_type": "bearer",
         }
     )
@@ -116,16 +121,19 @@ async def login(request: Request, req: LoginRequest):
 @router.post("/refresh")
 @limiter.limit("5/minute")
 async def refresh(request: Request, req: RefreshRequest):
-    payload = decode_token(req.refresh_token)
-    if payload is None or payload.get("type") != "refresh":
+    rt = await RefreshToken.get_or_none(token=req.refresh_token, revoked=False)
+    if not rt or rt.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 refresh token입니다.")
-    user = await User.get_or_none(id=int(payload["sub"]), deleted_at__isnull=True)
+    user = await User.get_or_none(id=rt.user_id, deleted_at__isnull=True)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="사용자를 찾을 수 없습니다.")
+    # 기존 refresh token 소비 (일회성)
+    rt.revoked = True
+    await rt.save()
     return success_response(
         {
             "access_token": create_access_token(user.id, user.role),
-            "refresh_token": create_refresh_token(user.id),
+            "refresh_token": await create_refresh_token(user.id),
             "token_type": "bearer",
         }
     )
@@ -133,6 +141,7 @@ async def refresh(request: Request, req: RefreshRequest):
 
 @router.post("/logout")
 async def logout(
+    req: LogoutRequest | None = None,
     user: User = Depends(get_current_user),
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
@@ -142,4 +151,6 @@ async def logout(
         redis = await get_state_redis()
         remaining_ttl = max(1, int(payload["exp"] - datetime.now(UTC).timestamp()))
         await redis.setex(f"blacklist:{jti}", remaining_ttl, "1")
+    if req and req.refresh_token:
+        await RefreshToken.filter(token=req.refresh_token, user_id=user.id).update(revoked=True)
     return success_response({"message": "로그아웃 되었습니다."})

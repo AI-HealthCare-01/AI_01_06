@@ -1,3 +1,4 @@
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -5,6 +6,7 @@ import bcrypt
 import jwt
 
 from app import config
+from app.models.refresh_token import RefreshToken
 
 
 def hash_password(password: str) -> str:
@@ -25,10 +27,11 @@ def create_access_token(user_id: int, role: str) -> str:
     return jwt.encode(payload, config.SECRET_KEY, algorithm=config.ALGORITHM)
 
 
-def create_refresh_token(user_id: int) -> str:
-    expire = datetime.now(UTC) + timedelta(days=config.REFRESH_TOKEN_EXPIRE_DAYS)
-    payload = {"sub": str(user_id), "exp": expire, "type": "refresh"}
-    return jwt.encode(payload, config.SECRET_KEY, algorithm=config.ALGORITHM)
+async def create_refresh_token(user_id: int) -> str:
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(UTC) + timedelta(days=config.REFRESH_TOKEN_EXPIRE_DAYS)
+    await RefreshToken.create(user_id=user_id, token=token, expires_at=expires_at)
+    return token
 
 
 def decode_token(token: str) -> dict | None:
