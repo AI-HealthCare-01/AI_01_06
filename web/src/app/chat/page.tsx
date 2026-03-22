@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
@@ -41,9 +41,8 @@ function ChatContent() {
   const [input, setInput] = useState("");
   const [threadId, setThreadId] = useState<number | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(true);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 피드백 모달 상태
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -79,7 +78,7 @@ function ChatContent() {
           const loaded = (msgRes.data as Array<{ role: "user" | "assistant"; content: string; status?: string }>);
           if (loaded.length > 0) {
             setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status })));
-            setShowQuickActions(false);
+            setQuickActionsOpen(false);
           }
         }
         setThreadId(Number(resumeThreadId));
@@ -94,9 +93,6 @@ function ChatContent() {
     initThread();
   }, []);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -119,7 +115,7 @@ function ChatContent() {
     }
 
     setInput("");
-    setShowQuickActions(false);
+    setQuickActionsOpen(false);
     setIsStreaming(true);
 
     setMessages((prev) => [...prev, { role: "user", content: text }]);
@@ -214,7 +210,7 @@ function ChatContent() {
     <AppLayout>
       <div className="max-w-3xl mx-auto">
         {/* ── Single unified card ── */}
-        <div className="app-card overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100dvh - 8rem)' }}>
+        <div className="app-card flex flex-col">
 
           {/* Header — 모바일 2줄 / 웹 1줄 */}
           <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -223,45 +219,12 @@ function ChatContent() {
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-primary)"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
               </div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-base font-bold leading-snug">AI 복약 상담</h1>
+                <h1 className="text-base font-bold leading-normal">AI 복약 상담</h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'var(--color-success)' }} />
                   <p className="text-sm" style={{ color: 'var(--color-success)' }}>온라인</p>
                 </div>
               </div>
-              {/* 웹: 1줄에 액션 버튼 표시 */}
-              <div className="hidden md:flex items-center gap-3">
-                <Link
-                  href="/chat/history"
-                  className="text-sm px-4 py-2.5 rounded-xl hover:underline"
-                  style={{ color: 'var(--color-primary)' }}
-                >
-                  대화 기록
-                </Link>
-                <button
-                  onClick={handleEndClick}
-                  disabled={isStreaming || !threadId}
-                  className="text-sm px-4 py-2.5 min-h-[44px] rounded-xl disabled:opacity-50 transition-colors btn-danger-outline"
-                >
-                  상담 종료
-                </button>
-              </div>
-            </div>
-            {/* 모바일: 2행에 액션 버튼 표시 */}
-            <div className="flex md:hidden items-center justify-end gap-3 mt-3">
-              <Link
-                href="/chat/history"
-                className="text-sm px-4 py-2.5 min-h-[44px] flex items-center rounded-xl btn-outline"
-              >
-                대화 기록
-              </Link>
-              <button
-                onClick={handleEndClick}
-                disabled={isStreaming || !threadId}
-                className="text-sm px-4 py-2.5 min-h-[44px] rounded-xl disabled:opacity-50 transition-colors btn-danger-outline"
-              >
-                상담 종료
-              </button>
             </div>
           </div>
 
@@ -295,10 +258,10 @@ function ChatContent() {
           )}
 
           {/* Messages — scrollable area */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '240px' }}>
+          <div className="overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '160px', maxHeight: 'clamp(200px, 40vh, 400px)' }}>
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] md:max-w-[75%] rounded-2xl px-4 py-3 whitespace-pre-wrap ${
+                <div className={`max-w-[80%] md:max-w-[75%] rounded-xl px-4 py-3.5 leading-relaxed whitespace-pre-wrap ${
                   msg.role === "user"
                     ? "text-white text-sm"
                     : "text-base"
@@ -319,22 +282,36 @@ function ChatContent() {
                 </div>
               </div>
             ))}
-            <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick actions */}
-          {showQuickActions && (
-            <div className="px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-              <p className="text-sm mb-2" style={{ color: 'var(--color-text-muted)' }}>자주 묻는 질문</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {/* Quick actions — toggle persists after chat starts */}
+          <div className="shrink-0 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <button
+              type="button"
+              onClick={() => setQuickActionsOpen((v) => !v)}
+              className="flex items-center gap-1.5 text-sm py-1 cursor-pointer"
+              style={{ color: 'var(--color-text-muted)' }}
+              aria-expanded={quickActionsOpen}
+            >
+              <svg
+                width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
+                className="transition-transform duration-200"
+                style={{ transform: quickActionsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}
+              >
+                <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+              </svg>
+              자주 묻는 질문
+            </button>
+            {quickActionsOpen && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                 {quickActions.map((q) => (
                   <button key={q} onClick={() => sendMessage(q)} className="text-sm rounded-xl px-4 py-3.5 text-left btn-outline">
                     {q}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Input — inside card, sticky within the flex column */}
           <div className="shrink-0 px-5 py-4" style={{ borderTop: '1px solid var(--color-border)' }}>
@@ -343,7 +320,6 @@ function ChatContent() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
-                onFocus={(e) => { setTimeout(() => e.target.scrollIntoView({ block: "center", behavior: "smooth" }), 300); }}
                 placeholder="메시지를 입력하세요..."
                 className="flex-1 px-4 py-3 text-base input-field"
                 disabled={isStreaming}
@@ -356,15 +332,32 @@ function ChatContent() {
                 전송
               </button>
             </div>
-            <p className="text-sm text-center mt-2" style={{ color: 'var(--color-text-muted)' }}>{DISCLAIMER}</p>
+            <p className="text-sm text-center mt-2 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>{DISCLAIMER}</p>
+          </div>
+
+          {/* Action buttons — bottom of card */}
+          <div className="shrink-0 flex flex-col md:flex-row md:justify-end gap-2 md:gap-3 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+            <button
+              onClick={handleEndClick}
+              disabled={isStreaming || !threadId}
+              className="text-sm px-4 py-2.5 min-h-[44px] rounded-xl disabled:opacity-50 transition-colors btn-danger-outline md:order-2"
+            >
+              상담 종료
+            </button>
+            <Link
+              href="/chat/history"
+              className="text-sm px-4 py-2.5 min-h-[44px] flex items-center justify-center rounded-xl btn-outline md:order-1"
+            >
+              대화 기록
+            </Link>
           </div>
 
         </div>{/* end single unified card */}
 
         {/* Info box */}
-        <div className="rounded-2xl p-5 mt-4 text-sm" style={{ background: 'var(--color-primary-soft)' }}>
+        <div className="rounded-2xl p-5 mt-4 mb-2 text-sm" style={{ background: 'var(--color-primary-soft)' }}>
           <p className="font-bold mb-1">AI 챗봇 사용 안내</p>
-          <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--color-text-muted)' }}>
+          <ul className="list-disc list-outside pl-5 space-y-1" style={{ color: 'var(--color-text-muted)' }}>
             <li>복약 방법, 시간, 주의사항 등에 대해 질문할 수 있습니다.</li>
             <li>약물 상호작용이나 부작용에 대해 문의할 수 있습니다.</li>
             <li>긴급한 상황이나 심각한 증상은 즉시 의료기관에 연락하세요.</li>

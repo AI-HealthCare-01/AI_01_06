@@ -16,10 +16,9 @@ SYSTEM_PROMPT = (
     "- 약물 상호작용: 처방된 약물 간 실제 상호작용만 명시. 없으면 '해당 약물 간 주요 상호작용 없음'으로 작성.\n"
     "- 부작용: 해당 약물의 대표적인 부작용을 구체적 증상으로 명시. 예: '구역, 두통, 어지러움'\n"
     "- 음주: 각 약물의 음주 금기 여부를 명확히 명시. 금기 시 '복용 중 음주 금지'로 작성.\n"
-    "- 복용 시간대: 각 약물의 복용 시간대를 아침 식전·식후/점심 식전·식후/저녁 식전·식후/취침 전 등으로 구체적으로 명시할 것.\n"
+    "- instructions에 복용 횟수, 시간대, 방법을 한 문장으로 통합 작성할 것. "
+    "예: '1일 3회 아침·점심·저녁 식후 30분 복용'\n"
     "- 환자 프로필(생년월일, 성별, 키/몸무게, 알레르기, 기저질환)이 제공된 경우, 해당 정보를 반영하여 개인화된 복약 지도를 작성할 것.\n"
-    "- 복용법(frequency)과 복용 지시사항(instructions)에 중복된 내용이 있으면 하나로 통합하여 instructions 항목에 작성할 것. "
-    "예: frequency='1일 3회 식후 30분', instructions='식후 30분' → instructions='1일 3회 식후 30분 복용'으로 통합.\n"
     "- 모든 항목은 한국어로, 간결하고 명확하게 작성할 것."
 )
 
@@ -29,11 +28,9 @@ RESPONSE_FORMAT_GUIDE = """
   "medication_guides": [
     {
       "name": "약물명",
-      "dosage": "용량",
-      "frequency": "복용 횟수",
-      "timing": "복용 시간대 (예: 아침 식전, 아침 식후, 아침·저녁 식후, 취침 전)",
+      "dosage": "1회 복용량",
       "duration": "복용 기간",
-      "instructions": "복용 지시",
+      "instructions": "복용법 (횟수+시간대+방법을 한 문장으로. 예: '1일 3회 아침·점심·저녁 식후 30분 복용')",
       "effect": "효능 및 적응증",
       "precautions": "주의사항"
     }
@@ -62,13 +59,15 @@ class DummyGuideService(GuideServiceBase):
     async def generate(self, medications: list[dict], user_info: dict) -> dict:
         medication_guides = []
         for med in medications:
+            freq = med.get("frequency", "")
+            instr = med.get("instructions", "")
+            combined = instr if instr else freq
             medication_guides.append(
                 {
                     "name": med.get("name", ""),
                     "dosage": med.get("dosage", ""),
-                    "frequency": med.get("frequency", ""),
                     "duration": med.get("duration", ""),
-                    "instructions": med.get("instructions", ""),
+                    "instructions": combined,
                     "effect": "증상 완화 및 관리",
                     "precautions": "공복 복용 시 위장 장애 가능",
                 }

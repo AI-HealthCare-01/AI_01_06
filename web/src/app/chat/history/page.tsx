@@ -161,7 +161,7 @@ export default function ChatHistoryPage() {
                           className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap"
                           style={{ background: "var(--color-secondary-soft)", color: "var(--color-secondary-text)" }}
                         >
-                          보호자 대리
+                          보호자
                         </span>
                       )}
                       {thread.prescription_id && (
