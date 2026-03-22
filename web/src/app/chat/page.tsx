@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/AppLayout";
@@ -50,6 +50,7 @@ function ChatContent() {
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
   const [reasonText, setReasonText] = useState("");
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const streamAbortRef = useRef<AbortController | null>(null);
 
   const initThread = async () => {
     setInitError(null);
@@ -93,6 +94,11 @@ function ChatContent() {
     initThread();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      streamAbortRef.current?.abort();
+    };
+  }, []);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -121,6 +127,10 @@ function ChatContent() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setMessages((prev) => [...prev, { role: "assistant", content: "", status: "streaming" }]);
 
+    streamAbortRef.current?.abort();
+    const controller = new AbortController();
+    streamAbortRef.current = controller;
+
     await streamChat(
       currentThreadId,
       text,
@@ -135,6 +145,7 @@ function ChatContent() {
         });
       },
       () => {
+        streamAbortRef.current = null;
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
@@ -146,6 +157,7 @@ function ChatContent() {
         setIsStreaming(false);
       },
       (errorMsg) => {
+        streamAbortRef.current = null;
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
@@ -160,12 +172,21 @@ function ChatContent() {
         });
         setIsStreaming(false);
       },
+      controller.signal,
     );
   };
 
   const endThreadAndRedirect = async () => {
     if (threadId) {
-      await api.endThread(threadId);
+      try {
+        await api.endThread(threadId);
+      } catch {
+        try {
+          await api.endThread(threadId);
+        } catch {
+          // 2회 실패 시에도 redirect 진행 — 스레드는 auto_close로 자동 종료됨
+        }
+      }
     }
     router.push("/chat/history");
   };
@@ -181,7 +202,11 @@ function ChatContent() {
   const handlePositiveFeedback = async () => {
     if (!threadId) return;
     setFeedbackSubmitting(true);
-    await api.sendFeedback({ thread_id: threadId, feedback_type: "session_positive" });
+    try {
+      await api.sendFeedback({ thread_id: threadId, feedback_type: "session_positive" });
+    } catch {
+      // 피드백 저장 실패 — 무시하고 종료 진행
+    }
     await endThreadAndRedirect();
   };
 
@@ -192,12 +217,16 @@ function ChatContent() {
   const handleSubmitNegativeFeedback = async () => {
     if (!threadId || !selectedReason) return;
     setFeedbackSubmitting(true);
-    await api.sendFeedback({
-      thread_id: threadId,
-      feedback_type: "session_negative",
-      reason: selectedReason,
-      reason_text: reasonText || undefined,
-    });
+    try {
+      await api.sendFeedback({
+        thread_id: threadId,
+        feedback_type: "session_negative",
+        reason: selectedReason,
+        reason_text: reasonText || undefined,
+      });
+    } catch {
+      // 피드백 저장 실패 — 무시하고 종료 진행
+    }
     await endThreadAndRedirect();
   };
 

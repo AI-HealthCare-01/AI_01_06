@@ -390,6 +390,7 @@ export async function streamChat(
   onChunk: (content: string) => void,
   onDone: (messageId: number) => void,
   onError: (message: string) => void,
+  signal?: AbortSignal,
 ) {
   // Step 1: POST → JSON (메시지 등록 + worker에 enqueue)
   const result = await api.sendMessage(threadId, content);
@@ -416,10 +417,17 @@ export async function streamChat(
     }
   }
 
-  const res = await fetch(
-    `${API_BASE}/api/chat/messages/${messageId}/stream`,
-    { headers: streamHeaders },
-  );
+  let res: Response;
+  try {
+    res = await fetch(
+      `${API_BASE}/api/chat/messages/${messageId}/stream`,
+      { headers: streamHeaders, signal },
+    );
+  } catch (err) {
+    if (signal?.aborted) return;
+    onError("스트림 연결에 실패했습니다.");
+    return;
+  }
 
   if (!res.ok || !res.body) {
     let errorMsg = `스트림 연결에 실패했습니다. (${res.status})`;
@@ -439,33 +447,41 @@ export async function streamChat(
 
   let streamEnded = false;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
 
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      try {
-        const event = JSON.parse(line.slice(6));
-        if (event.type === "chunk") {
-          onChunk(event.content);
-        } else if (event.type === "done") {
-          onDone(event.message_id);
-          streamEnded = true;
-          return;
-        } else if (event.type === "error") {
-          onError(event.message);
-          streamEnded = true;
-          return;
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          if (event.type === "chunk") {
+            onChunk(event.content);
+          } else if (event.type === "done") {
+            onDone(event.message_id);
+            streamEnded = true;
+            return;
+          } else if (event.type === "error") {
+            onError(event.message);
+            streamEnded = true;
+            return;
+          }
+        } catch {
+          // ignore parse errors
         }
-      } catch {
-        // ignore parse errors
       }
     }
+  } catch {
+    if (signal?.aborted) return;
+    if (!streamEnded) {
+      onError("응답 스트림이 예기치 않게 종료되었습니다.");
+    }
+    return;
   }
 
   if (!streamEnded) {
