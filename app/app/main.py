@@ -58,7 +58,7 @@ app.include_router(chat.router)
 register_tortoise(
     app,
     config=TORTOISE_ORM,
-    generate_schemas=True,
+    generate_schemas=False,
     add_exception_handlers=True,
 )
 
