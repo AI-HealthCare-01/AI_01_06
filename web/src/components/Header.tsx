@@ -75,17 +75,21 @@ export default function Header() {
   useEffect(() => {
     if (!user) { setUnreadCount(0); return; }
 
-    api.getUnreadCount().then((res) => {
-      if (res.success && res.data) {
-        setUnreadCount(res.data.count);
-      }
+    const abortCtrl = new AbortController();
+    let pollCtrl: AbortController | undefined;
+
+    api.checkMissed().finally(() => {
+      if (abortCtrl.signal.aborted) return;
+      pollCtrl = pollNotificationCount(
+        (count) => setUnreadCount(count),
+        30000,
+      );
     });
 
-    const controller = pollNotificationCount(
-      (count) => setUnreadCount(count),
-      30000,
-    );
-    return () => controller.abort();
+    return () => {
+      abortCtrl.abort();
+      pollCtrl?.abort();
+    };
   }, [user]);
 
   useEffect(() => {

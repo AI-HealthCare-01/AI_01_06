@@ -10,7 +10,7 @@ from app.models.notification import Notification, NotificationSetting
 from app.models.prescription import Medication, Prescription
 from app.models.schedule import AdherenceLog, MedicationSchedule
 from app.models.user import User
-from app.services.notification_service import check_missed_medications
+from app.services.notification_service import check_missed_for_user, check_missed_medications
 
 KST = ZoneInfo("Asia/Seoul")
 MOCK_DATE = date(2026, 3, 18)
@@ -192,3 +192,75 @@ async def test_notification_body_not_exposed_in_api(auth_client: AsyncClient):
     data = resp.json()["data"]
     assert len(data) == 1
     assert data[0]["body"] is None
+
+
+# ── Phase 2: per-user 미복약 체크 ──
+
+
+@pytest.mark.asyncio
+async def test_check_missed_for_user_creates_notification(auth_client: AsyncClient):
+    """check_missed_for_user()가 미복약 알림을 정상 생성한다."""
+    user_resp = await auth_client.get("/api/users/me")
+    user = await User.get(id=user_resp.json()["data"]["id"])
+    await NotificationSetting.create(user=user, morning_time="08:00")
+    await _create_schedule_for_user(user, "타이레놀", "MORNING")
+
+    with patch("app.services.notification_service._now_kst", return_value=MOCK_NOW):
+        created = await check_missed_for_user(user.id)
+
+    assert created == 1
+    notifications = await Notification.filter(user=user, notification_type="MEDICATION")
+    assert len(notifications) == 1
+    assert "타이레놀" in notifications[0].title
+
+
+@pytest.mark.asyncio
+async def test_check_missed_for_user_idempotent(auth_client: AsyncClient):
+    """check_missed_for_user() 2회 호출 시 중복 알림 미생성."""
+    user_resp = await auth_client.get("/api/users/me")
+    user = await User.get(id=user_resp.json()["data"]["id"])
+    await NotificationSetting.create(user=user, morning_time="08:00")
+    await _create_schedule_for_user(user, "타이레놀", "MORNING")
+
+    with patch("app.services.notification_service._now_kst", return_value=MOCK_NOW):
+        first = await check_missed_for_user(user.id)
+        second = await check_missed_for_user(user.id)
+
+    assert first == 1
+    assert second == 0
+
+
+@pytest.mark.asyncio
+async def test_check_missed_endpoint_requires_auth(client: AsyncClient):
+    """POST /api/notifications/check-missed 미인증 → 401."""
+    resp = await client.post("/api/notifications/check-missed")
+    assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_check_missed_endpoint_returns_count(auth_client: AsyncClient):
+    """POST /api/notifications/check-missed → created_count 반환."""
+    user_resp = await auth_client.get("/api/users/me")
+    user = await User.get(id=user_resp.json()["data"]["id"])
+    await NotificationSetting.create(user=user, morning_time="08:00")
+    await _create_schedule_for_user(user, "타이레놀", "MORNING")
+
+    with patch("app.services.notification_service._now_kst", return_value=MOCK_NOW):
+        resp = await auth_client.post("/api/notifications/check-missed")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    assert data["data"]["created_count"] == 1
+
+
+@pytest.mark.asyncio
+async def test_check_missed_for_user_no_schedule(auth_client: AsyncClient):
+    """활성 스케줄 없는 사용자 → 0 반환."""
+    user_resp = await auth_client.get("/api/users/me")
+    user = await User.get(id=user_resp.json()["data"]["id"])
+
+    with patch("app.services.notification_service._now_kst", return_value=MOCK_NOW):
+        created = await check_missed_for_user(user.id)
+
+    assert created == 0

@@ -229,3 +229,61 @@ async def check_missed_medications() -> None:
 
     if notifications_to_create:
         await Notification.bulk_create(notifications_to_create)
+
+
+async def check_missed_for_user(user_id: int) -> int:
+    """특정 사용자의 미복약 스케줄을 감지하고 알림을 생성한다.
+
+    Returns:
+        생성된 알림 수
+    """
+    now = _now_kst()
+    today = now.date()
+    today_dt = datetime(today.year, today.month, today.day, tzinfo=KST)
+
+    active_schedules = await MedicationSchedule.filter(
+        medication__prescription__user_id=user_id,
+        start_date__lte=today,
+        end_date__gte=today,
+    ).prefetch_related("medication__prescription__user")
+
+    if not active_schedules:
+        return 0
+
+    logged_ids, settings_map, patient_caregivers, cg_settings, user_map, sent_tods = await _load_batch_data(
+        active_schedules,
+        today,
+        today_dt,
+    )
+
+    setting = settings_map.get(user_id)
+    if setting and not setting.medication_enabled:
+        return 0
+
+    by_tod: dict[str, list[MedicationSchedule]] = {}
+    for s in active_schedules:
+        by_tod.setdefault(s.time_of_day, []).append(s)
+
+    notifications_to_create: list[Notification] = []
+    for tod, tod_schedules in by_tod.items():
+        if now < _get_deadline(setting, tod, today_dt):
+            continue
+        missed = [s for s in tod_schedules if s.id not in logged_ids]
+        if not missed or (user_id, tod) in sent_tods:
+            continue
+
+        user_obj = user_map.get(user_id)
+        notifications_to_create.extend(
+            _build_missed_notifications(
+                user_id=user_id,
+                user_name=user_obj.name if user_obj else "",
+                tod=tod,
+                missed=missed,
+                caregiver_ids=patient_caregivers.get(user_id, []),
+                caregiver_settings_map=cg_settings,
+            )
+        )
+
+    if notifications_to_create:
+        await Notification.bulk_create(notifications_to_create)
+    return len(notifications_to_create)
