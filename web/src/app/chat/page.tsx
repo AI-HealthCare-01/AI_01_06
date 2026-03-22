@@ -52,8 +52,6 @@ function ChatContent() {
   const [reasonText, setReasonText] = useState("");
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const streamAbortRef = useRef<AbortController | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [userScrolledUp, setUserScrolledUp] = useState(false);
 
   const initThread = async () => {
     setInitError(null);
@@ -103,11 +101,6 @@ function ChatContent() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!userScrolledUp) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-    }
-  }, [messages, userScrolledUp]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -262,9 +255,9 @@ function ChatContent() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto w-full overflow-x-hidden">
         {/* ── Single unified card ── */}
-        <div className="app-card chat-card-fit flex flex-col">
+        <div className="app-card flex flex-col overflow-hidden">
 
           {/* Header — 모바일 2줄 / 웹 1줄 */}
           <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -311,15 +304,9 @@ function ChatContent() {
             </div>
           )}
 
-          {/* Messages — scrollable area */}
+          {/* Messages — 내부 스크롤 없이 외부(페이지) 스크롤 사용 */}
           <div
-            className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4"
-            style={{ minHeight: '80px' }}
-            onScroll={(e) => {
-              const el = e.currentTarget;
-              const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
-              setUserScrolledUp(!atBottom);
-            }}
+            className="px-5 py-4 space-y-4"
           >
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -353,11 +340,13 @@ function ChatContent() {
                 </div>
               </div>
             ))}
-            <div ref={messagesEndRef} />
           </div>
 
+          {/* Quick actions + Input + Buttons — 하단 고정 */}
+          <div className="sticky bottom-0 z-10 w-full max-w-full" style={{ background: 'var(--color-card-bg)' }}>
+
           {/* Quick actions — toggle persists after chat starts */}
-          <div className="shrink-0 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <div className="px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
             <button
               type="button"
               onClick={() => setQuickActionsOpen((v) => !v)}
@@ -393,7 +382,7 @@ function ChatContent() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
                 placeholder="메시지를 입력하세요..."
-                className="flex-1 px-4 py-3 text-base input-field"
+                className="flex-1 min-w-0 px-4 py-3 text-base input-field"
                 disabled={isStreaming}
               />
               <button
@@ -408,7 +397,7 @@ function ChatContent() {
           </div>
 
           {/* Action buttons — bottom of card */}
-          <div className="shrink-0 flex flex-col md:flex-row md:justify-end gap-2 md:gap-3 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <div className="flex flex-col md:flex-row md:justify-end gap-2 md:gap-3 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
             <button
               onClick={handleEndClick}
               disabled={isStreaming || !threadId}
@@ -423,6 +412,8 @@ function ChatContent() {
               대화 기록
             </Link>
           </div>
+
+          </div>{/* end sticky bottom */}
 
         </div>{/* end single unified card */}
 

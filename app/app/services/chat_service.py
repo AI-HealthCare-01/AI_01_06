@@ -52,8 +52,10 @@ SYSTEM_PROMPT = (
     "처방전과 관련 없는 질문이더라도 일반적인 복약 상담 범위 내에서 설명할 수 있습니다.\n\n"
     "[도구 사용]\n"
     "사용 가능한 도구가 제공된 경우 적극적으로 활용하세요.\n"
-    "예를 들어 사용자가 날씨를 물으면 get_weather 도구를 호출하여 실제 날씨 데이터를 제공하고,\n"
-    "날씨와 복약의 관계(예: 더운 날 수분 섭취, 비 오는 날 외출 주의 등)를 안내할 수 있습니다."
+    "도구를 호출할 때는 먼저 텍스트를 출력하지 말고 바로 도구를 호출하세요.\n"
+    "도구 결과를 받은 후에 결과를 자연어로 설명하면서 답변하세요.\n"
+    "예를 들어 사용자가 날씨를 물으면 get_weather 도구를 바로 호출하고,\n"
+    "결과를 바탕으로 날씨 정보와 복약 관련 조언을 함께 안내하세요."
 )
 
 
@@ -159,8 +161,12 @@ class OpenAIChatService(ChatServiceBase):
             await response.close()
 
         if tool_calls_data and tool_executor:
+            logger.info("[ToolCall] %d tool(s) detected, pre-text=%d chars", len(tool_calls_data), len(accumulated))
             await self._execute_tool_calls(messages, accumulated, tool_calls_data, tool_executor)
-            return await self.generate_reply(messages, on_progress=on_progress)
+            follow_up = await self.generate_reply(messages, on_progress=on_progress)
+            combined = (accumulated + "\n\n" + follow_up).strip() if accumulated else follow_up
+            logger.info("[ToolCall] combined result length=%d", len(combined))
+            return combined
 
         if on_progress:
             await on_progress(accumulated)

@@ -7,7 +7,13 @@ from app.core.redis import CHAT_STREAM_PREFIX
 from app.models.chat import ChatMessage, ChatThread
 from app.services.chat_service import build_context, get_chat_service
 from worker import config
-from worker.tools.weather_tool import WEATHER_TOOL_SCHEMA, fetch_weather, format_weather_response
+from worker.tools.weather_tool import (
+    _CITY_MAP,
+    WEATHER_TOOL_SCHEMA,
+    _find_korean_city_name,
+    fetch_weather,
+    format_weather_response,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +25,16 @@ async def _execute_tool(name: str, arguments: str) -> str:
         weather_api_key = getattr(config, "WEATHER_API_KEY", "")
         if not weather_api_key:
             return "날씨 API 키가 설정되지 않았습니다."
+        raw_city = args.get("city", "")
+        # 한국어 도시명 → OpenWeatherMap 영어 도시명 변환
+        api_city = _CITY_MAP.get(raw_city, raw_city)
+        city_kr = _find_korean_city_name(api_city) or raw_city
         try:
-            data = await fetch_weather(args.get("city", ""), weather_api_key)
-            return format_weather_response(data)
+            data = await fetch_weather(api_city, weather_api_key)
+            return format_weather_response(data, city_kr)
         except Exception:
-            return f"'{args.get('city', '')}' 날씨 정보를 가져올 수 없습니다."
+            logger.exception("[Weather] fetch failed for city=%s (api_city=%s)", raw_city, api_city)
+            return f"'{raw_city}' 날씨 정보를 가져올 수 없습니다."
     return f"알 수 없는 도구: {name}"
 
 
