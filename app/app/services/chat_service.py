@@ -49,7 +49,13 @@ SYSTEM_PROMPT = (
     "- 처방전 요약\n"
     "- 사용자 질문\n"
     "- 최근 대화 내용\n"
-    "처방전과 관련 없는 질문이더라도 일반적인 복약 상담 범위 내에서 설명할 수 있습니다."
+    "처방전과 관련 없는 질문이더라도 일반적인 복약 상담 범위 내에서 설명할 수 있습니다.\n\n"
+    "[도구 사용]\n"
+    "사용 가능한 도구가 제공된 경우 적극적으로 활용하세요.\n"
+    "도구를 호출할 때는 먼저 텍스트를 출력하지 말고 바로 도구를 호출하세요.\n"
+    "도구 결과를 받은 후에 결과를 자연어로 설명하면서 답변하세요.\n"
+    "예를 들어 사용자가 날씨를 물으면 get_weather 도구를 바로 호출하고,\n"
+    "결과를 바탕으로 날씨 정보와 복약 관련 조언을 함께 안내하세요."
 )
 
 
@@ -59,7 +65,11 @@ class ChatServiceBase(abc.ABC):
 
     @abc.abstractmethod
     async def generate_reply(
-        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+        self,
+        messages: list[dict],
+        on_progress: Callable[[str], Awaitable[None]] | None = None,
+        tools: list[dict] | None = None,
+        tool_executor: Callable[[str, str], Awaitable[str]] | None = None,
     ) -> str: ...
 
 
@@ -72,7 +82,11 @@ class DummyChatService(ChatServiceBase):
             yield char
 
     async def generate_reply(
-        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+        self,
+        messages: list[dict],
+        on_progress: Callable[[str], Awaitable[None]] | None = None,
+        tools: list[dict] | None = None,
+        tool_executor: Callable[[str, str], Awaitable[str]] | None = None,
     ) -> str:
         response = "안녕하세요! 복약 관련 질문에 답변드리겠습니다. 궁금하신 점을 말씀해 주세요."
         if on_progress:
@@ -100,28 +114,84 @@ class OpenAIChatService(ChatServiceBase):
         finally:
             await response.close()
 
+    @staticmethod
+    def _accumulate_tool_call(tool_calls_data: list[dict], tc) -> None:
+        """스트리밍 청크에서 tool_call 데이터를 누적한다."""
+        while len(tool_calls_data) <= tc.index:
+            tool_calls_data.append({"id": "", "name": "", "arguments": ""})
+        entry = tool_calls_data[tc.index]
+        if tc.id:
+            entry["id"] = tc.id
+        if tc.function and tc.function.name:
+            entry["name"] = tc.function.name
+        if tc.function and tc.function.arguments:
+            entry["arguments"] += tc.function.arguments
+
     async def generate_reply(
-        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+        self,
+        messages: list[dict],
+        on_progress: Callable[[str], Awaitable[None]] | None = None,
+        tools: list[dict] | None = None,
+        tool_executor: Callable[[str, str], Awaitable[str]] | None = None,
     ) -> str:
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            stream=True,
-        )
+        create_kwargs: dict = {"model": self.model, "messages": messages, "stream": True}
+        if tools:
+            create_kwargs["tools"] = tools
+            create_kwargs["tool_choice"] = "auto"
+
+        response = await self.client.chat.completions.create(**create_kwargs)
         accumulated = ""
-        chunk_count = 0
+        tool_calls_data: list[dict] = []
+
         try:
             async for chunk in response:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    accumulated += chunk.choices[0].delta.content
-                    chunk_count += 1
-                    if on_progress and chunk_count % 5 == 0:
+                choice = chunk.choices[0] if chunk.choices else None
+                if not choice:
+                    continue
+
+                if choice.delta.content:
+                    accumulated += choice.delta.content
+                    if on_progress:
                         await on_progress(accumulated)
+
+                if choice.delta.tool_calls:
+                    for tc in choice.delta.tool_calls:
+                        self._accumulate_tool_call(tool_calls_data, tc)
         finally:
             await response.close()
+
+        if tool_calls_data and tool_executor:
+            logger.info("[ToolCall] %d tool(s) detected, pre-text=%d chars", len(tool_calls_data), len(accumulated))
+            await self._execute_tool_calls(messages, accumulated, tool_calls_data, tool_executor)
+            follow_up = await self.generate_reply(messages, on_progress=on_progress)
+            combined = (accumulated + "\n\n" + follow_up).strip() if accumulated else follow_up
+            logger.info("[ToolCall] combined result length=%d", len(combined))
+            return combined
+
         if on_progress:
             await on_progress(accumulated)
         return accumulated
+
+    @staticmethod
+    async def _execute_tool_calls(
+        messages: list[dict],
+        accumulated: str,
+        tool_calls_data: list[dict],
+        tool_executor: Callable[[str, str], Awaitable[str]],
+    ) -> None:
+        """tool_call 결과를 messages에 추가한다."""
+        assistant_msg = {
+            "role": "assistant",
+            "content": accumulated or None,
+            "tool_calls": [
+                {"id": tc["id"], "type": "function", "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                for tc in tool_calls_data
+            ],
+        }
+        messages.append(assistant_msg)
+        for tc in tool_calls_data:
+            result = await tool_executor(tc["name"], tc["arguments"])
+            messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
 
 
 def get_chat_service() -> ChatServiceBase:

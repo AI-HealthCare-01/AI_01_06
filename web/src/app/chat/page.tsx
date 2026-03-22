@@ -26,7 +26,8 @@ const negativeReasons = [
 interface Message {
   role: "user" | "assistant";
   content: string;
-  status?: string;
+  status?: "pending" | "streaming" | "completed" | "failed";
+  statusText?: string;
 }
 
 function ChatContent() {
@@ -78,7 +79,7 @@ function ChatContent() {
         if (msgRes.success && msgRes.data) {
           const loaded = (msgRes.data as Array<{ role: "user" | "assistant"; content: string; status?: string }>);
           if (loaded.length > 0) {
-            setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status })));
+            setMessages(loaded.map((m) => ({ role: m.role, content: m.content, status: m.status as Message["status"] })));
             setQuickActionsOpen(false);
           }
         }
@@ -99,6 +100,7 @@ function ChatContent() {
       streamAbortRef.current?.abort();
     };
   }, []);
+
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -131,32 +133,46 @@ function ChatContent() {
     const controller = new AbortController();
     streamAbortRef.current = controller;
 
+    const statusTimer = setTimeout(() => {
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last.role === "assistant" && !last.content) {
+          updated[updated.length - 1] = { ...last, statusText: "정보를 확인하고 있어요..." };
+        }
+        return updated;
+      });
+    }, 2000);
+
     await streamChat(
       currentThreadId,
       text,
       (content) => {
+        clearTimeout(statusTimer);
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last.role === "assistant") {
-            updated[updated.length - 1] = { ...last, content };
+            updated[updated.length - 1] = { ...last, content, statusText: undefined };
           }
           return updated;
         });
       },
       () => {
+        clearTimeout(statusTimer);
         streamAbortRef.current = null;
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last.role === "assistant") {
-            updated[updated.length - 1] = { ...last, status: "completed" };
+            updated[updated.length - 1] = { ...last, status: "completed", statusText: undefined };
           }
           return updated;
         });
         setIsStreaming(false);
       },
       (errorMsg) => {
+        clearTimeout(statusTimer);
         streamAbortRef.current = null;
         setMessages((prev) => {
           const updated = [...prev];
@@ -166,6 +182,7 @@ function ChatContent() {
               ...last,
               content: errorMsg || "오류가 발생했습니다.",
               status: "failed",
+              statusText: undefined,
             };
           }
           return updated;
@@ -174,6 +191,7 @@ function ChatContent() {
       },
       controller.signal,
     );
+    clearTimeout(statusTimer);
   };
 
   const endThreadAndRedirect = async () => {
@@ -237,9 +255,9 @@ function ChatContent() {
 
   return (
     <AppLayout>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto w-full overflow-x-hidden">
         {/* ── Single unified card ── */}
-        <div className="app-card chat-card-fit flex flex-col">
+        <div className="app-card flex flex-col overflow-hidden">
 
           {/* Header — 모바일 2줄 / 웹 1줄 */}
           <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -286,8 +304,10 @@ function ChatContent() {
             </div>
           )}
 
-          {/* Messages — scrollable area */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4" style={{ minHeight: '80px' }}>
+          {/* Messages — 내부 스크롤 없이 외부(페이지) 스크롤 사용 */}
+          <div
+            className="px-5 py-4 space-y-4"
+          >
             {messages.map((msg, i) => (
               <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[80%] md:max-w-[75%] rounded-xl px-4 py-3.5 leading-relaxed whitespace-pre-wrap ${
@@ -301,7 +321,16 @@ function ChatContent() {
                       ? { background: 'var(--color-danger-soft)', color: 'var(--color-danger-text)' }
                       : { background: 'var(--color-surface)', color: 'var(--color-text)' }
                 }>
-                  {msg.content || (msg.status === "streaming" ? (
+                  {msg.content || (msg.statusText ? (
+                    <span className="inline-flex items-center gap-2 py-1">
+                      <span className="inline-flex gap-1">
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "0ms" }} />
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "150ms" }} />
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "300ms" }} />
+                      </span>
+                      <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{msg.statusText}</span>
+                    </span>
+                  ) : msg.status === "streaming" ? (
                     <span className="inline-flex gap-1 py-1">
                       <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "0ms" }} />
                       <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "150ms" }} />
@@ -313,8 +342,11 @@ function ChatContent() {
             ))}
           </div>
 
+          {/* Quick actions + Input + Buttons — 하단 고정 */}
+          <div className="sticky bottom-0 z-10 w-full max-w-full" style={{ background: 'var(--color-card-bg)' }}>
+
           {/* Quick actions — toggle persists after chat starts */}
-          <div className="shrink-0 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <div className="px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
             <button
               type="button"
               onClick={() => setQuickActionsOpen((v) => !v)}
@@ -350,7 +382,7 @@ function ChatContent() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && sendMessage(input)}
                 placeholder="메시지를 입력하세요..."
-                className="flex-1 px-4 py-3 text-base input-field"
+                className="flex-1 min-w-0 px-4 py-3 text-base input-field"
                 disabled={isStreaming}
               />
               <button
@@ -365,7 +397,7 @@ function ChatContent() {
           </div>
 
           {/* Action buttons — bottom of card */}
-          <div className="shrink-0 flex flex-col md:flex-row md:justify-end gap-2 md:gap-3 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <div className="flex flex-col md:flex-row md:justify-end gap-2 md:gap-3 px-5 py-3" style={{ borderTop: '1px solid var(--color-border)' }}>
             <button
               onClick={handleEndClick}
               disabled={isStreaming || !threadId}
@@ -380,6 +412,8 @@ function ChatContent() {
               대화 기록
             </Link>
           </div>
+
+          </div>{/* end sticky bottom */}
 
         </div>{/* end single unified card */}
 

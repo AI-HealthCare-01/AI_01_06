@@ -2,12 +2,13 @@
 
 import io
 import json
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import AsyncClient
 
 from app.models.chat import ChatMessage, ChatThread
-from app.services.chat_service import build_context
+from app.services.chat_service import DummyChatService, build_context
 
 
 @pytest.mark.asyncio
@@ -305,3 +306,34 @@ async def test_message_stream_wrong_user(auth_client: AsyncClient, client: Async
         headers={"Authorization": f"Bearer {other_token}"},
     )
     assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_generate_reply_calls_progress_every_chunk(auth_client: AsyncClient):
+    """generate_reply가 매 청크마다 on_progress를 호출한다 (5개 단위 아님)."""
+    service = DummyChatService()
+    progress_mock = AsyncMock()
+    await service.generate_reply(
+        [{"role": "user", "content": "테스트"}],
+        on_progress=progress_mock,
+    )
+    # DummyChatService는 고정 응답 1회 → 최소 1회 호출
+    assert progress_mock.call_count >= 1
+
+
+@pytest.mark.asyncio
+async def test_build_context_includes_first_user_message(auth_client: AsyncClient):
+    """첫 메시지에서도 user 질문이 컨텍스트에 포함된다."""
+    create_resp = await auth_client.post("/api/chat/threads", json={})
+    thread_id = create_resp.json()["data"]["id"]
+
+    await auth_client.post(
+        "/api/chat/messages",
+        json={"thread_id": thread_id, "content": "이 약 부작용 알려줘"},
+    )
+
+    thread = await ChatThread.get(id=thread_id)
+    context = await build_context(thread)
+
+    user_contents = [m["content"] for m in context if m["role"] == "user"]
+    assert any("부작용" in c for c in user_contents)

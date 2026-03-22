@@ -452,6 +452,7 @@ export async function streamChat(
   let buffer = "";
 
   let streamEnded = false;
+  let accumulated = "";
 
   try {
     while (true) {
@@ -467,7 +468,8 @@ export async function streamChat(
         try {
           const event = JSON.parse(line.slice(6));
           if (event.type === "chunk") {
-            onChunk(event.content);
+            accumulated += event.content;
+            onChunk(accumulated);
           } else if (event.type === "done") {
             onDone(event.message_id);
             streamEnded = true;
