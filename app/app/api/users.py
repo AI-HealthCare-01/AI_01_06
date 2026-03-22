@@ -92,7 +92,7 @@ async def update_me(request: Request, req: UserUpdateRequest, user: User = Depen
 
 
 @router.delete("/me")
-@limiter.limit("3/hour")
+@limiter.limit("10/hour")
 async def delete_me(
     request: Request,
     req: DeleteAccountRequest,
