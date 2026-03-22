@@ -144,7 +144,9 @@ async def get_guide(guide_id: int, actors: tuple[User, User | None] = Depends(ge
     medications = await Medication.filter(prescription=prescription)
 
     profile = await PatientProfile.get_or_none(user=target_user)
-    profile_updated = bool(profile and profile.updated_at and profile.updated_at > guide.created_at)
+    profile_updated = bool(
+        guide.profile_snapshot_at is not None and profile and profile.updated_at != guide.profile_snapshot_at
+    )
 
     return success_response(
         {
