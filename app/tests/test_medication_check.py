@@ -50,6 +50,7 @@ async def test_missed_single_medication_specific_message(auth_client: AsyncClien
     assert len(notifications) == 1
     assert "아침" in notifications[0].title
     assert "타이레놀" in notifications[0].title
+    assert notifications[0].body is None
 
 
 @pytest.mark.asyncio
@@ -137,6 +138,8 @@ async def test_missed_medication_notifies_all_caregivers(auth_client: AsyncClien
     assert len(g1_notis) == 1
     assert len(g2_notis) == 1
     assert user.name in g1_notis[0].title
+    assert g1_notis[0].body is None
+    assert g2_notis[0].body is None
 
 
 @pytest.mark.asyncio
@@ -170,3 +173,22 @@ async def test_medication_disabled_no_notification(auth_client: AsyncClient):
 
     count = await Notification.filter(notification_type="MEDICATION").count()
     assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_notification_body_not_exposed_in_api(auth_client: AsyncClient):
+    """GET /api/notifications 응답에서 미복약 알림의 body가 null인지 확인."""
+    user_resp = await auth_client.get("/api/users/me")
+    user = await User.get(id=user_resp.json()["data"]["id"])
+    await NotificationSetting.create(user=user, morning_time="08:00")
+    await _create_schedule_for_user(user, "타이레놀", "MORNING")
+
+    fake_now = MOCK_NOW
+    with patch("app.services.notification_service._now_kst", return_value=fake_now):
+        await check_missed_medications()
+
+    resp = await auth_client.get("/api/notifications")
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert len(data) == 1
+    assert data[0]["body"] is None
