@@ -121,15 +121,16 @@ async def login(request: Request, req: LoginRequest):
 @router.post("/refresh")
 @limiter.limit("5/minute")
 async def refresh(request: Request, req: RefreshRequest):
-    rt = await RefreshToken.get_or_none(token=req.refresh_token, revoked=False)
-    if not rt or rt.expires_at < datetime.now(UTC):
+    # atomic update로 race condition 방지 (double-spend 차단)
+    updated = await RefreshToken.filter(token=req.refresh_token, revoked=False).update(revoked=True)
+    if updated == 0:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 refresh token입니다.")
+    rt = await RefreshToken.get(token=req.refresh_token)
+    if rt.expires_at < datetime.now(UTC):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 refresh token입니다.")
     user = await User.get_or_none(id=rt.user_id, deleted_at__isnull=True)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="사용자를 찾을 수 없습니다.")
-    # 기존 refresh token 소비 (일회성)
-    rt.revoked = True
-    await rt.save()
     return success_response(
         {
             "access_token": create_access_token(user.id, user.role),
@@ -153,4 +154,6 @@ async def logout(
         await redis.setex(f"blacklist:{jti}", remaining_ttl, "1")
     if req and req.refresh_token:
         await RefreshToken.filter(token=req.refresh_token, user_id=user.id).update(revoked=True)
+    else:
+        await RefreshToken.filter(user_id=user.id, revoked=False).update(revoked=True)
     return success_response({"message": "로그아웃 되었습니다."})
