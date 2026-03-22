@@ -121,6 +121,7 @@ async def setup_db():
                 "app.models.audit",
                 "app.models.guide",
                 "app.models.chat",
+                "app.models.refresh_token",
             ]
         },
     )

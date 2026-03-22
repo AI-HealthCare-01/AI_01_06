@@ -17,6 +17,7 @@ TORTOISE_ORM = {
                 "app.models.guide",
                 "app.models.chat",
                 "app.models.drug_document",
+                "app.models.refresh_token",
                 "aerich.models",
             ],
             "default_connection": "default",
