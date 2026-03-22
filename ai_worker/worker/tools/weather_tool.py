@@ -220,6 +220,25 @@ def _find_korean_city_name(english_city: str) -> str | None:
 # ── 통합 함수: chat_task에서 호출 ──
 
 
+WEATHER_TOOL_SCHEMA: dict = {
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "지정된 도시의 현재 날씨를 조회합니다. 사용자가 날씨에 대해 질문할 때만 사용하세요.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "city": {
+                    "type": "string",
+                    "description": "날씨를 조회할 도시명 (예: 서울, 부산, Tokyo)",
+                }
+            },
+            "required": ["city"],
+        },
+    },
+}
+
+
 async def try_weather_response(user_query: str, api_key: str) -> str | None:
     """날씨 질문이면 응답 문자열을 반환, 아니면 None.
 

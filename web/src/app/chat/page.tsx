@@ -27,6 +27,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   status?: string;
+  statusText?: string;
 }
 
 function ChatContent() {
@@ -139,32 +140,46 @@ function ChatContent() {
     const controller = new AbortController();
     streamAbortRef.current = controller;
 
+    const statusTimer = setTimeout(() => {
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last.role === "assistant" && !last.content) {
+          updated[updated.length - 1] = { ...last, statusText: "정보를 확인하고 있어요..." };
+        }
+        return updated;
+      });
+    }, 2000);
+
     await streamChat(
       currentThreadId,
       text,
       (content) => {
+        clearTimeout(statusTimer);
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last.role === "assistant") {
-            updated[updated.length - 1] = { ...last, content };
+            updated[updated.length - 1] = { ...last, content, statusText: undefined };
           }
           return updated;
         });
       },
       () => {
+        clearTimeout(statusTimer);
         streamAbortRef.current = null;
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last.role === "assistant") {
-            updated[updated.length - 1] = { ...last, status: "completed" };
+            updated[updated.length - 1] = { ...last, status: "completed", statusText: undefined };
           }
           return updated;
         });
         setIsStreaming(false);
       },
       (errorMsg) => {
+        clearTimeout(statusTimer);
         streamAbortRef.current = null;
         setMessages((prev) => {
           const updated = [...prev];
@@ -174,6 +189,7 @@ function ChatContent() {
               ...last,
               content: errorMsg || "오류가 발생했습니다.",
               status: "failed",
+              statusText: undefined,
             };
           }
           return updated;
@@ -182,6 +198,7 @@ function ChatContent() {
       },
       controller.signal,
     );
+    clearTimeout(statusTimer);
   };
 
   const endThreadAndRedirect = async () => {
@@ -317,7 +334,16 @@ function ChatContent() {
                       ? { background: 'var(--color-danger-soft)', color: 'var(--color-danger-text)' }
                       : { background: 'var(--color-surface)', color: 'var(--color-text)' }
                 }>
-                  {msg.content || (msg.status === "streaming" ? (
+                  {msg.content || (msg.statusText ? (
+                    <span className="inline-flex items-center gap-2 py-1">
+                      <span className="inline-flex gap-1">
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "0ms" }} />
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "150ms" }} />
+                        <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "300ms" }} />
+                      </span>
+                      <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{msg.statusText}</span>
+                    </span>
+                  ) : msg.status === "streaming" ? (
                     <span className="inline-flex gap-1 py-1">
                       <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "0ms" }} />
                       <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: 'var(--color-text-muted)', animationDelay: "150ms" }} />
