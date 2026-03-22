@@ -264,3 +264,17 @@ async def test_check_missed_for_user_no_schedule(auth_client: AsyncClient):
         created = await check_missed_for_user(user.id)
 
     assert created == 0
+
+
+@pytest.mark.asyncio
+async def test_check_missed_for_user_medication_disabled(auth_client: AsyncClient):
+    """medication_enabled=False인 사용자 → check_missed_for_user()가 0 반환."""
+    user_resp = await auth_client.get("/api/users/me")
+    user = await User.get(id=user_resp.json()["data"]["id"])
+    await NotificationSetting.create(user=user, morning_time="08:00", medication_enabled=False)
+    await _create_schedule_for_user(user, "타이레놀", "MORNING")
+
+    with patch("app.services.notification_service._now_kst", return_value=MOCK_NOW):
+        created = await check_missed_for_user(user.id)
+
+    assert created == 0
