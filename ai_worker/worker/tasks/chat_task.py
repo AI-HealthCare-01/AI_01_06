@@ -7,7 +7,7 @@ from app.core.redis import CHAT_STREAM_PREFIX
 from app.models.chat import ChatMessage, ChatThread
 from app.services.chat_service import build_context, get_chat_service
 from worker import config
-from worker.tools.weather_tool import try_weather_response
+from worker.tools.weather_tool import is_weather_query, try_weather_response
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,15 @@ async def chat_task(ctx: dict, message_id: int) -> None:
             # 날씨 응답을 기존과 동일한 발행 형식으로 전달
             await on_progress(weather_response)
             assistant_msg.content = weather_response
+            assistant_msg.status = "completed"
+            await assistant_msg.save()
+            await thread.save()
+            await redis_client.publish(channel, json.dumps({"t": "done"}))
+        elif weather_api_key and is_weather_query(user_query):
+            # 날씨 질문이지만 도시명 없음 → 지역 입력 유도
+            guide = '어느 지역의 날씨를 확인할까요?\n예: "서울 날씨 알려줘", "부산 기온 알려줘"'
+            await on_progress(guide)
+            assistant_msg.content = guide
             assistant_msg.status = "completed"
             await assistant_msg.save()
             await thread.save()
