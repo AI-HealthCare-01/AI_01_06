@@ -59,7 +59,11 @@ class ChatServiceBase(abc.ABC):
 
     @abc.abstractmethod
     async def generate_reply(
-        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+        self,
+        messages: list[dict],
+        on_progress: Callable[[str], Awaitable[None]] | None = None,
+        tools: list[dict] | None = None,
+        tool_executor: Callable[[str, str], Awaitable[str]] | None = None,
     ) -> str: ...
 
 
@@ -72,7 +76,11 @@ class DummyChatService(ChatServiceBase):
             yield char
 
     async def generate_reply(
-        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+        self,
+        messages: list[dict],
+        on_progress: Callable[[str], Awaitable[None]] | None = None,
+        tools: list[dict] | None = None,
+        tool_executor: Callable[[str, str], Awaitable[str]] | None = None,
     ) -> str:
         response = "안녕하세요! 복약 관련 질문에 답변드리겠습니다. 궁금하신 점을 말씀해 주세요."
         if on_progress:
@@ -101,24 +109,63 @@ class OpenAIChatService(ChatServiceBase):
             await response.close()
 
     async def generate_reply(
-        self, messages: list[dict], on_progress: Callable[[str], Awaitable[None]] | None = None
+        self,
+        messages: list[dict],
+        on_progress: Callable[[str], Awaitable[None]] | None = None,
+        tools: list[dict] | None = None,
+        tool_executor: Callable[[str, str], Awaitable[str]] | None = None,
     ) -> str:
-        response = await self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            stream=True,
-        )
+        create_kwargs: dict = {"model": self.model, "messages": messages, "stream": True}
+        if tools:
+            create_kwargs["tools"] = tools
+            create_kwargs["tool_choice"] = "auto"
+
+        response = await self.client.chat.completions.create(**create_kwargs)
         accumulated = ""
-        chunk_count = 0
+        tool_calls_data: list[dict] = []
+
         try:
             async for chunk in response:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    accumulated += chunk.choices[0].delta.content
-                    chunk_count += 1
-                    if on_progress and chunk_count % 5 == 0:
+                choice = chunk.choices[0] if chunk.choices else None
+                if not choice:
+                    continue
+
+                if choice.delta.content:
+                    accumulated += choice.delta.content
+                    if on_progress:
                         await on_progress(accumulated)
+
+                if choice.delta.tool_calls:
+                    for tc in choice.delta.tool_calls:
+                        while len(tool_calls_data) <= tc.index:
+                            tool_calls_data.append({"id": "", "name": "", "arguments": ""})
+                        entry = tool_calls_data[tc.index]
+                        if tc.id:
+                            entry["id"] = tc.id
+                        if tc.function and tc.function.name:
+                            entry["name"] = tc.function.name
+                        if tc.function and tc.function.arguments:
+                            entry["arguments"] += tc.function.arguments
         finally:
             await response.close()
+
+        if tool_calls_data and tool_executor:
+            assistant_msg = {
+                "role": "assistant",
+                "content": accumulated or None,
+                "tool_calls": [
+                    {"id": tc["id"], "type": "function", "function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                    for tc in tool_calls_data
+                ],
+            }
+            messages.append(assistant_msg)
+
+            for tc in tool_calls_data:
+                result = await tool_executor(tc["name"], tc["arguments"])
+                messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
+
+            return await self.generate_reply(messages, on_progress=on_progress)
+
         if on_progress:
             await on_progress(accumulated)
         return accumulated
