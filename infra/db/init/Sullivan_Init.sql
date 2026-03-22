@@ -1,7 +1,0 @@
--- Sullivan DB 초기화
---
--- 테이블 스키마는 Tortoise ORM generate_schemas(safe=True) 가 자동 생성합니다.
--- 이 파일에 테이블 DDL을 직접 작성하지 마세요.
--- 스키마 변경은 app/models/ 의 ORM 모델이 단일 source of truth 입니다.
---
--- 초기 seed 데이터가 필요한 경우 이 파일 하단에 INSERT 구문을 추가하세요.
