@@ -66,3 +66,7 @@ deploy.sh
 
 # Nginx prod config (contains server IP)
 infra/nginx/default.prod.conf
+
+# AI agent config (local-only)
+AGENTS.md
+SYSTEM_DESIGN.md
