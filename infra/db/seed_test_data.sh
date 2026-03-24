@@ -5,10 +5,14 @@
 #
 # 사용법:
 #   Docker Compose가 실행 중인 상태에서:
-#      bash infra/db/seed_test_data.sh
+#      bash infra/db/seed_test_data.sh              # 전체 (테스트 + 운영 데모)
+#      bash infra/db/seed_test_data.sh --demo-only   # 운영 데모 계정만
 #
-#   DB 접속 정보는 infra/env/.local.env 에서 자동으로 읽습니다.
-#   (.local.env는 .gitignore에 포함되어 git에 커밋되지 않습니다)
+#   EC2 운영 환경에서 .prod.env 사용:
+#      bash infra/db/seed_test_data.sh --demo-only --env infra/env/.prod.env
+#
+#   DB 접속 정보는 env 파일에서 자동으로 읽습니다.
+#   (MYSQL_USER/MYSQL_PASSWORD 또는 DB_USER/DB_PASSWORD 키 모두 지원)
 #
 # 주의:
 #   - 기존 test 계정(testp*, testg*)이 있으면 삭제 후 재생성합니다.
@@ -21,17 +25,36 @@
 #     testg1 → testp1, testp2, testp3
 #     testg2 → testp4, testp5, testp6
 #     testg3 → testp7, testp8, testp9
+#
+#   [운영 데모 계정] — EC2 배포 시 전체 기능 시연용
+#   PATIENT  1명 (demo.patient@sullivan.kr)  — 처방전 2개, 약물 7개, 프로필·가이드·스케줄 완비
+#   GUARDIAN 1명 (demo.guardian@sullivan.kr) — 위 환자와 APPROVED 연동
 # =============================================================================
 
 set -euo pipefail
 
-# --- .local.env에서 DB 접속 정보를 읽음 (비밀번호 하드코딩 금지) ---
+# --- 옵션 파싱 ---
+DEMO_ONLY=false
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENV_FILE="${SCRIPT_DIR}/../env/.local.env"
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --demo-only) DEMO_ONLY=true; shift ;;
+    --env)       ENV_FILE="$2"; shift 2 ;;
+    -h|--help)
+      echo "사용법: bash $0 [옵션]"
+      echo "  --demo-only   운영 데모 계정만 생성 (테스트 계정 건너뜀)"
+      echo "  --env <path>  env 파일 경로 지정 (기본: infra/env/.local.env)"
+      exit 0 ;;
+    *) echo "[ERROR] 알 수 없는 옵션: $1"; exit 1 ;;
+  esac
+done
+
+# --- env 파일에서 DB 접속 정보를 읽음 (비밀번호 하드코딩 금지) ---
 if [ ! -f "$ENV_FILE" ]; then
   echo "[ERROR] $ENV_FILE 파일이 없습니다."
-  echo "        infra/env/example.local.env 를 복사하여 .local.env 를 생성하세요."
+  echo "        infra/env/example.local.env 를 복사하여 env 파일을 생성하세요."
   exit 1
 fi
 
@@ -39,19 +62,27 @@ _val() { grep "^$1=" "$ENV_FILE" | cut -d'=' -f2-; }
 
 DB_HOST="127.0.0.1"
 DB_PORT=$(_val DB_EXPOSE_PORT)
+# MYSQL_USER / DB_USER 키 모두 지원 (.local.env vs .prod.env)
 DB_USER=$(_val MYSQL_USER)
+[ -z "$DB_USER" ] && DB_USER=$(_val DB_USER)
 DB_PASS=$(_val MYSQL_PASSWORD)
+[ -z "$DB_PASS" ] && DB_PASS=$(_val DB_PASSWORD)
 DB_NAME=$(_val MYSQL_DATABASE)
+[ -z "$DB_NAME" ] && DB_NAME=$(_val DB_NAME)
 
 [ -z "$DB_PORT" ] && DB_PORT="3306"
 [ -z "$DB_NAME" ] && DB_NAME="ai_health"
 
 if [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; then
-  echo "[ERROR] .local.env에 MYSQL_USER 또는 MYSQL_PASSWORD가 설정되지 않았습니다."
+  echo "[ERROR] env 파일에 DB 사용자/비밀번호가 설정되지 않았습니다."
+  echo "        지원 키: MYSQL_USER/MYSQL_PASSWORD 또는 DB_USER/DB_PASSWORD"
   exit 1
 fi
 
-echo "[INFO] .local.env 로드 완료 (USER=$DB_USER, DB=$DB_NAME, PORT=$DB_PORT)"
+MODE_LABEL="전체 (테스트 + 운영 데모)"
+$DEMO_ONLY && MODE_LABEL="운영 데모 계정만"
+echo "[INFO] env 로드 완료 (USER=$DB_USER, DB=$DB_NAME, PORT=$DB_PORT)"
+echo "[INFO] 모드: ${MODE_LABEL}"
 
 # --- MySQL 실행 함수 (docker exec으로 컨테이너 내부에서 실행) ---
 MYSQL_CONTAINER="mysql"
@@ -80,58 +111,82 @@ run_sql_optional() {
 }
 
 # --- 연결 확인 ---
-echo "[1/6] MySQL 연결 확인..."
+echo "[1/$(if $DEMO_ONLY; then echo 2; else echo 7; fi)] MySQL 연결 확인..."
 run_sql "SELECT 1;" > /dev/null 2>&1 || { echo "[ERROR] MySQL 연결 실패"; exit 1; }
 echo "  ✓ 연결 성공"
 
 # --- 날짜 계산 ---
 TODAY=$(date +%Y-%m-%d)
-START_DATE=$(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d)
-END_DATE=$(date -v+23d +%Y-%m-%d 2>/dev/null || date -d "23 days from now" +%Y-%m-%d)
+START_DATE=$(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days" +%Y-%m-%d)
+END_DATE=$(date -v+23d +%Y-%m-%d 2>/dev/null || date -d "+23 days" +%Y-%m-%d)
 
 # bcrypt hash — 원문은 팀 내부 채널 참고
 PW_HASH='$2b$12$5LC6ltOo40UXKfEsKGl9d.9jzPg0/WuTXWC4sJStTkY52p7KHlD06'
 
-echo "[2/6] 기존 테스트 데이터 정리..."
+# 가이드 disclaimer 문구
+DISCLAIMER='본 복약 가이드는 AI가 생성한 참고용 정보이며, 의학적 진단이나 처방을 대체하지 않습니다. 정확한 진단과 처방은 반드시 의료 전문가와 상담하세요. 약물 복용 중 이상 증상이 나타나면 즉시 의사와 상담하시기 바랍니다.'
+
+# --- 정리 대상 결정 ---
+# JOIN 컨텍스트용 (u. alias)
+# 서브쿼리/직접 WHERE 컨텍스트용 (email 직접)
+if $DEMO_ONLY; then
+  J_WHERE="u.email LIKE 'demo.%@sullivan.kr'"
+  D_WHERE="email LIKE 'demo.%@sullivan.kr'"
+  echo "[1/2] 기존 운영 데모 데이터 정리..."
+else
+  J_WHERE="u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com' OR u.email LIKE 'demo.%@sullivan.kr'"
+  D_WHERE="email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com' OR email LIKE 'demo.%@sullivan.kr'"
+  echo "[2/7] 기존 테스트 데이터 정리..."
+fi
+
 run_sql "SET FOREIGN_KEY_CHECKS = 0;"
 
 # 아직 Tortoise ORM이 생성하지 않았을 수 있는 테이블 (에러 무시)
-run_sql_optional "DELETE cf FROM chat_feedbacks cf INNER JOIN chat_threads ct ON cf.thread_id = ct.id INNER JOIN users u ON ct.user_id = u.id WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';"
-run_sql_optional "DELETE cm FROM chat_messages cm INNER JOIN chat_threads ct ON cm.thread_id = ct.id INNER JOIN users u ON ct.user_id = u.id WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';"
-run_sql_optional "DELETE FROM chat_threads WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
-run_sql_optional "DELETE al FROM adherence_logs al INNER JOIN medication_schedules ms ON al.schedule_id = ms.id INNER JOIN medications m ON ms.medication_id = m.id INNER JOIN prescriptions p ON m.prescription_id = p.id INNER JOIN users u ON p.user_id = u.id WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';"
-run_sql_optional "DELETE ms FROM medication_schedules ms INNER JOIN medications m ON ms.medication_id = m.id INNER JOIN prescriptions p ON m.prescription_id = p.id INNER JOIN users u ON p.user_id = u.id WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';"
-run_sql_optional "DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
-run_sql_optional "DELETE FROM notification_settings WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
-run_sql_optional "DELETE FROM audit_logs WHERE actor_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
-run_sql_optional "DELETE FROM refresh_tokens WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');"
+run_sql_optional "DELETE cf FROM chat_feedbacks cf INNER JOIN chat_threads ct ON cf.thread_id = ct.id INNER JOIN users u ON ct.user_id = u.id WHERE ${J_WHERE};"
+run_sql_optional "DELETE cm FROM chat_messages cm INNER JOIN chat_threads ct ON cm.thread_id = ct.id INNER JOIN users u ON ct.user_id = u.id WHERE ${J_WHERE};"
+run_sql_optional "DELETE FROM chat_threads WHERE user_id IN (SELECT id FROM users WHERE ${D_WHERE});"
+run_sql_optional "DELETE al FROM adherence_logs al INNER JOIN medication_schedules ms ON al.schedule_id = ms.id INNER JOIN medications m ON ms.medication_id = m.id INNER JOIN prescriptions p ON m.prescription_id = p.id INNER JOIN users u ON p.user_id = u.id WHERE ${J_WHERE};"
+run_sql_optional "DELETE ms FROM medication_schedules ms INNER JOIN medications m ON ms.medication_id = m.id INNER JOIN prescriptions p ON m.prescription_id = p.id INNER JOIN users u ON p.user_id = u.id WHERE ${J_WHERE};"
+run_sql_optional "DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE ${D_WHERE});"
+run_sql_optional "DELETE FROM notification_settings WHERE user_id IN (SELECT id FROM users WHERE ${D_WHERE});"
+run_sql_optional "DELETE FROM audit_logs WHERE actor_id IN (SELECT id FROM users WHERE ${D_WHERE});"
+run_sql_optional "DELETE FROM refresh_tokens WHERE user_id IN (SELECT id FROM users WHERE ${D_WHERE});"
 
 # 핵심 테이블 (항상 존재)
 run_sql "
 DELETE g FROM guides g
   INNER JOIN users u ON g.user_id = u.id
-  WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';
+  WHERE ${J_WHERE};
 
 DELETE m FROM medications m
   INNER JOIN prescriptions p ON m.prescription_id = p.id
   INNER JOIN users u ON p.user_id = u.id
-  WHERE u.email LIKE 'testp%@test.com' OR u.email LIKE 'testg%@test.com';
+  WHERE ${J_WHERE};
 
-DELETE FROM prescriptions WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');
+DELETE FROM prescriptions WHERE user_id IN (SELECT id FROM users WHERE ${D_WHERE});
 
-DELETE FROM caregiver_patient_mappings WHERE caregiver_id IN (SELECT id FROM users WHERE email LIKE 'testg%@test.com')
-  OR patient_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com');
+DELETE FROM caregiver_patient_mappings WHERE caregiver_id IN (SELECT id FROM users WHERE ${D_WHERE})
+  OR patient_id IN (SELECT id FROM users WHERE ${D_WHERE});
 
-DELETE FROM auth_providers WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');
-DELETE FROM terms_consents WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');
-DELETE FROM patient_profiles WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com');
-DELETE FROM users WHERE email LIKE 'testp%@test.com' OR email LIKE 'testg%@test.com';
+DELETE FROM auth_providers WHERE user_id IN (SELECT id FROM users WHERE ${D_WHERE});
+DELETE FROM terms_consents WHERE user_id IN (SELECT id FROM users WHERE ${D_WHERE});
+DELETE FROM patient_profiles WHERE user_id IN (SELECT id FROM users WHERE ${D_WHERE});
+DELETE FROM users WHERE ${D_WHERE};
 
 SET FOREIGN_KEY_CHECKS = 1;
 "
 echo "  ✓ 정리 완료"
 
-echo "[3/6] 사용자 계정 생성..."
+# --demo-only 모드면 테스트 계정(3~6단계) 건너뛰고 바로 데모 계정 생성
+if $DEMO_ONLY; then
+  # 아래 테스트 계정 생성 블록을 건너뜀
+  :
+else
+# ┌─────────────────────────────────────────┐
+# │  테스트 계정 생성 (--demo-only 시 스킵) │
+# └─────────────────────────────────────────┘
+
+echo "[3/7] 사용자 계정 생성..."
 run_sql "
 -- ===== PATIENT 9명 =====
 INSERT INTO users (email, nickname, password_hash, name, role, birth_date, gender, phone, font_size_mode, failed_login_attempts, created_at, updated_at) VALUES
@@ -153,7 +208,7 @@ INSERT INTO users (email, nickname, password_hash, name, role, birth_date, gende
 "
 echo "  ✓ 계정 생성 완료 (PATIENT 9, GUARDIAN 3)"
 
-echo "[4/6] 프로필 · 약관 · 인증제공자 생성..."
+echo "[4/7] 프로필 · 약관 · 인증제공자 생성..."
 run_sql "
 -- 유저 ID 변수 설정
 SET @p1 = (SELECT id FROM users WHERE email='testp1@test.com');
@@ -219,7 +274,7 @@ INSERT INTO caregiver_patient_mappings (caregiver_id, patient_id, status, reques
 "
 echo "  ✓ 프로필·약관·인증·보호자 연동 완료"
 
-echo "[5/6] 처방전 · 약물 · 복약 가이드 생성..."
+echo "[5/7] 처방전 · 약물 · 복약 가이드 생성..."
 run_sql "
 SET @p1 = (SELECT id FROM users WHERE email='testp1@test.com');
 SET @p2 = (SELECT id FROM users WHERE email='testp2@test.com');
@@ -334,7 +389,7 @@ INSERT INTO medications (prescription_id, name, dosage, frequency, duration, ins
 "
 echo "  ✓ 처방전·약물 생성 완료"
 
-echo "[6/6] 복약 스케줄 · 가이드 생성..."
+echo "[6/7] 복약 스케줄 · 가이드 생성..."
 run_sql "
 SET @p1 = (SELECT id FROM users WHERE email='testp1@test.com');
 SET @p2 = (SELECT id FROM users WHERE email='testp2@test.com');
@@ -450,7 +505,8 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','타이레놀정 500mg','dosage','500mg','frequency','1일 3회','duration','5일','instructions','식후 30분 복용','effect','해열·진통','precautions','간 질환 시 용량 조절 필요')
   ),
   'warnings', JSON_OBJECT('drug_interactions','알코올과 병용 시 간독성 증가','side_effects','장기 복용 시 간기능 이상','alcohol','복용 중 음주 금지'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('충분한 수분 섭취'), 'exercise', JSON_ARRAY('충분한 휴식'))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('충분한 수분 섭취'), 'exercise', JSON_ARRAY('충분한 휴식')),
+  'disclaimer', '${DISCLAIMER}'
 ), 'completed', NOW()),
 
 (@p2, @rx2, JSON_OBJECT(
@@ -459,7 +515,8 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','로사르탄정 50mg','dosage','50mg','frequency','1일 1회','duration','30일','instructions','아침 식후','effect','ARB 계열, 혈압 강하','precautions','고칼륨혈증 주의')
   ),
   'warnings', JSON_OBJECT('drug_interactions','칼륨 보충제 병용 주의','side_effects','두통, 어지러움','alcohol','음주 시 혈압 급강하 위험'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('저염식 권장','칼륨 풍부 식품 적당량'), 'exercise', JSON_ARRAY('규칙적 유산소 운동 30분'))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('저염식 권장','칼륨 풍부 식품 적당량'), 'exercise', JSON_ARRAY('규칙적 유산소 운동 30분')),
+  'disclaimer', '${DISCLAIMER}'
 ), 'completed', NOW()),
 
 (@p3, @rx3, JSON_OBJECT(
@@ -469,7 +526,8 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','트리메부틴정 100mg','dosage','100mg','frequency','1일 3회','duration','14일','instructions','식후','effect','위장관 운동 조절','precautions','졸음 유발 가능')
   ),
   'warnings', JSON_OBJECT('drug_interactions','특이 상호작용 없음','side_effects','변비, 설사, 두통','alcohol','위장 자극 증가'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('소량씩 자주 식사','맵고 기름진 음식 자제'), 'exercise', JSON_ARRAY('식후 가벼운 산책'))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('소량씩 자주 식사','맵고 기름진 음식 자제'), 'exercise', JSON_ARRAY('식후 가벼운 산책')),
+  'disclaimer', '${DISCLAIMER}'
 ), 'completed', NOW()),
 
 (@p4, @rx4, JSON_OBJECT(
@@ -480,7 +538,8 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','로수바스타틴정 10mg','dosage','10mg','frequency','1일 1회','duration','30일','instructions','저녁 식후','effect','콜레스테롤 감소','precautions','근육통 발생 시 즉시 보고')
   ),
   'warnings', JSON_OBJECT('drug_interactions','메트포르민+조영제 주의','side_effects','소화불량, 근육통, 저혈당','alcohol','저혈당 및 유산산증 위험 증가'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('저탄수화물식','식이섬유 충분히'), 'exercise', JSON_ARRAY('식후 30분 걷기','주 150분 중강도 운동'))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('저탄수화물식','식이섬유 충분히'), 'exercise', JSON_ARRAY('식후 30분 걷기','주 150분 중강도 운동')),
+  'disclaimer', '${DISCLAIMER}'
 ), 'completed', NOW()),
 
 (@p5, @rx5, JSON_OBJECT(
@@ -492,7 +551,8 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','타나민정 40mg','dosage','40mg','frequency','1일 3회','duration','30일','instructions','식후','effect','혈액순환 개선','precautions','출혈 경향 증가 가능')
   ),
   'warnings', JSON_OBJECT('drug_interactions','클로피도그렐+셀레콕시브 출혈 위험','side_effects','출혈, 두통, 소화불량','alcohol','출혈 위험 현저히 증가'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('비타민K 일정량 유지','오메가3 풍부 식품'), 'exercise', JSON_ARRAY('무리한 운동 자제','규칙적 가벼운 산책'))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('비타민K 일정량 유지','오메가3 풍부 식품'), 'exercise', JSON_ARRAY('무리한 운동 자제','규칙적 가벼운 산책')),
+  'disclaimer', '${DISCLAIMER}'
 ), 'completed', NOW()),
 
 (@p6, @rx6, JSON_OBJECT(
@@ -501,7 +561,8 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','프로토픽연고 0.1%','dosage','적당량','frequency','1일 2회','duration','14일','instructions','환부 도포','effect','면역조절, 피부염 완화','precautions','도포 후 자외선 차단 필수')
   ),
   'warnings', JSON_OBJECT('drug_interactions','특이 상호작용 없음','side_effects','졸음, 도포 부위 작열감','alcohol','졸음 증가'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('항염증 식품 섭취','가공식품 자제'), 'exercise', JSON_ARRAY('땀이 과도한 운동 자제'))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('항염증 식품 섭취','가공식품 자제'), 'exercise', JSON_ARRAY('땀이 과도한 운동 자제')),
+  'disclaimer', '${DISCLAIMER}'
 ), 'completed', NOW()),
 
 (@p7, @rx7, JSON_OBJECT(
@@ -514,7 +575,8 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','칼시트리올캡슐 0.25mcg','dosage','0.25mcg','frequency','1일 1회','duration','30일','instructions','아침 식후','effect','칼슘 흡수 촉진','precautions','고칼슘혈증 주의')
   ),
   'warnings', JSON_OBJECT('drug_interactions','와파린+다수 약물 상호작용 주의, 디곡신 독성 모니터링','side_effects','출혈, 구강 칸디다증, 오심','alcohol','와파린 효과 변동, 출혈 위험'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('비타민K 함유 식품 일정량 유지','칼슘·비타민D 충분히'), 'exercise', JSON_ARRAY('호흡 재활 운동','낙상 예방 운동'))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('비타민K 함유 식품 일정량 유지','칼슘·비타민D 충분히'), 'exercise', JSON_ARRAY('호흡 재활 운동','낙상 예방 운동')),
+  'disclaimer', '${DISCLAIMER}'
 ), 'completed', NOW()),
 
 (@p8, @rx8, JSON_OBJECT(
@@ -522,7 +584,8 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','이부프로펜정 200mg','dosage','200mg','frequency','1일 3회 필요시','duration','5일','instructions','식후 복용','effect','소염진통','precautions','공복 복용 금지, 위장 자극')
   ),
   'warnings', JSON_OBJECT('drug_interactions','아스피린 병용 주의','side_effects','위장 장애, 두통','alcohol','위장 출혈 위험'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('충분한 수분'), 'exercise', JSON_ARRAY('스트레칭','눈 휴식')))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('충분한 수분'), 'exercise', JSON_ARRAY('스트레칭','눈 휴식')),
+  'disclaimer', '${DISCLAIMER}')
 , 'completed', NOW()),
 
 (@p9, @rx9, JSON_OBJECT(
@@ -532,17 +595,135 @@ INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUE
     JSON_OBJECT('name','알마겔현탁액','dosage','15ml','frequency','1일 3회','duration','14일','instructions','식후 1시간','effect','제산제, 위점막 보호','precautions','다른 약과 2시간 간격')
   ),
   'warnings', JSON_OBJECT('drug_interactions','알마겔이 다른 약물 흡수 방해 가능','side_effects','변비, 두통','alcohol','위산 역류 악화'),
-  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('야식 금지','식사 후 2시간 내 눕지 않기'), 'exercise', JSON_ARRAY('복부 압박 운동 자제','식후 가벼운 산책'))
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('야식 금지','식사 후 2시간 내 눕지 않기'), 'exercise', JSON_ARRAY('복부 압박 운동 자제','식후 가벼운 산책')),
+  'disclaimer', '${DISCLAIMER}'
 ), 'completed', NOW());
 "
 echo "  ✓ 스케줄·가이드 생성 완료"
+
+fi  # ← --demo-only 분기 종료 (테스트 계정 스킵 블록 끝)
+
+# =============================================================================
+# 운영 데모 계정 — EC2 배포 후 전체 기능 시연용
+# =============================================================================
+DEMO_END=$(date -v+13d +%Y-%m-%d 2>/dev/null || date -d "+13 days" +%Y-%m-%d)
+
+if $DEMO_ONLY; then
+  echo "[2/2] 운영 데모 계정 생성..."
+else
+  echo "[7/7] 운영 데모 계정 생성..."
+fi
+
+# --- 7-1. 사용자 계정 ---
+run_sql "
+INSERT INTO users (email, nickname, password_hash, name, role, birth_date, gender, phone, font_size_mode, failed_login_attempts, created_at, updated_at) VALUES
+  ('demo.patient@sullivan.kr', '설리번환자', '${PW_HASH}', '홍길동', 'PATIENT',  '1988-04-15', 'MALE',   '010-9999-0001', NULL, 0, NOW(), NOW()),
+  ('demo.guardian@sullivan.kr','설리번보호', '${PW_HASH}', '홍보호', 'GUARDIAN', '1960-09-22', 'FEMALE', '010-9999-0002', NULL, 0, NOW(), NOW());
+"
+
+run_sql "
+SET @dp = (SELECT id FROM users WHERE email='demo.patient@sullivan.kr');
+SET @dg = (SELECT id FROM users WHERE email='demo.guardian@sullivan.kr');
+
+-- 7-2. 프로필 (알레르기 + 질환 모두 있는 케이스)
+INSERT INTO patient_profiles (user_id, height_cm, weight_kg, has_allergy, allergy_details, has_disease, disease_details, updated_at) VALUES
+  (@dp, 173.00, 70.50, TRUE, '페니실린 알레르기', TRUE, '고혈압, 제2형 당뇨', NOW());
+
+-- 7-3. 약관 동의
+INSERT INTO terms_consents (user_id, terms_of_service, privacy_policy, marketing_consent, agreed_at) VALUES
+  (@dp, TRUE, TRUE, FALSE, NOW()),
+  (@dg, TRUE, TRUE, FALSE, NOW());
+
+-- 7-4. 인증 제공자 (LOCAL)
+INSERT INTO auth_providers (user_id, provider, provider_user_id, created_at) VALUES
+  (@dp, 'LOCAL', @dp, NOW()),
+  (@dg, 'LOCAL', @dg, NOW());
+
+-- 7-5. 보호자-환자 연동
+INSERT INTO caregiver_patient_mappings (caregiver_id, patient_id, status, requested_at, accepted_at) VALUES
+  (@dg, @dp, 'APPROVED', NOW(), NOW());
+
+-- ===== 7-6. 처방전 1: 내과 (고혈압+당뇨) — 약 4개 =====
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@dp, '서울대학교병원', '김내과', '${TODAY}', '본태성 고혈압, 제2형 당뇨', 'confirmed', NOW());
+SET @drx1 = LAST_INSERT_ID();
+
+INSERT INTO medications (prescription_id, name, dosage, frequency, duration, instructions) VALUES
+  (@drx1, '아모디핀정 5mg',     '5mg',   '1일 1회', '14일', '아침 식후 복용'),
+  (@drx1, '로사르탄정 50mg',    '50mg',  '1일 1회', '14일', '아침 식후 복용'),
+  (@drx1, '메트포르민정 500mg', '500mg', '1일 2회', '14일', '아침·저녁 식후 복용'),
+  (@drx1, '로수바스타틴정 10mg','10mg',  '1일 1회', '14일', '저녁 식후 복용');
+
+-- 스케줄: 아모디핀·로사르탄 → 아침, 메트포르민 → 아침·저녁, 로수바스타틴 → 저녁
+INSERT INTO medication_schedules (medication_id, time_of_day, start_date, end_date)
+  SELECT m.id, 'MORNING', '${TODAY}', '${DEMO_END}'
+  FROM medications m WHERE m.prescription_id = @drx1 AND m.name IN ('아모디핀정 5mg', '로사르탄정 50mg');
+INSERT INTO medication_schedules (medication_id, time_of_day, start_date, end_date)
+  SELECT m.id, t.tod, '${TODAY}', '${DEMO_END}'
+  FROM medications m
+  CROSS JOIN (SELECT 'MORNING' AS tod UNION SELECT 'EVENING') t
+  WHERE m.prescription_id = @drx1 AND m.name = '메트포르민정 500mg';
+INSERT INTO medication_schedules (medication_id, time_of_day, start_date, end_date)
+  SELECT m.id, 'EVENING', '${TODAY}', '${DEMO_END}'
+  FROM medications m WHERE m.prescription_id = @drx1 AND m.name = '로수바스타틴정 10mg';
+
+-- 가이드 1
+INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUES
+(@dp, @drx1, JSON_OBJECT(
+  'medication_guides', JSON_ARRAY(
+    JSON_OBJECT('name','아모디핀정 5mg','dosage','5mg','frequency','1일 1회','duration','14일','instructions','아침 식후','effect','칼슘채널차단제, 혈압 강하','precautions','어지러움 주의, 자몽주스 병용 금지'),
+    JSON_OBJECT('name','로사르탄정 50mg','dosage','50mg','frequency','1일 1회','duration','14일','instructions','아침 식후','effect','ARB 계열, 혈압 강하','precautions','고칼륨혈증 주의, 임신 시 금기'),
+    JSON_OBJECT('name','메트포르민정 500mg','dosage','500mg','frequency','1일 2회','duration','14일','instructions','아침·저녁 식후','effect','인슐린 감수성 개선','precautions','유산산증 주의, 조영제 검사 전 중단'),
+    JSON_OBJECT('name','로수바스타틴정 10mg','dosage','10mg','frequency','1일 1회','duration','14일','instructions','저녁 식후','effect','콜레스테롤 감소','precautions','근육통 발생 시 즉시 보고')
+  ),
+  'warnings', JSON_OBJECT('drug_interactions','메트포르민+조영제 주의, 로사르탄+칼륨 보충제 병용 주의','side_effects','소화불량, 근육통, 저혈당, 어지러움','alcohol','저혈당 및 유산산증 위험 증가, 혈압 급강하 위험'),
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('저염식 권장','저탄수화물식','식이섬유 충분히'), 'exercise', JSON_ARRAY('식후 30분 걷기','주 150분 중강도 유산소 운동')),
+  'disclaimer', '${DISCLAIMER}'
+), 'completed', NOW());
+
+-- ===== 7-7. 처방전 2: 정형외과 (근골격) — 약 3개 =====
+INSERT INTO prescriptions (user_id, hospital_name, doctor_name, prescription_date, diagnosis, ocr_status, created_at)
+  VALUES (@dp, '강남정형외과', '박정형', '${TODAY}', '요추 추간판 탈출증', 'confirmed', NOW());
+SET @drx2 = LAST_INSERT_ID();
+
+INSERT INTO medications (prescription_id, name, dosage, frequency, duration, instructions) VALUES
+  (@drx2, '셀레콕시브캡슐 200mg', '200mg',  '1일 1회', '14일', '아침 식후 복용'),
+  (@drx2, '에페리손정 50mg',      '50mg',   '1일 3회', '14일', '식후 복용'),
+  (@drx2, '레바미피드정 100mg',   '100mg',  '1일 3회', '14일', '식후 복용 (위장 보호)');
+
+-- 스케줄: 셀레콕시브 → 아침, 에페리손·레바미피드 → 아침·점심·저녁
+INSERT INTO medication_schedules (medication_id, time_of_day, start_date, end_date)
+  SELECT m.id, 'MORNING', '${TODAY}', '${DEMO_END}'
+  FROM medications m WHERE m.prescription_id = @drx2 AND m.name = '셀레콕시브캡슐 200mg';
+INSERT INTO medication_schedules (medication_id, time_of_day, start_date, end_date)
+  SELECT m.id, t.tod, '${TODAY}', '${DEMO_END}'
+  FROM medications m
+  CROSS JOIN (SELECT 'MORNING' AS tod UNION SELECT 'NOON' UNION SELECT 'EVENING') t
+  WHERE m.prescription_id = @drx2 AND m.name IN ('에페리손정 50mg', '레바미피드정 100mg');
+
+-- 가이드 2
+INSERT INTO guides (user_id, prescription_id, content, status, created_at) VALUES
+(@dp, @drx2, JSON_OBJECT(
+  'medication_guides', JSON_ARRAY(
+    JSON_OBJECT('name','셀레콕시브캡슐 200mg','dosage','200mg','frequency','1일 1회','duration','14일','instructions','아침 식후','effect','COX-2 선택적 소염진통','precautions','심혈관 질환자 장기 복용 주의'),
+    JSON_OBJECT('name','에페리손정 50mg','dosage','50mg','frequency','1일 3회','duration','14일','instructions','식후','effect','근이완제, 근육 경직 완화','precautions','졸음 유발 가능, 운전 주의'),
+    JSON_OBJECT('name','레바미피드정 100mg','dosage','100mg','frequency','1일 3회','duration','14일','instructions','식후','effect','위점막 보호','precautions','특이 부작용 드묾')
+  ),
+  'warnings', JSON_OBJECT('drug_interactions','셀레콕시브+항응고제 병용 시 출혈 위험','side_effects','위장 장애, 졸음, 어지러움','alcohol','위장 출혈 및 졸음 위험 증가'),
+  'lifestyle', JSON_OBJECT('diet', JSON_ARRAY('항염증 식품 섭취 권장','칼슘·비타민D 보충'), 'exercise', JSON_ARRAY('허리 스트레칭','코어 근력 강화 운동','무거운 물건 들기 자제')),
+  'disclaimer', '${DISCLAIMER}'
+), 'completed', NOW());
+"
+echo "  ✓ 운영 데모 계정 생성 완료 (PATIENT 1, GUARDIAN 1)"
 
 echo ""
 echo "============================================="
 echo " Seed 완료!"
 echo "============================================="
+
+if ! $DEMO_ONLY; then
 echo ""
-echo " PATIENT 계정"
+echo " PATIENT 계정 (테스트)"
 echo "  testp1@test.com (김건강) — 약 1개, 건강한 청년"
 echo "  testp2@test.com (이복약) — 약 2개, 고혈압, 알레르기, LARGE 폰트"
 echo "  testp3@test.com (박처방) — 약 3개, 소화불량"
@@ -553,8 +734,14 @@ echo "  testp7@test.com (조활력) — 약 6개(스크롤), 고령+복합질환
 echo "  testp8@test.com (윤평화) — 약 1개, 청소년, 프로필 미입력"
 echo "  testp9@test.com (한든든) — 약 3개, GERD, 성별·키·체중 미입력"
 echo ""
-echo " GUARDIAN 계정"
+echo " GUARDIAN 계정 (테스트)"
 echo "  testg1@test.com (김보호) → testp1, testp2, testp3"
 echo "  testg2@test.com (이돌봄) → testp4, testp5, testp6"
 echo "  testg3@test.com (박사랑) → testp7, testp8, testp9"
+fi
+
+echo ""
+echo " ─── 운영 데모 계정 ───"
+echo "  demo.patient@sullivan.kr  (홍길동/일반사용자) — 처방전 2개, 약 7개, 유효기간 14일"
+echo "  demo.guardian@sullivan.kr (홍보호/보호자)     → 홍길동 환자 연동"
 echo "============================================="
